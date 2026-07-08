@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="JeriRota Manager - painel de reservas, operações, financeiro e prestação de contas entre agências de turismo." />
+  <title>JeriRota Manager | Gestão de Turismo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <strong>JeriRota</strong>
+          <small>MANAGER</small>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Menu principal">
+        <button class="nav-item active" data-section="dashboard"><span>⌂</span> Dashboard</button>
+        <button class="nav-item" data-section="reservas"><span>▣</span> Reservas</button>
+        <button class="nav-item" data-section="operacao"><span>◌</span> Operação</button>
+        <button class="nav-item" data-section="financeiro"><span>R$</span> Financeiro</button>
+        <button class="nav-item" data-section="prestacao"><span>⇄</span> Prestação de contas</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="profile-mini">
+          <div class="avatar">JR</div>
+          <div><strong>Jeri Rota</strong><small>Administrador</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
+        <div>
+          <p class="eyebrow">CENTRAL DE OPERAÇÕES</p>
+          <h1 id="pageTitle">Olá, Jeri Rota</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="date-badge" id="todayLabel"></div>
+          <button class="primary-button" id="newReservationButton">+ Nova reserva</button>
+        </div>
+      </header>
+
+      <section class="content-section active" id="dashboard">
+        <div class="hero-strip">
+          <div>
+            <p class="eyebrow">VISÃO GERAL</p>
+            <h2>Seu dia está sob controle.</h2>
+            <p>Acompanhe reservas, pagamentos e embarques em um só lugar.</p>
+          </div>
+          <div class="hero-stat">
+            <span id="nextTripCount">0</span>
+            <small>saídas programadas</small>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <div class="metric-icon gold">▣</div>
+            <div><p>Reservas confirmadas</p><strong id="confirmedMetric">0</strong><small>no sistema</small></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon blue">◌</div>
+            <div><p>Embarques de hoje</p><strong id="todayMetric">0</strong><small>operações em andamento</small></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon green">R$</div>
+            <div><p>Em caixa Jeri Rota</p><strong id="revenueMetric">R$ 0,00</strong><small>valores recebidos diretamente</small></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon coral">!</div>
+            <div><p>Saldo de clientes</p><strong id="pendingMetric">R$ 0,00</strong><small>pendente de recebimento</small></div>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel reservations-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">PRÓXIMAS SAÍDAS</p><h3>Agenda operacional</h3></div>
+              <button class="text-button" data-go="reservas">Ver todas →</button>
+            </div>
+            <div id="upcomingReservations" class="agenda-list"></div>
+          </article>
+
+          <article class="panel payment-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">FINANCEIRO</p><h3>Valores em caixa</h3></div>
+            </div>
+            <div class="donut-row">
+              <div class="donut" id="paymentDonut"><span id="paymentPercent">0%</span></div>
+              <div class="donut-info">
+                <p><i class="dot paid"></i> Jeri Rota <strong id="receivedValue">R$ 0,00</strong></p>
+                <p><i class="dot pending"></i> Clientes <strong id="openValue">R$ 0,00</strong></p>
+              </div>
+            </div>
+            <button class="outline-button" data-go="financeiro">Abrir financeiro</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="reservas">
+        <div class="section-heading">
+          <div><p class="eyebrow">GESTÃO COMERCIAL</p><h2>Reservas</h2><p>Cadastre, consulte e organize cada experiência vendida.</p></div>
+        </div>
+        <div class="filters">
+          <input id="searchInput" type="search" placeholder="Buscar por cliente, destino, serviço ou parceira..." />
+          <select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select>
+        </div>
+        <article class="panel table-panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Experiência</th><th>Data</th><th>Pessoas</th><th>Total</th><th>Cliente pagou</th><th>Saldo</th><th>Pagamento</th><th>Reserva</th><th></th></tr></thead>
+              <tbody id="reservationsTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="content-section" id="operacao">
+        <div class="section-heading">
+          <div><p class="eyebrow">LOGÍSTICA</p><h2>Operação diária</h2><p>Lista prática para acompanhar embarques, veículos, responsáveis e saldos no embarque.</p></div>
+        </div>
+        <div class="operation-board" id="operationBoard"></div>
+      </section>
+
+      <section class="content-section" id="financeiro">
+        <div class="section-heading">
+          <div><p class="eyebrow">CONTROLE DE CAIXA</p><h2>Financeiro</h2><p>Veja o que entrou diretamente na Jeri Rota e o que ainda está pendente de cliente.</p></div>
+        </div>
+        <div class="finance-grid">
+          <article class="finance-card received-card"><p>Em caixa Jeri Rota</p><strong id="financeReceived">R$ 0,00</strong><span>Pagamentos que a agência recebeu diretamente</span></article>
+          <article class="finance-card pending-card"><p>Saldo de clientes</p><strong id="financePending">R$ 0,00</strong><span>Valor que ainda falta o cliente pagar</span></article>
+          <article class="finance-card total-card"><p>Volume comercial</p><strong id="financeTotal">R$ 0,00</strong><span>Total de reservas cadastradas</span></article>
+        </div>
+        <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LANÇAMENTOS</p><h3>Resumo por reserva</h3></div></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Data</th><th>Total</th><th>Cliente pagou</th><th>Saldo do cliente</th></tr></thead><tbody id="financeTable"></tbody></table></div></article>
+      </section>
+
+      <section class="content-section" id="prestacao">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FINANCEIRO ENTRE AGÊNCIAS</p>
+            <h2>Prestação de contas</h2>
+            <p>Extrato por empresa parceira para acompanhar NET, repasses e serviços fiados.</p>
+          </div>
+          <button class="primary-button" data-open-modal>+ Lançar reserva parceira</button>
+        </div>
+
+        <div class="statement-note">
+          <strong>Regra da operação:</strong> a troca de vagas serve para formar carro. O sistema mantém cada NET em seu lançamento e <b>não compensa valores automaticamente</b>. O acerto é registrado quando a prestação for feita, por exemplo a cada 15 dias.
+        </div>
+
+        <div class="filters statement-filters">
+          <select id="partnerFilter"><option value="todos">Todas as empresas</option></select>
+          <select id="partnerStatusFilter"><option value="todos">Todos os lançamentos</option><option value="abertos">Prestação em aberto</option><option value="fiados">Cliente com fiado</option><option value="quitados">Quitados</option></select>
+        </div>
+
+        <div class="partner-finance-grid">
+          <article class="partner-card receivable-card"><p>A receber da parceira</p><strong id="partnerReceivable">R$ 0,00</strong><span>NET de serviços que a Jeri Rota executou</span></article>
+          <article class="partner-card payable-card"><p>A pagar à parceira</p><strong id="partnerPayable">R$ 0,00</strong><span>NET de serviços executados pela parceira</span></article>
+          <article class="partner-card fiado-card"><p>Fiado de clientes</p><strong id="partnerFiado">R$ 0,00</strong><span>Saldo comercial ainda pendente de cliente</span></article>
+          <article class="partner-card settled-card"><p>Repasses lançados</p><strong id="partnerSettled">R$ 0,00</strong><span>Valores já acertados na prestação</span></article>
+        </div>
+
+        <article class="panel table-panel">
+          <div class="panel-head statement-head">
+            <div><p class="eyebrow">EXTRATO FINANCEIRO</p><h3 id="partnerStatementTitle">Extrato de todas as empresas</h3></div>
+            <span class="statement-badge">Prestação quinzenal</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Empresa / operação</th><th>Reserva</th><th>Datas</th><th>Movimento</th><th>NET</th><th>Repassado</th><th>Saldo NET</th><th>Cliente pagou</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="settlementTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="close-button" id="closeModal" aria-label="Fechar">×</button>
+      <p class="eyebrow">NOVA VENDA</p>
+      <h2 id="modalTitle">Cadastrar reserva</h2>
+      <p class="modal-subtitle">Use dados fictícios no portfólio público. Dados reais devem ficar em ambiente privado.</p>
+      <form id="reservationForm">
+        <div class="form-grid">
+          <label>Nome do cliente<input required name="client" placeholder="Ex.: Ana Souza" /></label>
+          <label>Telefone<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
+          <label>Experiência / serviço<input required name="service" placeholder="Ex.: Transfer Fortaleza → Jeri" /></label>
+          <label>Data da saída<input required name="date" type="date" /></label>
+          <label>Quantidade de pessoas<input required min="1" value="2" name="people" type="number" /></label>
+          <label>Valor total (R$)<input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
+          <label>Cliente já pagou (R$)<input min="0" step="0.01" value="0" name="paidAmount" type="number" placeholder="0,00" /></label>
+          <label>Quem está com o pagamento?<select name="collectedBy"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
+          <div class="balance-preview" aria-live="polite"><span>Saldo do cliente</span><strong id="balancePreview">R$ 0,00</strong><small id="paymentPreview">Saldo pendente do cliente.</small></div>
+          <label>Status da reserva<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
+          <label>Responsável<input name="responsible" placeholder="Ex.: Motorista a confirmar" /></label>
+          <label>Tipo de operação<select name="partnerOperation"><option value="propria">Venda e operação próprias</option><option value="recebida">Parceira vendeu · Jeri Rota executa</option><option value="enviada">Jeri Rota vendeu · Parceira executa</option></select></label>
+        </div>
+
+        <fieldset class="partner-fields" id="partnerFields">
+          <legend>Prestação de contas com parceira</legend>
+          <div class="form-grid partner-form-grid">
+            <label>Empresa parceira<input name="partner" placeholder="Ex.: Agência Sol Nascente" /></label>
+            <label>NET desta reserva (R$)<input min="0" step="0.01" value="0" name="netAmount" type="number" placeholder="0,00" /></label>
+            <label>Valor já repassado (R$)<input min="0" step="0.01" value="0" name="settledAmount" type="number" placeholder="0,00" /></label>
+            <label>Previsão de prestação<input name="settlementDate" type="date" /></label>
+            <div class="partner-preview" id="partnerPreview" aria-live="polite"><span>Prestação de contas</span><strong>Venda própria</strong><small>Sem lançamento para parceiro.</small></div>
+          </div>
+        </fieldset>
+
+        <label>Observações<textarea name="notes" placeholder="Hotel, ponto de embarque, roteiro, crédito autorizado ou observações importantes."></textarea></label>
+        <button class="primary-button full" id="submitReservation" type="submit">Salvar reserva</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
