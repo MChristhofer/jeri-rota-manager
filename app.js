@@ -368,7 +368,8 @@ document.querySelectorAll('[data-go]').forEach(button => button.addEventListener
 document.querySelectorAll('[data-open-modal]').forEach(button => button.addEventListener('click', () => openModal()));
 document.getElementById('newReservationButton').addEventListener('click', () => openModal());
 document.getElementById('closeModal').addEventListener('click', closeModal);
-modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+// O modal não fecha ao clicar fora.
+// Para fechar, use o botão X ou a tecla Esc.
 document.getElementById('menuButton').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
 document.getElementById('searchInput').addEventListener('input', renderReservations);
 document.getElementById('statusFilter').addEventListener('change', renderReservations);
