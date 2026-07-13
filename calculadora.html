@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Calculadora de pacotes da Jeri Rota para custos, margem de lucro e preço de negociação." />
+  <title>Calculadora de Pacotes | JeriRota Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="calculadora.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Voltar ao JeriRota Manager">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span><strong>JeriRota</strong><small>CALCULADORA DE PACOTES</small></span>
+    </a>
+    <a class="back-link" href="index.html">← Voltar ao Manager</a>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro-card">
+      <div>
+        <p class="eyebrow">FORMAÇÃO DE PREÇO</p>
+        <h1>Calcule um pacote sem perder sua margem.</h1>
+        <p>Some hospedagem, transporte e demais custos. O sistema mostra o preço mínimo e um preço de tabela com espaço para negociação.</p>
+      </div>
+      <div class="formula-note">
+        <span>Recomendado</span>
+        <strong>Margem real</strong>
+        <small>O lucro é calculado como percentual do valor vendido.</small>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <form class="panel calculator-form" id="packageForm">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">DADOS DO PACOTE</p>
+            <h2>Custos e configuração</h2>
+          </div>
+          <button class="text-button" type="button" id="clearButton">Limpar</button>
+        </div>
+
+        <fieldset>
+          <legend>Informações da viagem</legend>
+          <div class="form-grid three-columns">
+            <label>Destino
+              <input name="destination" placeholder="Ex.: Jericoacoara" value="Jericoacoara" />
+            </label>
+            <label>Data de ida
+              <input name="startDate" type="date" />
+            </label>
+            <label>Data de volta
+              <input name="endDate" type="date" />
+            </label>
+            <label>Quantidade de pessoas
+              <input name="people" type="number" min="1" step="1" value="2" />
+            </label>
+            <label>Quantidade de diárias
+              <input name="nights" type="number" min="0" step="1" value="2" />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Custos do pacote</legend>
+          <div class="form-grid">
+            <label>Hospedagem
+              <span class="money-input"><span>R$</span><input name="lodging" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Transfer / transporte
+              <span class="money-input"><span>R$</span><input name="transfer" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Passeios
+              <span class="money-input"><span>R$</span><input name="tours" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Ingressos e taxas
+              <span class="money-input"><span>R$</span><input name="tickets" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Comissão do vendedor
+              <span class="money-input"><span>R$</span><input name="commission" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Taxa de cartão
+              <span class="money-input"><span>R$</span><input name="cardFee" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+            <label>Outros custos
+              <span class="money-input"><span>R$</span><input name="otherCosts" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0,00" /></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Estratégia de preço</legend>
+          <div class="form-grid">
+            <label>Método de cálculo
+              <select name="pricingMode">
+                <option value="margin">Margem real sobre a venda</option>
+                <option value="markup">Acréscimo sobre o custo</option>
+              </select>
+            </label>
+            <label>Lucro mínimo desejado
+              <span class="percent-input"><input name="margin" type="number" min="0" max="95" step="0.1" value="20" /><span>%</span></span>
+            </label>
+            <label>Espaço para negociação
+              <span class="percent-input"><input name="negotiation" type="number" min="0" max="90" step="0.1" value="10" /><span>%</span></span>
+            </label>
+            <label>Arredondar preços para cima
+              <select name="rounding">
+                <option value="1">Real inteiro</option>
+                <option value="5">Múltiplo de R$ 5</option>
+                <option value="10" selected>Múltiplo de R$ 10</option>
+                <option value="50">Múltiplo de R$ 50</option>
+              </select>
+            </label>
+          </div>
+          <p class="field-help" id="modeHelp">Na margem real, preço = custo ÷ (1 − margem). Uma margem de 20% sobre R$ 1.000 gera preço mínimo de R$ 1.250.</p>
+        </fieldset>
+      </form>
+
+      <aside class="results-column" aria-live="polite">
+        <article class="result-card featured">
+          <span>Preço para apresentar</span>
+          <strong id="tablePrice">R$ 0,00</strong>
+          <small id="tablePricePerPerson">R$ 0,00 por pessoa</small>
+        </article>
+
+        <article class="result-card minimum">
+          <span>Preço mínimo para fechar</span>
+          <strong id="minimumPrice">R$ 0,00</strong>
+          <small id="minimumPricePerPerson">R$ 0,00 por pessoa</small>
+        </article>
+
+        <div class="result-grid">
+          <article class="mini-result"><span>Custo total</span><strong id="totalCost">R$ 0,00</strong></article>
+          <article class="mini-result"><span>Custo por pessoa</span><strong id="costPerPerson">R$ 0,00</strong></article>
+          <article class="mini-result"><span>Lucro mínimo</span><strong id="minimumProfit">R$ 0,00</strong></article>
+          <article class="mini-result"><span>Margem real</span><strong id="actualMargin">0%</strong></article>
+        </div>
+
+        <article class="negotiation-card">
+          <div>
+            <span>Desconto seguro</span>
+            <strong id="safeDiscount">R$ 0,00</strong>
+          </div>
+          <p id="negotiationText">Você ainda não adicionou custos ao pacote.</p>
+        </article>
+
+        <article class="warning-card" id="warningCard" hidden>
+          <strong>Ajuste necessário</strong>
+          <p id="warningText"></p>
+        </article>
+
+        <button class="primary-button" type="button" id="copyButton">Copiar resumo da cotação</button>
+        <p class="copy-status" id="copyStatus" role="status"></p>
+      </aside>
+    </div>
+  </main>
+
+  <script src="calculadora.js"></script>
+</body>
+</html>
