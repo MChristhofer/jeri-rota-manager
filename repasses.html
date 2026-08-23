@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="JeriRota Manager - repasses de passeios por WhatsApp." />
+  <title>Repasses | JeriRota Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="repasses.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div><strong>JeriRota</strong><small>MANAGER</small></div>
+      </div>
+      <nav class="main-nav" aria-label="Menu principal">
+        <a class="nav-item" href="index.html" style="text-decoration:none"><span>⌂</span> Dashboard</a>
+        <a class="nav-item active" href="repasses.html" style="text-decoration:none"><span>↗</span> Repasses</a>
+        <a class="nav-item" href="calculadora.html" style="text-decoration:none"><span>◇</span> Calculadora de pacotes</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="profile-mini"><div class="avatar">JR</div><div><strong>Jeri Rota</strong><small>Administrador</small></div></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
+        <div><p class="eyebrow">OPERAÇÃO RÁPIDA</p><h1>Repasses de passeios</h1></div>
+        <div class="topbar-actions"><div class="date-badge" id="todayLabel"></div></div>
+      </header>
+
+      <div class="repasse-tabs" role="tablist">
+        <button class="repasse-tab active" data-tab="novo" type="button">Novo repasse</button>
+        <button class="repasse-tab" data-tab="historico" type="button">Histórico</button>
+        <button class="repasse-tab" data-tab="passeios" type="button">Passeios</button>
+        <button class="repasse-tab" data-tab="locais" type="button">Locais de embarque</button>
+      </div>
+
+      <section class="repasse-panel active" id="tab-novo">
+        <div class="repasse-grid">
+          <article class="panel repasse-card">
+            <div class="panel-head"><div><p class="eyebrow">NOVO REPASSE</p><h3>Dados essenciais</h3></div><span class="repasse-code" id="nextCode"></span></div>
+            <form id="repasseForm" class="repasse-form">
+              <label>Data do serviço<input type="date" id="serviceDate" required></label>
+              <label>Passeio<select id="tourSelect" required></select></label>
+              <label class="full">Local de embarque
+                <div class="location-picker">
+                  <input id="boardingInput" list="boardingOptions" placeholder="Digite um hotel ou local" required>
+                  <datalist id="boardingOptions"></datalist>
+                  <button class="outline-button map-search-button" id="searchMapsButton" type="button">Buscar no Maps</button>
+                </div>
+                <small class="field-help">Locais já cadastrados aparecem primeiro. Um novo local pode ser salvo depois do repasse.</small>
+              </label>
+              <label class="full">Nome(s)<input id="namesInput" placeholder="Ex.: João Silva / Maria Silva" required></label>
+              <label>Telefone<input id="phoneInput" inputmode="tel" placeholder="Ex.: (88) 99999-9999" required></label>
+              <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
+              <label class="full">Valor a receber (R$)<input id="amountInput" inputmode="decimal" placeholder="Ex.: 300,00" required></label>
+              <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local de embarque para os próximos repasses</label>
+              <div class="repasse-actions full">
+                <button class="outline-button" type="submit">Salvar repasse</button>
+                <button class="primary-button whatsapp-button" id="saveWhatsappButton" type="button">Salvar + abrir WhatsApp</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel preview-card">
+            <div class="panel-head"><div><p class="eyebrow">WHATSAPP</p><h3>Prévia da mensagem</h3></div><button class="text-button" id="copyMessageButton" type="button">Copiar</button></div>
+            <div class="message-preview empty" id="messagePreview">Preencha os dados para visualizar a mensagem.</div>
+            <div class="preview-foot"><span>Sem nome de empresa</span><span>•</span><span>Pronto para copiar ou enviar</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="repasse-panel" id="tab-historico">
+        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie e avance o status de cada repasse.</p></div></div>
+        <div class="filters repasse-filters"><input id="historySearch" type="search" placeholder="Buscar código, passageiro, passeio ou telefone"><select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Confirmado</option><option>Finalizado</option></select></div>
+        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Passeio</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse cadastrado.</strong><p>Os novos repasses aparecerão aqui.</p></div></article>
+      </section>
+
+      <section class="repasse-panel" id="tab-passeios">
+        <div class="section-heading"><div><p class="eyebrow">CADASTRO</p><h2>Passeios</h2><p>Cadastre uma vez e reutilize nos próximos repasses.</p></div></div>
+        <article class="panel catalog-panel">
+          <form id="tourForm" class="catalog-form"><label>Nome do passeio<input id="newTourInput" placeholder="Ex.: Litoral Leste privativo" required></label><button class="primary-button" type="submit">+ Adicionar passeio</button></form>
+          <div class="catalog-list" id="tourList"></div><div class="empty-state repasse-empty" id="tourEmpty"><strong>Nenhum passeio cadastrado.</strong></div>
+        </article>
+      </section>
+
+      <section class="repasse-panel" id="tab-locais">
+        <div class="section-heading"><div><p class="eyebrow">EMBARQUE</p><h2>Locais de embarque</h2><p>Hotéis, pousadas, aeroportos e pontos de encontro salvos para uso rápido.</p></div></div>
+        <article class="panel catalog-panel">
+          <form id="locationForm" class="location-form">
+            <label>Nome do local<input id="newLocationName" placeholder="Ex.: Pousada do Norte" required></label>
+            <label>Tipo<select id="newLocationType"><option>Hotel / pousada</option><option>Aeroporto</option><option>Restaurante</option><option>Ponto de encontro</option><option>Residência</option><option>Outro</option></select></label>
+            <label class="full">Endereço ou referência<input id="newLocationAddress" placeholder="Ex.: R. das Dunas, Jericoacoara"></label>
+            <div class="location-form-actions full"><button class="outline-button" id="newLocationMaps" type="button">Pesquisar este local no Google Maps</button><button class="primary-button" type="submit">Salvar local</button></div>
+          </form>
+          <div class="catalog-list" id="locationList"></div><div class="empty-state repasse-empty" id="locationEmpty"><strong>Nenhum local cadastrado.</strong><p>Você pode cadastrar hotéis e outros pontos de embarque manualmente.</p></div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <div class="repasse-toast" id="toast"></div>
+  <script src="repasses.js"></script>
+</body>
+</html>
