@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/css/intlTelInput.css" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="repasses.css" />
 </head>
@@ -58,7 +59,10 @@
                 <small class="field-help">Locais já cadastrados aparecem primeiro. Um novo local pode ser salvo depois do repasse.</small>
               </label>
               <label class="full">Nome(s)<input id="namesInput" placeholder="Ex.: João Silva / Maria Silva" required></label>
-              <label>Telefone<input id="phoneInput" inputmode="tel" placeholder="Ex.: (88) 99999-9999" required></label>
+              <label>Telefone de contato
+                <input id="phoneInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="(85) 99999-9999" required>
+                <small class="field-help" id="phoneHelp">Brasil selecionado por padrão. Use a bandeira para trocar de país.</small>
+              </label>
               <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
               <label class="full">Valor a receber (R$)<input id="amountInput" inputmode="decimal" placeholder="Ex.: 300,00" required></label>
               <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local de embarque para os próximos repasses</label>
@@ -97,7 +101,7 @@
           <form id="locationForm" class="location-form">
             <label>Nome do local<input id="newLocationName" placeholder="Ex.: Pousada do Norte" required></label>
             <label>Tipo<select id="newLocationType"><option>Hotel / pousada</option><option>Aeroporto</option><option>Restaurante</option><option>Ponto de encontro</option><option>Residência</option><option>Outro</option></select></label>
-            <label class="full">Endereço ou referência<input id="newLocationAddress" placeholder="Ex.: R. das Dunas, Jericoacoara"></label>
+            <label class="full">Endereço ou referência<input id="newLocationAddress" placeholder="Ex.: Av. Beira Mar, Fortaleza"></label>
             <div class="location-form-actions full"><button class="outline-button" id="newLocationMaps" type="button">Pesquisar este local no Google Maps</button><button class="primary-button" type="submit">Salvar local</button></div>
           </form>
           <div class="catalog-list" id="locationList"></div><div class="empty-state repasse-empty" id="locationEmpty"><strong>Nenhum local cadastrado.</strong><p>Você pode cadastrar hotéis e outros pontos de embarque manualmente.</p></div>
@@ -106,6 +110,7 @@
     </main>
   </div>
   <div class="repasse-toast" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/js/intlTelInput.min.js"></script>
   <script src="repasses.js"></script>
 </body>
 </html>
