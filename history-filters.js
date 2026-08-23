@@ -23,7 +23,8 @@
     const q=(byId('historySearch')?.value||'').trim().toLowerCase();
 
     const items=getRepasses().filter(x=>{
-      const generalText=`${x.names||''} ${x.phone||''} ${x.phoneE164||''} ${x.boarding||''}`.toLowerCase();
+      const extraPhones=Array.isArray(x.phones)?x.phones.map(p=>`${p.phone||''} ${p.phoneE164||''}`).join(' '):'';
+      const generalText=`${x.names||''} ${x.phone||''} ${x.phoneE164||''} ${extraPhones} ${x.boarding||''}`.toLowerCase();
       const codeOk=!code||String(x.code||'').toLowerCase().includes(code);
       const dateOk=!date||x.date===date;
       const tourOk=!tour||x.tour===tour;
