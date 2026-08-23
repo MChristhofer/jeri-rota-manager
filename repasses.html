@@ -83,8 +83,30 @@
 
       <section class="repasse-panel" id="tab-historico">
         <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie e altere o status de cada repasse.</p></div></div>
-        <div class="filters repasse-filters"><input id="historySearch" type="search" placeholder="Buscar código, passageiro, passeio ou telefone"><select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Confirmado</option><option>Finalizado</option></select></div>
-        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Passeio</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse cadastrado.</strong><p>Os novos repasses aparecerão aqui.</p></div></article>
+
+        <div class="history-filter-card">
+          <div class="history-filter-grid">
+            <label>Código
+              <input id="historyCode" type="search" placeholder="Ex.: REP-00003">
+            </label>
+            <label>Data do serviço
+              <input id="historyDate" type="date">
+            </label>
+            <label>Passeio
+              <select id="historyTour"><option value="">Todos os passeios</option></select>
+            </label>
+            <label>Status
+              <select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Confirmado</option><option>Finalizado</option></select>
+            </label>
+            <label class="history-general-search">Busca geral
+              <input id="historySearch" type="search" placeholder="Passageiro, telefone ou local de embarque">
+            </label>
+            <button class="outline-button clear-history-filters" id="clearHistoryFilters" type="button">Limpar filtros</button>
+          </div>
+          <div class="history-filter-footer"><span id="historyResultCount">0 repasses encontrados</span></div>
+        </div>
+
+        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Passeio</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse encontrado.</strong><p>Altere ou limpe os filtros para ver outros repasses.</p></div></article>
       </section>
 
       <section class="repasse-panel" id="tab-passeios">
