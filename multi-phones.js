@@ -3,7 +3,19 @@
   const primaryIti=phoneIti;
   const primaryHelp=document.getElementById('phoneHelp');
   const peopleLabel=document.getElementById('peopleInput')?.closest('label');
+  const boardingLabel=document.getElementById('boardingInput')?.closest('label');
   if(!primaryInput||!peopleLabel)return;
+
+  let apInput=document.getElementById('apInput');
+  if(!apInput&&boardingLabel){
+    const apLabel=document.createElement('label');
+    apLabel.className='full';
+    apLabel.innerHTML='AP / Quarto <input id="apInput" type="text" autocomplete="off" placeholder="Ex.: 305"><small class="field-help">Opcional. Informe o apartamento ou quarto quando houver.</small>';
+    boardingLabel.insertAdjacentElement('afterend',apLabel);
+    apInput=document.getElementById('apInput');
+    apInput?.addEventListener('input',()=>updatePreview());
+    apInput?.addEventListener('change',()=>updatePreview());
+  }
 
   const tools=document.createElement('div');
   tools.className='multi-phone-tools';
@@ -146,6 +158,7 @@
       date:$('serviceDate').value,
       tour:$('tourSelect').value,
       boarding:$('boardingInput').value.trim(),
+      apartment:apInput?.value.trim()||'',
       names:$('namesInput').value.trim(),
       phone:primary.phone,
       phoneE164:primary.phoneE164,
@@ -161,7 +174,8 @@
       ?data.phones.map(p=>p.phone).filter(Boolean)
       :[data.phone].filter(Boolean);
     const phoneLine=phones.length>1?`Telefones: ${phones.join(' / ')}`:`Telefone: ${phones[0]||''}`;
-    return `Código: ${code}\nData: ${brDate(data.date)}\nPasseio: ${data.tour}\nEmbarque: ${data.boarding}\nPassageiro(s): ${data.names}\n${phoneLine}\nQuantidade: ${data.people} pessoa${data.people===1?'':'s'}\nValor a receber: ${currency.format(data.amount)}`;
+    const apartmentLine=data.apartment?`\nAP / Quarto: ${data.apartment}`:'';
+    return `Código: ${code}\nData: ${brDate(data.date)}\nPasseio: ${data.tour}\nEmbarque: ${data.boarding}${apartmentLine}\nPassageiro(s): ${data.names}\n${phoneLine}\nQuantidade: ${data.people} pessoa${data.people===1?'':'s'}\nValor a receber: ${currency.format(data.amount)}`;
   };
 
   resetPhone=function(){
@@ -178,6 +192,7 @@
     $('serviceDate').value=item.date||localToday();
     $('tourSelect').value=item.tour||'';
     $('boardingInput').value=item.boarding||'';
+    if(apInput)apInput.value=item.apartment||'';
     $('namesInput').value=item.names||'';
     clearExtras();
     const storedPhones=Array.isArray(item.phones)&&item.phones.length
