@@ -82,7 +82,7 @@
       </section>
 
       <section class="repasse-panel" id="tab-historico">
-        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie e avance o status de cada repasse.</p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie e altere o status de cada repasse.</p></div></div>
         <div class="filters repasse-filters"><input id="historySearch" type="search" placeholder="Buscar código, passageiro, passeio ou telefone"><select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Confirmado</option><option>Finalizado</option></select></div>
         <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Passeio</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse cadastrado.</strong><p>Os novos repasses aparecerão aqui.</p></div></article>
       </section>
@@ -112,5 +112,6 @@
   <div class="repasse-toast" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/js/intlTelInput.min.js"></script>
   <script src="repasses.js"></script>
+  <script src="whatsapp-fix.js"></script>
 </body>
 </html>
