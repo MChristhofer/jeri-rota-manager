@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/css/intlTelInput.css" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="repasses.css" />
+  <link rel="stylesheet" href="multi-phones.css" />
 </head>
 <body>
   <div class="app-shell">
@@ -59,7 +60,7 @@
                 <small class="field-help">Locais já cadastrados aparecem primeiro. Um novo local pode ser salvo depois do repasse.</small>
               </label>
               <label class="full">Nome(s)<input id="namesInput" placeholder="Ex.: João Silva / Maria Silva" required></label>
-              <label>Telefone de contato
+              <label>Telefone principal
                 <input id="phoneInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="(85) 99999-9999" required>
                 <small class="field-help" id="phoneHelp">Brasil selecionado por padrão. Use a bandeira para trocar de país.</small>
               </label>
@@ -137,5 +138,6 @@
   <script src="status-update.js"></script>
   <script src="whatsapp-fix.js"></script>
   <script src="history-filters.js"></script>
+  <script src="multi-phones.js"></script>
 </body>
 </html>
