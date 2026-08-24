@@ -4,7 +4,40 @@
   const primaryHelp=document.getElementById('phoneHelp');
   const peopleLabel=document.getElementById('peopleInput')?.closest('label');
   const boardingLabel=document.getElementById('boardingInput')?.closest('label');
+  const serviceDateInput=document.getElementById('serviceDate');
   if(!primaryInput||!peopleLabel)return;
+
+  let returnDateInput=document.getElementById('returnDate');
+  const serviceDateLabel=serviceDateInput?.closest('label');
+  if(serviceDateInput&&serviceDateLabel){
+    serviceDateInput.required=false;
+    const firstText=[...serviceDateLabel.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+    if(firstText)firstText.textContent='Data ida';
+    if(!returnDateInput){
+      const returnDateLabel=document.createElement('label');
+      returnDateLabel.innerHTML='Data volta <input type="date" id="returnDate"><small class="field-help">Opcional. Preencha ida, volta ou as duas datas.</small>';
+      serviceDateLabel.insertAdjacentElement('afterend',returnDateLabel);
+      returnDateInput=document.getElementById('returnDate');
+    }
+  }
+
+  function syncDateValidity(){
+    if(!serviceDateInput)return true;
+    const valid=Boolean(serviceDateInput.value||returnDateInput?.value);
+    serviceDateInput.setCustomValidity(valid?'':'Informe pelo menos a data de ida ou a data de volta.');
+    return valid;
+  }
+  serviceDateInput?.addEventListener('input',()=>{syncDateValidity();updatePreview()});
+  serviceDateInput?.addEventListener('change',()=>{syncDateValidity();updatePreview()});
+  returnDateInput?.addEventListener('input',()=>{syncDateValidity();updatePreview()});
+  returnDateInput?.addEventListener('change',()=>{syncDateValidity();updatePreview()});
+  syncDateValidity();
+
+  const historyDateLabel=document.getElementById('historyDate')?.closest('label');
+  if(historyDateLabel){
+    const firstText=[...historyDateLabel.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+    if(firstText)firstText.textContent='Data (ida ou volta)';
+  }
 
   let apInput=document.getElementById('apInput');
   if(!apInput&&boardingLabel){
@@ -144,6 +177,10 @@
   addButton.addEventListener('click',()=>addExtraPhone());
 
   validatePhone=async function(){
+    if(!syncDateValidity()){
+      serviceDateInput?.reportValidity();
+      return false;
+    }
     if(!(await validateEntry(primaryInput,primaryIti,primaryHelp,true)))return false;
     for(const entry of extras){
       if(!(await validateEntry(entry.input,entry.iti,entry.help,false)))return false;
@@ -155,7 +192,8 @@
     const phones=allPhones();
     const primary=phones[0]||{phone:'',phoneE164:'',phoneCountry:''};
     return{
-      date:$('serviceDate').value,
+      date:serviceDateInput?.value||'',
+      returnDate:returnDateInput?.value||'',
       tour:$('tourSelect').value,
       boarding:$('boardingInput').value.trim(),
       apartment:apInput?.value.trim()||'',
@@ -175,7 +213,8 @@
       :[data.phone].filter(Boolean);
     const phoneLine=phones.length>1?`Telefones: ${phones.join(' / ')}`:`Telefone: ${phones[0]||''}`;
     const apartmentLine=data.apartment?`\nAP / Quarto: ${data.apartment}`:'';
-    return `Código: ${code}\nData: ${brDate(data.date)}\nPasseio: ${data.tour}\nEmbarque: ${data.boarding}${apartmentLine}\nPassageiro(s): ${data.names}\n${phoneLine}\nQuantidade: ${data.people} pessoa${data.people===1?'':'s'}\nValor a receber: ${currency.format(data.amount)}`;
+    const dateLines=[data.date?`Ida: ${brDate(data.date)}`:'',data.returnDate?`Volta: ${brDate(data.returnDate)}`:''].filter(Boolean).join('\n');
+    return `Código: ${code}\n${dateLines}\nPasseio: ${data.tour}\nEmbarque: ${data.boarding}${apartmentLine}\nPassageiro(s): ${data.names}\n${phoneLine}\nQuantidade: ${data.people} pessoa${data.people===1?'':'s'}\nValor a receber: ${currency.format(data.amount)}`;
   };
 
   resetPhone=function(){
@@ -183,13 +222,15 @@
     if(primaryIti){primaryIti.setCountry('br');primaryIti.setNumber('')}else primaryInput.value='';
     primaryHelp.textContent='Brasil selecionado por padrão. Use a bandeira para trocar de país.';
     primaryHelp.classList.remove('phone-invalid','phone-valid');
+    setTimeout(syncDateValidity,0);
   };
 
   editRepasse=function(id){
     const item=getRepasses().find(x=>x.id===id);
     if(!item)return;
     editingRepasseId=id;
-    $('serviceDate').value=item.date||localToday();
+    if(serviceDateInput)serviceDateInput.value=item.date||'';
+    if(returnDateInput)returnDateInput.value=item.returnDate||'';
     $('tourSelect').value=item.tour||'';
     $('boardingInput').value=item.boarding||'';
     if(apInput)apInput.value=item.apartment||'';
@@ -205,9 +246,10 @@
     $('saveLocationCheck').checked=false;
     $('repasseForm').querySelector('button[type="submit"]').textContent='Salvar alterações';
     $('saveWhatsappButton').textContent='Salvar alterações + WhatsApp';
+    syncDateValidity();
     activateTab('novo');
     updatePreview();
-    setTimeout(()=>$('serviceDate').focus(),250);
+    setTimeout(()=>serviceDateInput?.focus(),250);
   };
 
   const oldRenderHistory=window.renderHistory;
