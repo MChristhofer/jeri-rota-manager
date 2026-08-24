@@ -45,4 +45,15 @@
   if(serviceTab)serviceTab.textContent='Serviços';
   const routeTab=document.querySelector('.repasse-tab[data-tab="rotas"]');
   if(routeTab)routeTab.textContent='Rotas / Sentidos';
+
+  // Mantém origem e destino cadastrados internamente, mas deixa a mensagem mais enxuta.
+  if(typeof message==='function'){
+    const detailedMessage=message;
+    message=function(data,code){
+      const text=detailedMessage(data,code);
+      const routeCode=data?.route || String(data?.routeLabel||'').split(' — ')[0].trim();
+      return text.replace(/^Rota:.*$/m,routeCode?`Rota: ${routeCode}`:'').replace(/\n{3,}/g,'\n\n').trim();
+    };
+    if(typeof updatePreview==='function')updatePreview();
+  }
 })();
