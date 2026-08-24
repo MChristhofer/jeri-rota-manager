@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body style="visibility:hidden">
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
@@ -36,6 +36,7 @@
           <div class="avatar">JR</div>
           <div><strong>Jeri Rota</strong><small>Administrador</small></div>
         </div>
+        <button class="nav-item" id="logoutSystemButton" type="button" style="margin-top:12px;padding-left:0"><span>↪</span> Sair do sistema</button>
       </div>
     </aside>
 
@@ -227,6 +228,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
