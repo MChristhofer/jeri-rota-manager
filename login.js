@@ -13,9 +13,25 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     message.textContent='';
+
+    const emailValue=email.value.trim().toLowerCase();
+    const passwordValue=password.value;
+    const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+
+    if(!emailOk){
+      message.textContent='Digite um e-mail válido. Ex.: admin@jerirota.com.br';
+      email.focus();
+      return;
+    }
+    if(!passwordValue){
+      message.textContent='Digite sua senha.';
+      password.focus();
+      return;
+    }
+
     button.disabled=true;
     button.textContent='Entrando...';
-    const {error}=await client.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+    const {error}=await client.auth.signInWithPassword({email:emailValue,password:passwordValue});
     if(error){
       message.textContent='E-mail ou senha inválidos.';
       button.disabled=false;
