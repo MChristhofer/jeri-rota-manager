@@ -16,8 +16,8 @@
       <p class="eyebrow">JERI ROTA</p>
       <h1>Manager</h1>
       <p class="subtitle">Acesso interno ao sistema de operações.</p>
-      <form id="loginForm">
-        <label>E-mail<input id="email" type="email" autocomplete="email" required></label>
+      <form id="loginForm" novalidate>
+        <label>E-mail<input id="email" type="text" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="admin@jerirota.com.br" required></label>
         <label>Senha<input id="password" type="password" autocomplete="current-password" required></label>
         <button id="loginButton" type="submit">Entrar</button>
         <p id="loginMessage" class="message" aria-live="polite"></p>
