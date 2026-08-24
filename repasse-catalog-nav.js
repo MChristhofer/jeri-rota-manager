@@ -67,6 +67,29 @@
     legacyApInput.closest('label')?.remove();
   }
 
+  // Desembarque opcional, reutilizando os mesmos locais cadastrados do embarque.
+  const boardingInput=byId('boardingInput');
+  let dropoffInput=byId('dropoffInput');
+  if(boardingInput&&!dropoffInput){
+    const boardingLabel=boardingInput.closest('label');
+    const dropoffLabel=document.createElement('label');
+    dropoffLabel.className='full';
+    dropoffLabel.innerHTML=`Local de desembarque <small class="field-help">Opcional</small>
+      <div class="location-picker">
+        <input id="dropoffInput" list="boardingOptions" placeholder="Digite um hotel ou local">
+        <button class="outline-button map-search-button" id="searchDropoffMapsButton" type="button">Buscar no Maps</button>
+      </div>
+      <small class="field-help">Você pode usar um local já cadastrado ou digitar outro destino.</small>`;
+    boardingLabel?.insertAdjacentElement('afterend',dropoffLabel);
+    dropoffInput=byId('dropoffInput');
+
+    byId('searchDropoffMapsButton')?.addEventListener('click',()=>{
+      const q=dropoffInput?.value.trim()||'';
+      if(!q)return toast('Digite o local de desembarque primeiro.');
+      window.open(mapUrl(locationMapQuery(q)),'_blank');
+    });
+  }
+
   // Telefone também é opcional. Se houver telefone principal preenchido,
   // continua sendo validado para o país selecionado.
   validatePhone=async function(){
@@ -88,8 +111,8 @@
     return true;
   };
 
-  // Preserva toda a estrutura atual, mas permite quantidade e valor realmente vazios
-  // e usa somente o campo único de AP / Quarto.
+  // Preserva toda a estrutura atual, mas permite quantidade e valor realmente vazios,
+  // usa somente o campo único de AP / Quarto e acrescenta o desembarque.
   if(typeof formData==='function'){
     const baseFormData=formData;
     formData=function(){
@@ -98,6 +121,7 @@
       const amountRaw=byId('amountInput')?.value.trim()||'';
       return{
         ...data,
+        dropoff:dropoffInput?.value.trim()||'',
         apartment:roomInput?.value.trim()||'',
         people:peopleRaw?Math.max(1,Number(peopleRaw)||1):null,
         amount:amountRaw?normalizeMoney(amountRaw):null
@@ -122,6 +146,7 @@
     if(routeCode)lines.push(`Rota: ${routeCode}`);
 
     if(data?.boarding)lines.push(`Embarque: ${data.boarding}`);
+    if(data?.dropoff)lines.push(`Desembarque: ${data.dropoff}`);
     if(data?.apartment)lines.push(`AP / Quarto: ${data.apartment}`);
     if(data?.names)lines.push(`Passageiro(s): ${data.names}`);
     if(phones.length>1)lines.push(`Telefones: ${phones.join(' / ')}`);
@@ -135,8 +160,7 @@
     return lines.join('\n');
   };
 
-  // A prévia precisa considerar também Serviço, Rota, Volta e AP/Quarto,
-  // mesmo quando os demais campos estiverem vazios.
+  // A prévia considera qualquer campo informado, inclusive desembarque.
   updatePreview=function(){
     const data=formData();
     const preview=byId('messagePreview');
@@ -147,7 +171,7 @@
 
     const hasAny=Boolean(
       data.date||data.returnDate||data.tour||data.service||data.route||data.routeLabel||
-      data.boarding||data.apartment||data.names||data.phone||
+      data.boarding||data.dropoff||data.apartment||data.names||data.phone||
       (Array.isArray(data.phones)&&data.phones.length)||
       (data.people!==null&&data.people!==undefined&&data.people!=='')||
       (data.amount!==null&&data.amount!==undefined&&data.amount!=='')
@@ -163,20 +187,21 @@
   };
 
   // Campos que foram criados por scripts anteriores também atualizam a prévia.
-  ['serviceDate','returnDate','tourSelect','serviceSelect','routeSelect','boardingInput','roomInput','namesInput','phoneInput','peopleInput','amountInput']
+  ['serviceDate','returnDate','tourSelect','serviceSelect','routeSelect','boardingInput','dropoffInput','roomInput','namesInput','phoneInput','peopleInput','amountInput']
     .forEach(id=>{
       const field=byId(id);
       field?.addEventListener('input',updatePreview);
       field?.addEventListener('change',updatePreview);
     });
 
-  // Ao editar um repasse antigo, traz AP, quantidade e valor sem inventar 1 ou R$ 0,00.
+  // Ao editar um repasse antigo, traz desembarque, AP, quantidade e valor sem inventar dados.
   if(typeof editRepasse==='function'){
     const baseEditRepasse=editRepasse;
     editRepasse=function(id){
       const item=getRepasses().find(x=>x.id===id);
       baseEditRepasse(id);
       if(!item)return;
+      if(dropoffInput)dropoffInput.value=item.dropoff||'';
       if(roomInput)roomInput.value=item.apartment||'';
       const people=byId('peopleInput');
       if(people)people.value=item.people===null||item.people===undefined?'':item.people;
@@ -186,8 +211,8 @@
     };
   }
 
-  // Depois que o histórico for renderizado, campos não informados aparecem como traço,
-  // em vez de sugerir automaticamente 1 pessoa ou R$ 0,00.
+  // Depois que o histórico for renderizado, campos não informados aparecem como traço.
+  // O desembarque é mostrado junto ao embarque para manter a tabela compacta.
   if(typeof renderHistory==='function'){
     const baseRenderHistory=renderHistory;
     renderHistory=function(){
@@ -195,12 +220,22 @@
       const table=document.querySelector('#tab-historico table');
       if(!table)return;
       const headers=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+      const boardingIndex=headers.indexOf('Embarque');
       const peopleIndex=headers.indexOf('Pessoas');
       const amountIndex=headers.indexOf('Valor');
       table.querySelectorAll('tbody tr').forEach(row=>{
         const code=row.cells[0]?.textContent.trim();
         const item=getRepasses().find(x=>x.code===code);
         if(!item)return;
+
+        if(boardingIndex>=0&&item.dropoff){
+          const boarding=item.boarding
+            ?`${escapeHtml(item.boarding)}<small><a href="${mapUrl(locationMapQuery(item.boarding))}" target="_blank" rel="noopener">Ver embarque no Maps</a></small>`
+            :'—';
+          const dropoff=`<small><strong>Desembarque:</strong> ${escapeHtml(item.dropoff)} · <a href="${mapUrl(locationMapQuery(item.dropoff))}" target="_blank" rel="noopener">Maps</a></small>`;
+          row.cells[boardingIndex].innerHTML=boarding+dropoff;
+        }
+
         if(peopleIndex>=0&&(item.people===null||item.people===undefined||item.people===''))row.cells[peopleIndex].textContent='—';
         if(amountIndex>=0&&(item.amount===null||item.amount===undefined||item.amount===''))row.cells[amountIndex].textContent='—';
       });
@@ -215,6 +250,7 @@
       baseResetRepasseForm();
       repasseForm?.querySelectorAll('[required]').forEach(field=>{field.required=false});
       serviceDate?.setCustomValidity('');
+      if(dropoffInput)dropoffInput.value='';
       if(roomInput)roomInput.value='';
       updatePreview();
     };
