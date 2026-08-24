@@ -49,8 +49,22 @@
           <article class="panel repasse-card">
             <div class="panel-head"><div><p class="eyebrow">NOVO REPASSE</p><h3>Dados essenciais</h3></div><span class="repasse-code" id="nextCode"></span></div>
             <form id="repasseForm" class="repasse-form">
-              <label>Data do serviço<input type="date" id="serviceDate" required></label>
+              <label>Data de ida<input type="date" id="serviceDate"></label>
+              <label>Data de volta <small class="field-help">Opcional</small><input type="date" id="returnDate"></label>
               <label>Passeio<select id="tourSelect" required></select></label>
+              <label>Serviço
+                <select id="serviceSelect" required>
+                  <option value="">Selecione...</option>
+                  <option>Hilux compartilhada</option>
+                  <option>Hilux privativa</option>
+                  <option>Ônibus compartilhado</option>
+                  <option>Ônibus privativo</option>
+                  <option>Micro-ônibus compartilhado</option>
+                  <option>Micro-ônibus privativo</option>
+                  <option>Van compartilhada</option>
+                  <option>Van privativa</option>
+                </select>
+              </label>
               <label class="full">Local de embarque
                 <div class="location-picker">
                   <input id="boardingInput" list="boardingOptions" placeholder="Digite um hotel ou local" required>
@@ -59,12 +73,13 @@
                 </div>
                 <small class="field-help">Locais já cadastrados aparecem primeiro. Um novo local pode ser salvo depois do repasse.</small>
               </label>
+              <label>AP / Quarto <small class="field-help">Opcional</small><input id="roomInput" placeholder="Ex.: 305"></label>
+              <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
               <label class="full">Nome(s)<input id="namesInput" placeholder="Ex.: João Silva / Maria Silva" required></label>
               <label>Telefone principal
                 <input id="phoneInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="(85) 99999-9999" required>
                 <small class="field-help" id="phoneHelp">Brasil selecionado por padrão. Use a bandeira para trocar de país.</small>
               </label>
-              <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
               <label class="full">Valor a receber (R$)<input id="amountInput" inputmode="decimal" placeholder="Ex.: 300,00" required></label>
               <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local de embarque para os próximos repasses</label>
               <div class="repasse-actions full">
@@ -87,27 +102,18 @@
 
         <div class="history-filter-card">
           <div class="history-filter-grid">
-            <label>Código
-              <input id="historyCode" type="search" placeholder="Ex.: REP-00003">
-            </label>
-            <label>Data do serviço
-              <input id="historyDate" type="date">
-            </label>
-            <label>Passeio
-              <select id="historyTour"><option value="">Todos os passeios</option></select>
-            </label>
-            <label>Status
-              <select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Realizado</option><option>Cancelado</option></select>
-            </label>
-            <label class="history-general-search">Busca geral
-              <input id="historySearch" type="search" placeholder="Passageiro, telefone ou local de embarque">
-            </label>
+            <label>Código<input id="historyCode" type="search" placeholder="Ex.: REP-00003"></label>
+            <label>Data<input id="historyDate" type="date"></label>
+            <label>Passeio<select id="historyTour"><option value="">Todos os passeios</option></select></label>
+            <label>Serviço<select id="historyService"><option value="">Todos os serviços</option></select></label>
+            <label>Status<select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Realizado</option><option>Cancelado</option></select></label>
+            <label class="history-general-search">Busca geral<input id="historySearch" type="search" placeholder="Passageiro, telefone, AP ou local de embarque"></label>
             <button class="outline-button clear-history-filters" id="clearHistoryFilters" type="button">Limpar filtros</button>
           </div>
           <div class="history-filter-footer"><span id="historyResultCount">0 repasses encontrados</span></div>
         </div>
 
-        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Passeio</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse encontrado.</strong><p>Altere ou limpe os filtros para ver outros repasses.</p></div></article>
+        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Ida / Volta</th><th>Passeio</th><th>Serviço</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse encontrado.</strong><p>Altere ou limpe os filtros para ver outros repasses.</p></div></article>
       </section>
 
       <section class="repasse-panel" id="tab-passeios">
@@ -139,5 +145,6 @@
   <script src="whatsapp-fix.js"></script>
   <script src="history-filters.js"></script>
   <script src="multi-phones.js"></script>
+  <script src="repasse-details.js"></script>
 </body>
 </html>
