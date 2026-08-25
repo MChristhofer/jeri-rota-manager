@@ -28,4 +28,14 @@
   }
 
   if(typeof renderHistory === 'function') renderHistory();
+
+  function loadCentralRepasses(){
+    if(document.querySelector('script[src="central-repasses.js"]')) return;
+    const script=document.createElement('script');
+    script.src='central-repasses.js';
+    document.body.appendChild(script);
+  }
+
+  if(document.readyState==='complete') setTimeout(loadCentralRepasses,0);
+  else window.addEventListener('load',loadCentralRepasses,{once:true});
 })();
