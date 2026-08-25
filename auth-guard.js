@@ -20,7 +20,6 @@
 
     const button=document.getElementById('logoutSystemButton');
     const profile=document.querySelector('.profile-mini');
-
     if(button&&profile){
       profile.appendChild(button);
       button.style.margin='0 0 0 auto';
@@ -76,6 +75,11 @@
         if(!document.querySelector('script[src="reservation-flow.js"]')){
           const script=document.createElement('script');
           script.src='reservation-flow.js';
+          script.onload=()=>{
+            const form=document.getElementById('reservationForm');
+            form?.querySelector('[name="service"]')?.removeAttribute('required');
+            form?.querySelector('[name="date"]')?.removeAttribute('required');
+          };
           document.body.appendChild(script);
         }
       },{once:true});
