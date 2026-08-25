@@ -1,0 +1,85 @@
+/* Acabamento visual do Manager: ícones e alinhamento consistente */
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.nav-item .nav-icon,
+.nav-item > i{
+  width:22px;
+  min-width:22px;
+  height:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--gold);
+  font-size:18px;
+  line-height:1;
+}
+.nav-item.active .nav-icon,
+.nav-item.active > i{color:var(--gold)}
+
+/* Mantém todos os cartões de uma mesma grade com a mesma altura. */
+.dashboard-finance-grid,
+.dashboard-grid,
+.finance-grid,
+.partner-finance-grid,
+.operation-board,
+.manager-services-grid,
+.reservation-finance-grid{
+  align-items:stretch;
+}
+.dashboard-finance-grid > *,
+.dashboard-grid > *,
+.finance-grid > *,
+.partner-finance-grid > *,
+.operation-board > *,
+.manager-services-grid > *,
+.reservation-finance-grid > *{
+  height:100%;
+  min-width:0;
+}
+
+/* Resumo financeiro da reserva: caixas perfeitamente alinhadas. */
+.reservation-finance-grid{grid-auto-rows:1fr}
+.reservation-finance-item{
+  min-height:68px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+/* Tabelas: cabeçalhos, conteúdo e ações na mesma linha visual. */
+.table-wrap table{width:100%;border-collapse:collapse}
+.table-wrap th,
+.table-wrap td{vertical-align:middle}
+.table-wrap th{white-space:nowrap}
+.table-wrap td{line-height:1.35}
+.table-wrap td > strong,
+.table-wrap td > small{margin-left:0;margin-right:0}
+.table-wrap .status{white-space:nowrap;vertical-align:middle}
+.row-actions{white-space:nowrap;vertical-align:middle}
+.row-actions button{vertical-align:middle;margin:2px 3px 2px 0}
+
+/* Formulários em grade: evita caixas desalinhadas pela quantidade de ajuda/texto. */
+.form-grid,
+.service-draft-grid,
+.manager-service-form,
+.manager-location-form{align-items:start}
+.form-grid > label,
+.service-draft-grid > label,
+.manager-service-form > label,
+.manager-location-form > label{min-width:0}
+.service-draft-grid input,
+.service-draft-grid select,
+.form-grid input,
+.form-grid select{min-height:42px}
+
+@media(max-width:800px){
+  .reservation-finance-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:520px){
+  .nav-item{gap:12px}
+  .reservation-finance-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .reservation-finance-item{min-height:64px;padding:9px!important}
+}
