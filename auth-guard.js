@@ -82,7 +82,15 @@
         }
       };
 
+      const loadManagerRepasses=()=>{
+        if(document.querySelector('script[src^="manager-repasses-section.js"]'))return;
+        const script=document.createElement('script');
+        script.src='manager-repasses-section.js?v=20260824-1';
+        document.body.appendChild(script);
+      };
+
       const initReservationModules=()=>{
+        loadManagerRepasses();
         ['reservation-flow.css','reservation-enhancements.css','reservation-service-catalog.css','reservation-roundtrip.css'].forEach(href=>{
           if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
