@@ -49,43 +49,43 @@
         </div>
         <div class="topbar-actions">
           <div class="date-badge" id="todayLabel"></div>
-          <button class="primary-button" id="newReservationButton">+ Nova reserva</button>
+          <button class="primary-button topbar-new-reservation" id="newReservationButton" hidden>+ Nova reserva</button>
         </div>
       </header>
 
       <section class="content-section active" id="dashboard">
-        <div class="hero-strip">
-          <div>
-            <p class="eyebrow">VISÃO GERAL</p>
-            <h2>Sua operação em uma só rota.</h2>
-            <p>Acompanhe reservas, pagamentos, repasses e embarques com uma visão clara do dia.</p>
-          </div>
-          <div class="hero-stat">
-            <span id="nextTripCount">0</span>
-            <small>saídas programadas</small>
-          </div>
+        <div class="dashboard-heading">
+          <div><p class="eyebrow">VISÃO GERAL</p><h2>Resumo financeiro</h2><p>Acompanhe as entradas, os compromissos e o caixa disponível da operação.</p></div>
+          <span class="dashboard-period">Posição atual</span>
         </div>
 
-        <div class="metrics-grid">
-          <article class="metric-card">
-            <div class="metric-icon gold">▣</div>
-            <div><p>Reservas confirmadas</p><strong id="confirmedMetric">0</strong><small>no sistema</small></div>
+        <div class="dashboard-finance-grid" aria-label="Resumo financeiro">
+          <article class="dashboard-finance-card received-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">↓</span><p>Recebido</p></div>
+            <strong id="dashboardReceived">R$ 0,00</strong><small>Pagamentos recebidos pela Jeri Rota</small>
           </article>
-          <article class="metric-card">
-            <div class="metric-icon blue">◌</div>
-            <div><p>Embarques de hoje</p><strong id="todayMetric">0</strong><small>operações em andamento</small></div>
+          <article class="dashboard-finance-card receivable-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">＋</span><p>A receber</p></div>
+            <strong id="dashboardReceivable">R$ 0,00</strong><small>Saldos pendentes de clientes e parceiras</small>
           </article>
-          <article class="metric-card">
-            <div class="metric-icon green">R$</div>
-            <div><p>Em caixa Jeri Rota</p><strong id="revenueMetric">R$ 0,00</strong><small>valores recebidos diretamente</small></div>
+          <article class="dashboard-finance-card payable-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">↑</span><p>A pagar</p></div>
+            <strong id="dashboardPayable">R$ 0,00</strong><small>Repasses pendentes para parceiras</small>
           </article>
-          <article class="metric-card">
-            <div class="metric-icon coral">!</div>
-            <div><p>Saldo de clientes</p><strong id="pendingMetric">R$ 0,00</strong><small>pendente de recebimento</small></div>
+          <article class="dashboard-finance-card free-balance-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">◆</span><p>Saldo livre estimado</p></div>
+            <strong id="dashboardFreeBalance">R$ 0,00</strong><small>Recebido menos compromissos a pagar</small>
           </article>
         </div>
 
         <div class="dashboard-grid">
+          <article class="panel pending-payments-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">PAGAMENTOS PENDENTES</p><h3>Previsão de recebimentos</h3></div>
+              <button class="text-button" data-go="financeiro">Ver financeiro →</button>
+            </div>
+            <div class="pending-periods" id="pendingPaymentPeriods"></div>
+          </article>
           <article class="panel reservations-panel">
             <div class="panel-head">
               <div><p class="eyebrow">PRÓXIMAS SAÍDAS</p><h3>Agenda operacional</h3></div>
@@ -94,19 +94,6 @@
             <div id="upcomingReservations" class="agenda-list"></div>
           </article>
 
-          <article class="panel payment-panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">FINANCEIRO</p><h3>Valores em caixa</h3></div>
-            </div>
-            <div class="donut-row">
-              <div class="donut" id="paymentDonut"><span id="paymentPercent">0%</span></div>
-              <div class="donut-info">
-                <p><i class="dot paid"></i> Jeri Rota <strong id="receivedValue">R$ 0,00</strong></p>
-                <p><i class="dot pending"></i> Clientes <strong id="openValue">R$ 0,00</strong></p>
-              </div>
-            </div>
-            <button class="outline-button" data-go="financeiro">Abrir financeiro</button>
-          </article>
         </div>
       </section>
 
