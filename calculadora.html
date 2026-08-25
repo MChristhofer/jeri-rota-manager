@@ -9,12 +9,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="calculadora.css" />
+  <link rel="stylesheet" href="manager-brand.css" />
 </head>
-<body>
+<body style="visibility:hidden">
   <header class="topbar">
-    <a class="brand" href="index.html" aria-label="Voltar ao JeriRota Manager">
-      <span class="brand-mark" aria-hidden="true"><i></i></span>
-      <span><strong>JeriRota</strong><small>CALCULADORA DE PACOTES</small></span>
+    <a class="brand" href="index.html" aria-label="Voltar ao Jeri Rota Manager">
+      <img class="brand-logo-mark" src="jeri-rota-mark.svg" alt="" aria-hidden="true" />
+      <span><strong>Jeri Rota</strong><small>CALCULADORA DE PACOTES</small></span>
     </a>
     <a class="back-link" href="index.html">← Voltar ao Manager</a>
   </header>
@@ -24,10 +25,10 @@
       <div>
         <p class="eyebrow">FORMAÇÃO DE PREÇO</p>
         <h1>Calcule um pacote sem perder sua margem.</h1>
-        <p>Some hospedagem, transporte e demais custos. O sistema mostra o preço mínimo e um preço de tabela com espaço para negociação.</p>
+        <p>Some hospedagem, transporte e demais custos para encontrar uma faixa segura de venda e negociação.</p>
       </div>
       <div class="formula-note">
-        <span>Recomendado</span>
+        <span>Método recomendado</span>
         <strong>Margem real</strong>
         <small>O lucro é calculado como percentual do valor vendido.</small>
       </div>
@@ -158,6 +159,9 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
   <script src="calculadora.js"></script>
 </body>
 </html>
