@@ -3,6 +3,14 @@
   const main=document.querySelector('.main-content');
   if(!nav||!main)return;
 
+  function loadManagerServices(){
+    if(document.querySelector('script[src^="manager-services-section.js"]'))return;
+    const script=document.createElement('script');
+    script.src='manager-services-section.js?v=20260825-2';
+    document.body.appendChild(script);
+  }
+  loadManagerServices();
+
   nav.dataset.section='repasses';
   nav.removeAttribute('href');
   nav.setAttribute('role','button');
@@ -14,7 +22,7 @@
     section=document.createElement('section');
     section.className='content-section manager-repasses-section';
     section.id='repasses';
-    section.innerHTML=`<div class="manager-embed-frame-wrap"><iframe id="managerRepassesFrame" title="Central de repasses" src="repasses.html?embed=1" loading="eager"></iframe></div>`;
+    section.innerHTML=`<div class="manager-embed-frame-wrap"><iframe id="managerRepassesFrame" title="Central de repasses" src="repasses.html?embed=1&v=20260825-2" loading="eager"></iframe></div>`;
     main.appendChild(section);
   }
 
