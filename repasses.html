@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="JeriRota Manager - repasses de passeios por WhatsApp." />
+  <meta name="description" content="JeriRota Manager - repasses de passeios e serviços por WhatsApp." />
   <title>Repasses | JeriRota Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,13 +12,14 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="repasses.css" />
   <link rel="stylesheet" href="multi-phones.css" />
+  <link rel="stylesheet" href="manager-brand.css" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true"><span></span></div>
-        <div><strong>JeriRota</strong><small>MANAGER</small></div>
+        <img class="brand-logo-mark" src="jeri-rota-mark.svg" alt="" aria-hidden="true" />
+        <div><strong>Jeri Rota</strong><small>MANAGER</small></div>
       </div>
       <nav class="main-nav" aria-label="Menu principal">
         <a class="nav-item" href="index.html" style="text-decoration:none"><span>⌂</span> Dashboard</a>
@@ -26,28 +27,28 @@
         <a class="nav-item" href="calculadora.html" style="text-decoration:none"><span>◇</span> Calculadora de pacotes</a>
       </nav>
       <div class="sidebar-bottom">
-        <div class="profile-mini"><div class="avatar">JR</div><div><strong>Jeri Rota</strong><small>Administrador</small></div></div>
+        <div class="profile-mini"><div class="avatar">JR</div><div><strong>Jeri Rota</strong><small>Operação interna</small></div></div>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
-        <div><p class="eyebrow">OPERAÇÃO RÁPIDA</p><h1>Repasses de passeios</h1></div>
+        <div><p class="eyebrow">OPERAÇÃO RÁPIDA</p><h1>Repasses e serviços</h1></div>
         <div class="topbar-actions"><div class="date-badge" id="todayLabel"></div></div>
       </header>
 
-      <div class="repasse-tabs" role="tablist">
+      <div class="repasse-tabs" role="tablist" aria-label="Áreas de repasses">
         <button class="repasse-tab active" data-tab="novo" type="button">Novo repasse</button>
         <button class="repasse-tab" data-tab="historico" type="button">Histórico</button>
         <button class="repasse-tab" data-tab="passeios" type="button">Passeios</button>
-        <button class="repasse-tab" data-tab="locais" type="button">Locais de embarque</button>
+        <button class="repasse-tab" data-tab="locais" type="button">Locais</button>
       </div>
 
       <section class="repasse-panel active" id="tab-novo">
         <div class="repasse-grid">
           <article class="panel repasse-card">
-            <div class="panel-head"><div><p class="eyebrow">NOVO REPASSE</p><h3>Dados essenciais</h3></div><span class="repasse-code" id="nextCode"></span></div>
+            <div class="panel-head"><div><p class="eyebrow">NOVO REPASSE</p><h3>Dados do atendimento</h3></div><span class="repasse-code" id="nextCode"></span></div>
             <form id="repasseForm" class="repasse-form">
               <label>Data de ida<input type="date" id="serviceDate"></label>
               <label>Data de volta <small class="field-help">Opcional</small><input type="date" id="returnDate"></label>
@@ -71,7 +72,7 @@
                   <datalist id="boardingOptions"></datalist>
                   <button class="outline-button map-search-button" id="searchMapsButton" type="button">Buscar no Maps</button>
                 </div>
-                <small class="field-help">Locais já cadastrados aparecem primeiro. Um novo local pode ser salvo depois do repasse.</small>
+                <small class="field-help">Use um local cadastrado ou digite um novo ponto para este repasse.</small>
               </label>
               <label>AP / Quarto <small class="field-help">Opcional</small><input id="roomInput" placeholder="Ex.: 305"></label>
               <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
@@ -81,7 +82,7 @@
                 <small class="field-help" id="phoneHelp">Brasil selecionado por padrão. Use a bandeira para trocar de país.</small>
               </label>
               <label class="full">Valor a receber (R$)<input id="amountInput" inputmode="decimal" placeholder="Ex.: 300,00" required></label>
-              <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local de embarque para os próximos repasses</label>
+              <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local para os próximos repasses</label>
               <div class="repasse-actions full">
                 <button class="outline-button" type="submit">Salvar repasse</button>
                 <button class="primary-button whatsapp-button" id="saveWhatsappButton" type="button">Salvar + abrir WhatsApp</button>
@@ -91,14 +92,14 @@
 
           <article class="panel preview-card">
             <div class="panel-head"><div><p class="eyebrow">WHATSAPP</p><h3>Prévia da mensagem</h3></div><button class="text-button" id="copyMessageButton" type="button">Copiar</button></div>
-            <div class="message-preview empty" id="messagePreview">Preencha os dados para visualizar a mensagem.</div>
-            <div class="preview-foot"><span>Sem nome de empresa</span><span>•</span><span>Pronto para copiar ou enviar</span></div>
+            <div class="message-preview empty" id="messagePreview">Preencha os dados que desejar para visualizar a mensagem.</div>
+            <div class="preview-foot"><span>Mensagem compacta</span><span>•</span><span>Pronta para copiar ou enviar</span></div>
           </article>
         </div>
       </section>
 
       <section class="repasse-panel" id="tab-historico">
-        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie e altere o status de cada repasse.</p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie, edite e altere o status de cada atendimento.</p></div></div>
 
         <div class="history-filter-card">
           <div class="history-filter-grid">
@@ -107,7 +108,7 @@
             <label>Passeio<select id="historyTour"><option value="">Todos os passeios</option></select></label>
             <label>Serviço<select id="historyService"><option value="">Todos os serviços</option></select></label>
             <label>Status<select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Realizado</option><option>Cancelado</option></select></label>
-            <label class="history-general-search">Busca geral<input id="historySearch" type="search" placeholder="Passageiro, telefone, AP ou local de embarque"></label>
+            <label class="history-general-search">Busca geral<input id="historySearch" type="search" placeholder="Passageiro, telefone, AP ou local"></label>
             <button class="outline-button clear-history-filters" id="clearHistoryFilters" type="button">Limpar filtros</button>
           </div>
           <div class="history-filter-footer"><span id="historyResultCount">0 repasses encontrados</span></div>
@@ -125,15 +126,15 @@
       </section>
 
       <section class="repasse-panel" id="tab-locais">
-        <div class="section-heading"><div><p class="eyebrow">EMBARQUE</p><h2>Locais de embarque</h2><p>Hotéis, pousadas, aeroportos e pontos de encontro salvos para uso rápido.</p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">PONTOS DA ROTA</p><h2>Locais</h2><p>Hotéis, pousadas, aeroportos e pontos de encontro salvos para embarque ou desembarque.</p></div></div>
         <article class="panel catalog-panel">
           <form id="locationForm" class="location-form">
             <label>Nome do local<input id="newLocationName" placeholder="Ex.: Pousada do Norte" required></label>
             <label>Tipo<select id="newLocationType"><option>Hotel / pousada</option><option>Aeroporto</option><option>Restaurante</option><option>Ponto de encontro</option><option>Residência</option><option>Outro</option></select></label>
             <label class="full">Endereço ou referência<input id="newLocationAddress" placeholder="Ex.: Av. Beira Mar, Fortaleza"></label>
-            <div class="location-form-actions full"><button class="outline-button" id="newLocationMaps" type="button">Pesquisar este local no Google Maps</button><button class="primary-button" type="submit">Salvar local</button></div>
+            <div class="location-form-actions full"><button class="outline-button" id="newLocationMaps" type="button">Pesquisar no Google Maps</button><button class="primary-button" type="submit">Salvar local</button></div>
           </form>
-          <div class="catalog-list" id="locationList"></div><div class="empty-state repasse-empty" id="locationEmpty"><strong>Nenhum local cadastrado.</strong><p>Você pode cadastrar hotéis e outros pontos de embarque manualmente.</p></div>
+          <div class="catalog-list" id="locationList"></div><div class="empty-state repasse-empty" id="locationEmpty"><strong>Nenhum local cadastrado.</strong><p>Cadastre hotéis e outros pontos usados na operação.</p></div>
         </article>
       </section>
     </main>
