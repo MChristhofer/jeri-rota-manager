@@ -3,19 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="JeriRota Manager - repasses de passeios e serviços por WhatsApp." />
-  <title>Repasses | JeriRota Manager</title>
+  <meta name="description" content="Jeri Rota Manager - central de repasses vinculada às reservas." />
+  <title>Repasses | Jeri Rota Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/css/intlTelInput.css" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="repasses.css" />
-  <link rel="stylesheet" href="multi-phones.css" />
   <link rel="stylesheet" href="manager-brand.css" />
-  <link rel="stylesheet" href="service-net-catalog.css?v=20260824-1" />
+  <link rel="stylesheet" href="repasses.css?v=20260825-9" />
 </head>
-<body>
+<body style="visibility:hidden">
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
@@ -25,134 +22,103 @@
       <nav class="main-nav" aria-label="Menu principal">
         <a class="nav-item" href="index.html" style="text-decoration:none"><span>⌂</span> Dashboard</a>
         <a class="nav-item active" href="repasses.html" style="text-decoration:none"><span>↗</span> Repasses</a>
-        <a class="nav-item" href="calculadora.html" style="text-decoration:none"><span>◇</span> Calculadora de pacotes</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="profile-mini"><div class="avatar">JR</div><div><strong>Jeri Rota</strong><small>Operação interna</small></div></div>
+        <button class="nav-item" id="logoutSystemButton" type="button"><span>↪</span> Sair</button>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
-        <div><p class="eyebrow">OPERAÇÃO RÁPIDA</p><h1>Repasses e serviços</h1></div>
+        <div><p class="eyebrow">OPERAÇÃO</p><h1>Central de repasses</h1></div>
         <div class="topbar-actions"><div class="date-badge" id="todayLabel"></div></div>
       </header>
 
       <div class="repasse-tabs" role="tablist" aria-label="Áreas de repasses">
-        <button class="repasse-tab active" data-tab="novo" type="button">Novo repasse</button>
+        <button class="repasse-tab active" data-tab="central" type="button">Central</button>
         <button class="repasse-tab" data-tab="historico" type="button">Histórico</button>
-        <button class="repasse-tab" data-tab="passeios" type="button">Passeios</button>
-        <button class="repasse-tab" data-tab="locais" type="button">Locais</button>
       </div>
 
-      <section class="repasse-panel active" id="tab-novo">
-        <div class="repasse-grid">
-          <article class="panel repasse-card">
-            <div class="panel-head"><div><p class="eyebrow">NOVO REPASSE</p><h3>Dados do atendimento</h3></div><span class="repasse-code" id="nextCode"></span></div>
-            <form id="repasseForm" class="repasse-form">
-              <label>Data de ida<input type="date" id="serviceDate"></label>
-              <label>Data de volta <small class="field-help">Opcional</small><input type="date" id="returnDate"></label>
-              <label>Passeio<select id="tourSelect" required></select></label>
-              <label>Serviço
-                <select id="serviceSelect" required>
-                  <option value="">Selecione...</option>
-                  <option>Hilux compartilhada</option>
-                  <option>Hilux privativa</option>
-                  <option>Ônibus compartilhado</option>
-                  <option>Ônibus privativo</option>
-                  <option>Micro-ônibus compartilhado</option>
-                  <option>Micro-ônibus privativo</option>
-                  <option>Van compartilhada</option>
-                  <option>Van privativa</option>
-                </select>
-              </label>
-              <label class="full">Local de embarque
-                <div class="location-picker">
-                  <input id="boardingInput" list="boardingOptions" placeholder="Digite um hotel ou local" required>
-                  <datalist id="boardingOptions"></datalist>
-                  <button class="outline-button map-search-button" id="searchMapsButton" type="button">Buscar no Maps</button>
-                </div>
-                <small class="field-help">Use um local cadastrado ou digite um novo ponto para este repasse.</small>
-              </label>
-              <label>AP / Quarto <small class="field-help">Opcional</small><input id="roomInput" placeholder="Ex.: 305"></label>
-              <label>Quantidade de pessoas<input id="peopleInput" type="number" min="1" value="1" required></label>
-              <label class="full">Nome(s)<input id="namesInput" placeholder="Ex.: João Silva / Maria Silva" required></label>
-              <label>Telefone principal
-                <input id="phoneInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="(85) 99999-9999" required>
-                <small class="field-help" id="phoneHelp">Brasil selecionado por padrão. Use a bandeira para trocar de país.</small>
-              </label>
-              <label class="full">Valor a receber (R$)<input id="amountInput" inputmode="decimal" placeholder="Ex.: 300,00" required></label>
-              <label class="save-location-option full"><input id="saveLocationCheck" type="checkbox"> Salvar este local para os próximos repasses</label>
-              <div class="repasse-actions full">
-                <button class="outline-button" type="submit">Salvar repasse</button>
-                <button class="primary-button whatsapp-button" id="saveWhatsappButton" type="button">Salvar + abrir WhatsApp</button>
-              </div>
-            </form>
-          </article>
-
-          <article class="panel preview-card">
-            <div class="panel-head"><div><p class="eyebrow">WHATSAPP</p><h3>Prévia da mensagem</h3></div><button class="text-button" id="copyMessageButton" type="button">Copiar</button></div>
-            <div class="message-preview empty" id="messagePreview">Preencha os dados que desejar para visualizar a mensagem.</div>
-            <div class="preview-foot"><span>Mensagem compacta</span><span>•</span><span>Pronta para copiar ou enviar</span></div>
-          </article>
+      <section class="repasse-panel active" id="tab-central">
+        <div class="repasse-page-head">
+          <div>
+            <p class="eyebrow">RESERVAS → OPERAÇÃO</p>
+            <h2>Serviços das reservas</h2>
+            <p>Nenhum repasse é criado manualmente. Cada item abaixo nasceu de uma reserva e só permite decidir se será repassado ou mantido pela Jeri Rota.</p>
+          </div>
+          <button class="outline-button" id="refreshRepassePanel" type="button">Atualizar</button>
         </div>
+
+        <div class="repasse-summary-grid">
+          <article><span>Aguardando decisão</span><strong id="repassePendingCount">0</strong></article>
+          <article><span>Repassados</span><strong id="repasseSentCount">0</strong></article>
+          <article><span>Não repassar</span><strong id="repasseOwnCount">0</strong></article>
+        </div>
+
+        <div class="repasse-toolbar">
+          <input id="repasseSearch" type="search" placeholder="Buscar por reserva, passageiro, serviço ou local...">
+          <input id="repasseDate" type="date" aria-label="Filtrar por data">
+          <select id="repasseDecisionFilter">
+            <option value="">Todas as decisões</option>
+            <option value="undecided">Aguardando decisão</option>
+            <option value="repassed">Repassado</option>
+            <option value="own">Não repassar</option>
+          </select>
+          <button class="outline-button" id="clearRepasseFilters" type="button">Limpar</button>
+        </div>
+
+        <div id="repasseReservationList" class="reservation-repasse-list"></div>
       </section>
 
       <section class="repasse-panel" id="tab-historico">
-        <div class="section-heading"><div><p class="eyebrow">CONTROLE</p><h2>Histórico de repasses</h2><p>Consulte, reenvie, edite e altere o status de cada atendimento.</p></div></div>
-
-        <div class="history-filter-card">
-          <div class="history-filter-grid">
-            <label>Código<input id="historyCode" type="search" placeholder="Ex.: REP-00003"></label>
-            <label>Data<input id="historyDate" type="date"></label>
-            <label>Passeio<select id="historyTour"><option value="">Todos os passeios</option></select></label>
-            <label>Serviço<select id="historyService"><option value="">Todos os serviços</option></select></label>
-            <label>Status<select id="historyStatus"><option value="">Todos os status</option><option>Pendente</option><option>Enviado</option><option>Realizado</option><option>Cancelado</option></select></label>
-            <label class="history-general-search">Busca geral<input id="historySearch" type="search" placeholder="Passageiro, telefone, AP ou local"></label>
-            <button class="outline-button clear-history-filters" id="clearHistoryFilters" type="button">Limpar filtros</button>
+        <div class="repasse-page-head">
+          <div>
+            <p class="eyebrow">AUDITORIA</p>
+            <h2>Histórico de repasses</h2>
+            <p>Somente registros enviados a partir de uma reserva aparecem aqui. Esta área é apenas para consulta.</p>
           </div>
-          <div class="history-filter-footer"><span id="historyResultCount">0 repasses encontrados</span></div>
         </div>
-
-        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Ida / Volta</th><th>Passeio</th><th>Serviço</th><th>Embarque</th><th>Passageiro(s)</th><th>Pessoas</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div class="empty-state repasse-empty" id="historyEmpty"><strong>Nenhum repasse encontrado.</strong><p>Altere ou limpe os filtros para ver outros repasses.</p></div></article>
-      </section>
-
-      <section class="repasse-panel" id="tab-passeios">
-        <div class="section-heading"><div><p class="eyebrow">CADASTRO</p><h2>Passeios</h2><p>Cadastre uma vez e reutilize nos próximos repasses.</p></div></div>
-        <article class="panel catalog-panel">
-          <form id="tourForm" class="catalog-form"><label>Nome do passeio<input id="newTourInput" placeholder="Ex.: Litoral Leste privativo" required></label><button class="primary-button" type="submit">+ Adicionar passeio</button></form>
-          <div class="catalog-list" id="tourList"></div><div class="empty-state repasse-empty" id="tourEmpty"><strong>Nenhum passeio cadastrado.</strong></div>
-        </article>
-      </section>
-
-      <section class="repasse-panel" id="tab-locais">
-        <div class="section-heading"><div><p class="eyebrow">PONTOS DA ROTA</p><h2>Locais</h2><p>Hotéis, pousadas, aeroportos e pontos de encontro salvos para embarque ou desembarque.</p></div></div>
-        <article class="panel catalog-panel">
-          <form id="locationForm" class="location-form">
-            <label>Nome do local<input id="newLocationName" placeholder="Ex.: Pousada do Norte" required></label>
-            <label>Tipo<select id="newLocationType"><option>Hotel / pousada</option><option>Aeroporto</option><option>Restaurante</option><option>Ponto de encontro</option><option>Residência</option><option>Outro</option></select></label>
-            <label class="full">Endereço ou referência<input id="newLocationAddress" placeholder="Ex.: Av. Beira Mar, Fortaleza"></label>
-            <div class="location-form-actions full"><button class="outline-button" id="newLocationMaps" type="button">Pesquisar no Google Maps</button><button class="primary-button" type="submit">Salvar local</button></div>
-          </form>
-          <div class="catalog-list" id="locationList"></div><div class="empty-state repasse-empty" id="locationEmpty"><strong>Nenhum local cadastrado.</strong><p>Cadastre hotéis e outros pontos usados na operação.</p></div>
-        </article>
+        <div class="repasse-toolbar history-toolbar">
+          <input id="historySearch" type="search" placeholder="Código, reserva, passageiro, serviço ou destinatário...">
+          <input id="historyDate" type="date" aria-label="Filtrar histórico por data">
+          <button class="outline-button" id="clearHistoryFilters" type="button">Limpar</button>
+        </div>
+        <div class="history-readonly-wrap">
+          <table class="history-readonly-table">
+            <thead><tr><th>Repasse</th><th>Reserva</th><th>Data</th><th>Serviço</th><th>Passageiro(s)</th><th>Destinatário</th><th>Valor</th><th>Enviado em</th></tr></thead>
+            <tbody id="repasseHistoryBody"></tbody>
+          </table>
+        </div>
+        <div id="repasseHistoryEmpty" class="repasse-empty-state" hidden>Nenhum repasse enviado encontrado.</div>
       </section>
     </main>
   </div>
+
+  <div class="repasse-modal-backdrop" id="repasseModal" aria-hidden="true">
+    <div class="repasse-modal-card" role="dialog" aria-modal="true" aria-labelledby="repasseModalTitle">
+      <button class="repasse-modal-close" id="closeRepasseModal" type="button" aria-label="Fechar">×</button>
+      <p class="eyebrow">WHATSAPP</p>
+      <h2 id="repasseModalTitle">Repassar serviço</h2>
+      <p class="repasse-modal-subtitle">Confira o destinatário e a mensagem antes do envio.</p>
+      <div class="repasse-modal-grid">
+        <label>Parceiro / motorista<input id="repasseRecipientName" placeholder="Nome do destinatário"></label>
+        <label>WhatsApp do destinatário<input id="repasseRecipientPhone" inputmode="tel" placeholder="Ex.: (88) 99999-9999"></label>
+      </div>
+      <pre class="repasse-message-preview" id="repasseMessagePreview"></pre>
+      <div class="repasse-modal-actions">
+        <button class="outline-button" id="copyRepasseMessage" type="button">Copiar mensagem</button>
+        <button class="outline-button" id="cancelRepasseModal" type="button">Cancelar</button>
+        <button class="primary-button" id="sendRepasseWhatsapp" type="button">Abrir WhatsApp e marcar repassado</button>
+      </div>
+    </div>
+  </div>
+
   <div class="repasse-toast" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@29.2.0/dist/js/intlTelInput.min.js"></script>
-  <script src="repasses.js"></script>
-  <script src="status-update.js"></script>
-  <script src="whatsapp-fix.js"></script>
-  <script src="history-filters.js"></script>
-  <script src="multi-phones.js"></script>
-  <script src="repasse-details.js"></script>
-  <script src="repasse-catalog-nav.js"></script>
-  <script src="service-net-catalog.js?v=20260824-1"></script>
-  <script src="repasse-reservation-link.js"></script>
-  <script src="repasse-reservation-phones.js"></script>
+  <script src="auth-guard.js?v=20260825-9"></script>
+  <script src="repasses-dashboard.js?v=20260825-9"></script>
 </body>
 </html>
