@@ -9,7 +9,7 @@
   const br=v=>{if(!v)return'';const [y,m,d]=String(v).split('-');return y&&m&&d?`${d}/${m}/${y}`:v};
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 
-  if(!document.querySelector('link[href^="integrated-repasses.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='integrated-repasses.css?v=20260825-2';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="integrated-repasses.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='integrated-repasses.css?v=20260825-3';document.head.appendChild(l)}
   if(!document.getElementById('repasseManagerCleanupStyle')){
     const s=document.createElement('style');s.id='repasseManagerCleanupStyle';s.textContent=`
       .repasse-tab[data-tab="novo"],.repasse-tab[data-tab="passeios"],.repasse-tab[data-tab="locais"],.repasse-tab[data-tab="servicos"],.repasse-tab[data-tab="rotas"]{display:none!important}
@@ -19,6 +19,8 @@
       .repasse-decision-modal .modal-subtitle{margin-bottom:8px}
       .central-item.operation-own .central-status{background:#fff1c9;color:#75510a}
       .central-item.operation-own{border-left:4px solid #d6a94e}
+      .central-item.operation-own.operation-done{border-left-color:#2e7d59}
+      .central-item.operation-own.operation-done .central-status{background:#eaf7f0;color:#286746}
     `;document.head.appendChild(s)
   }
 
@@ -62,10 +64,17 @@
     if(!id||!client)return{};
     try{const {data}=await client.from('service_catalog').select('default_partner_name,default_partner_phone').eq('id',id).maybeSingle();return data||{}}catch{return{}}
   }
+  async function cloudServiceRow(service,r){
+    if(!client||!r?.reservationCode)return null;
+    const {data:cloudReservation}=await client.from('reservations').select('id').eq('code',r.reservationCode).maybeSingle();if(!cloudReservation)return null;
+    const {data:rows}=await client.from('reservation_services').select('id,sort_order').eq('reservation_id',cloudReservation.id).order('sort_order');
+    const localOwn=services().filter(x=>String(x.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    const idx=localOwn.findIndex(x=>String(x.id)===String(service.id));
+    return{reservationId:cloudReservation.id,serviceId:rows?.[idx]?.id||null}
+  }
 
   async function openRepasse(serviceId,leg){
-    const service=serviceFor(serviceId);if(!service)return;const r=reservationFor(service);const data=legData(service,leg);const defaults=await catalogDefaults(data.catalogId);
-    const code=nextCode();
+    const service=serviceFor(serviceId);if(!service)return;const r=reservationFor(service);const data=legData(service,leg);const defaults=await catalogDefaults(data.catalogId);const code=nextCode();
     let modal=document.getElementById('repasseDecisionModal');if(!modal){modal=document.createElement('div');modal.id='repasseDecisionModal';modal.className='modal-backdrop';document.body.appendChild(modal)}
     const savedName=leg==='return'?service.returnExecutionPartnerName:service.executionPartnerName;
     const savedPhone=leg==='return'?service.returnExecutionPartnerPhone:service.executionPartnerPhone;
@@ -76,37 +85,47 @@
     modal.classList.add('open');modal.setAttribute('aria-hidden','false');
     modal.querySelectorAll('[data-close-decision]').forEach(b=>b.addEventListener('click',()=>modal.classList.remove('open')));
     modal.querySelector('[data-copy-decision]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msg);if(typeof toast==='function')toast('Mensagem copiada.')}catch{}});
-    modal.querySelector('[data-send-decision]')?.addEventListener('click',()=>{
-      const recipientName=document.getElementById('decisionRecipientName')?.value.trim()||'';
-      const recipientPhone=document.getElementById('decisionRecipientPhone')?.value.trim()||'';
-      const phoneDigits=waPhone(recipientPhone);if(!phoneDigits){alert('Informe o WhatsApp do parceiro ou motorista.');return}
-      saveRepasse(service,r,data,leg,code,recipientName,recipientPhone,msg);
-      window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`,'_blank');
-      modal.classList.remove('open');setTimeout(()=>location.reload(),220);
+    modal.querySelector('[data-send-decision]')?.addEventListener('click',async e=>{
+      const button=e.currentTarget;const recipientName=document.getElementById('decisionRecipientName')?.value.trim()||'';const recipientPhone=document.getElementById('decisionRecipientPhone')?.value.trim()||'';const phoneDigits=waPhone(recipientPhone);
+      if(!phoneDigits){alert('Informe o WhatsApp do parceiro ou motorista.');return}
+      button.disabled=true;button.textContent='Salvando...';
+      const wa=window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`,'_blank');
+      try{await saveRepasse(service,r,data,leg,code,recipientName,recipientPhone,msg)}catch(err){console.error(err)}
+      if(!wa)window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`,'_blank');
+      modal.classList.remove('open');location.reload();
     });
   }
 
-  function saveRepasse(service,r,data,leg,code,recipientName,recipientPhone,msg){
+  async function saveRepasse(service,r,data,leg,code,recipientName,recipientPhone,msg){
     const reps=read(REPASSES_KEY_LOCAL);const phones=Array.isArray(r?.phones)?r.phones:[];
     reps.push({id:`rep-${Date.now()}`,number:Number(code.replace(/\D/g,'')),code,date:data.date||'',returnDate:'',tour:'',service:data.service||'',route:data.route||'',boarding:data.boarding||'',dropoff:data.dropoff||'',apartment:data.apartment||'',names:r?.client||'',phone:r?.phone||'',phones,people:r?.people??null,amount:data.amount??null,status:'Enviado',reservationId:r?.id||null,reservationCode:r?.reservationCode||'',reservationServiceId:service.id,reservationLeg:leg,recipientName,recipientPhone,messageSnapshot:msg,createdAt:new Date().toISOString()});
     if(typeof window.write==='function'){try{window.write(REPASSES_KEY_LOCAL,reps)}catch{write(REPASSES_KEY_LOCAL,reps)}}else write(REPASSES_KEY_LOCAL,reps);
     const all=services();const i=all.findIndex(x=>String(x.id)===String(service.id));if(i>=0){const now=new Date().toISOString();if(leg==='return'){all[i].returnExecutionMode='repassed';all[i].returnExecutionPartnerName=recipientName;all[i].returnExecutionPartnerPhone=recipientPhone;all[i].returnExecutionDecidedAt=now;all[i].returnRepasseStatus='Repassado'}else{all[i].executionMode='repassed';all[i].executionPartnerName=recipientName;all[i].executionPartnerPhone=recipientPhone;all[i].executionDecidedAt=now;all[i].repasseStatus='Repassado'}write(SERVICES_KEY,all)}
-    syncCloud(service,r,data,leg,code,recipientName,recipientPhone).catch(console.error);
+    await syncCloud(service,r,data,leg,code,recipientName,recipientPhone);
   }
 
   async function syncCloud(service,r,data,leg,code,recipientName,recipientPhone){
-    if(!client||!r?.reservationCode)return;
-    const {data:cloudReservation}=await client.from('reservations').select('id').eq('code',r.reservationCode).maybeSingle();if(!cloudReservation)return;
-    let q=client.from('reservation_services').select('id,sort_order').eq('reservation_id',cloudReservation.id).order('sort_order');const {data:rows}=await q;const localOwn=services().filter(x=>String(x.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));const idx=localOwn.findIndex(x=>String(x.id)===String(service.id));const row=rows?.[idx]||null;
-    if(row){const update=leg==='return'?{return_execution_mode:'repassed',return_execution_partner_name:recipientName||null,return_execution_partner_phone:recipientPhone||null,return_execution_decided_at:new Date().toISOString(),return_repasse_status:'Repassado'}:{execution_mode:'repassed',execution_partner_name:recipientName||null,execution_partner_phone:recipientPhone||null,execution_decided_at:new Date().toISOString(),repasse_status:'Repassado'};await client.from('reservation_services').update({...update,updated_at:new Date().toISOString()}).eq('id',row.id)}
-    await client.from('repasses').upsert({code,number:Number(code.replace(/\D/g,'')),service_date:data.date||null,tour:null,service:data.service||null,route:data.route||null,boarding:data.boarding||null,dropoff:data.dropoff||null,apartment:data.apartment||null,names:r.client||null,people:r.people??null,amount:data.amount??null,status:'Enviado',reservation_id:cloudReservation.id,reservation_service_id:row?.id||null,reservation_code:r.reservationCode,reservation_leg:leg,recipient_name:recipientName||null,recipient_phone:recipientPhone||null,updated_at:new Date().toISOString()},{onConflict:'code'});
+    const cloud=await cloudServiceRow(service,r);if(!cloud)return;
+    if(cloud.serviceId){const update=leg==='return'?{return_execution_mode:'repassed',return_execution_partner_name:recipientName||null,return_execution_partner_phone:recipientPhone||null,return_execution_decided_at:new Date().toISOString(),return_repasse_status:'Repassado'}:{execution_mode:'repassed',execution_partner_name:recipientName||null,execution_partner_phone:recipientPhone||null,execution_decided_at:new Date().toISOString(),repasse_status:'Repassado'};await client.from('reservation_services').update({...update,updated_at:new Date().toISOString()}).eq('id',cloud.serviceId)}
+    await client.from('repasses').upsert({code,number:Number(code.replace(/\D/g,'')),service_date:data.date||null,tour:null,service:data.service||null,route:data.route||null,boarding:data.boarding||null,dropoff:data.dropoff||null,apartment:data.apartment||null,names:r.client||null,people:r.people??null,amount:data.amount??null,status:'Enviado',reservation_id:cloud.reservationId,reservation_service_id:cloud.serviceId,reservation_code:r.reservationCode,reservation_leg:leg,recipient_name:recipientName||null,recipient_phone:recipientPhone||null,updated_at:new Date().toISOString()},{onConflict:'code'});
   }
 
-  function markOwn(serviceId,leg){
-    const all=services();const i=all.findIndex(x=>String(x.id)===String(serviceId));if(i<0)return;const now=new Date().toISOString();if(leg==='return'){all[i].returnExecutionMode='own';all[i].returnExecutionDecidedAt=now;all[i].returnExecutionPartnerName='Jeri Rota';all[i].returnExecutionPartnerPhone=''}else{all[i].executionMode='own';all[i].executionDecidedAt=now;all[i].executionPartnerName='Jeri Rota';all[i].executionPartnerPhone=''}write(SERVICES_KEY,all);syncOwnCloud(all[i],leg).catch(console.error);setTimeout(()=>location.reload(),80)
+  async function markOwn(serviceId,leg){
+    const all=services();const i=all.findIndex(x=>String(x.id)===String(serviceId));if(i<0)return;const now=new Date().toISOString();
+    if(leg==='return'){all[i].returnExecutionMode='own';all[i].returnExecutionDecidedAt=now;all[i].returnExecutionPartnerName='Jeri Rota';all[i].returnExecutionPartnerPhone=''}else{all[i].executionMode='own';all[i].executionDecidedAt=now;all[i].executionPartnerName='Jeri Rota';all[i].executionPartnerPhone=''}
+    write(SERVICES_KEY,all);try{await syncOwnCloud(all[i],leg)}catch(e){console.error(e)}location.reload();
   }
-  async function syncOwnCloud(service,leg){const r=reservationFor(service);if(!client||!r?.reservationCode)return;const {data:cr}=await client.from('reservations').select('id').eq('code',r.reservationCode).maybeSingle();if(!cr)return;const {data:rows}=await client.from('reservation_services').select('id,sort_order').eq('reservation_id',cr.id).order('sort_order');const localOwn=services().filter(x=>String(x.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));const idx=localOwn.findIndex(x=>String(x.id)===String(service.id));const row=rows?.[idx];if(!row)return;const patch=leg==='return'?{return_execution_mode:'own',return_execution_partner_name:'Jeri Rota',return_execution_decided_at:new Date().toISOString()}:{execution_mode:'own',execution_partner_name:'Jeri Rota',execution_decided_at:new Date().toISOString()};await client.from('reservation_services').update({...patch,updated_at:new Date().toISOString()}).eq('id',row.id)}
-  function markOwnDone(serviceId,leg){const all=services();const i=all.findIndex(x=>String(x.id)===String(serviceId));if(i<0)return;if(leg==='return')all[i].returnRepasseStatus='Realizado';else all[i].repasseStatus='Realizado';write(SERVICES_KEY,all);location.reload()}
+  async function syncOwnCloud(service,leg){
+    const r=reservationFor(service);const cloud=await cloudServiceRow(service,r);if(!cloud?.serviceId)return;
+    const patch=leg==='return'?{return_execution_mode:'own',return_execution_partner_name:'Jeri Rota',return_execution_partner_phone:null,return_execution_decided_at:new Date().toISOString()}:{execution_mode:'own',execution_partner_name:'Jeri Rota',execution_partner_phone:null,execution_decided_at:new Date().toISOString()};
+    await client.from('reservation_services').update({...patch,updated_at:new Date().toISOString()}).eq('id',cloud.serviceId);
+  }
+  async function markOwnDone(serviceId,leg){
+    const all=services();const i=all.findIndex(x=>String(x.id)===String(serviceId));if(i<0)return;
+    if(leg==='return')all[i].returnRepasseStatus='Realizado';else all[i].repasseStatus='Realizado';write(SERVICES_KEY,all);
+    try{const r=reservationFor(all[i]);const cloud=await cloudServiceRow(all[i],r);if(cloud?.serviceId){const patch=leg==='return'?{return_repasse_status:'Realizado'}:{repasse_status:'Realizado'};await client.from('reservation_services').update({...patch,updated_at:new Date().toISOString()}).eq('id',cloud.serviceId)}}catch(e){console.error(e)}
+    location.reload();
+  }
 
   function decorate(){
     const note=document.querySelector('.central-section-note span');if(note)note.textContent='Todos os itens desta central são gerados a partir dos serviços das reservas.';
@@ -114,19 +133,20 @@
       const isReturn=item.classList.contains('central-return-item');
       const prepare=item.querySelector(isReturn?'[data-return-prepare]':'[data-central-prepare]');
       const anyId=prepare?.dataset[isReturn?'returnPrepare':'centralPrepare']||item.querySelector(isReturn?'[data-return-reservation]':'[data-central-reservation]')?.dataset[isReturn?'returnReservation':'centralReservation'];if(!anyId)return;
-      const svc=serviceFor(anyId);if(!svc)return;const mode=isReturn?svc.returnExecutionMode:svc.executionMode;
+      const svc=serviceFor(anyId);if(!svc)return;const mode=isReturn?svc.returnExecutionMode:svc.executionMode;const opStatus=isReturn?svc.returnRepasseStatus:svc.repasseStatus;
       if(prepare){prepare.textContent='Repassar';if(!item.querySelector('[data-manager-keep]')){const b=document.createElement('button');b.type='button';b.className='outline-button';b.dataset.managerKeep=anyId;b.dataset.managerLeg=isReturn?'return':'outbound';b.textContent='Manter';prepare.insertAdjacentElement('beforebegin',b)}}
       if(mode==='own'){
-        item.classList.add('operation-own');const status=item.querySelector('.central-status');if(status)status.textContent='Operação própria';prepare?.remove();item.querySelector('[data-manager-keep]')?.remove();
-        const actions=item.querySelector('.central-actions');if(actions&&!actions.querySelector('[data-manager-own-done]')&&((isReturn?svc.returnRepasseStatus:svc.repasseStatus)!=='Realizado')){const b=document.createElement('button');b.type='button';b.className='primary-button';b.dataset.managerOwnDone=anyId;b.dataset.managerLeg=isReturn?'return':'outbound';b.textContent='Marcar realizado';actions.appendChild(b)}
+        item.classList.add('operation-own');const status=item.querySelector('.central-status');if(status)status.textContent=opStatus==='Realizado'?'Realizado · operação própria':'Operação própria';prepare?.remove();item.querySelector('[data-manager-keep]')?.remove();
+        if(opStatus==='Realizado')item.classList.add('operation-done');
+        const actions=item.querySelector('.central-actions');if(actions&&!actions.querySelector('[data-manager-own-done]')&&opStatus!=='Realizado'){const b=document.createElement('button');b.type='button';b.className='primary-button';b.dataset.managerOwnDone=anyId;b.dataset.managerLeg=isReturn?'return':'outbound';b.textContent='Marcar realizado';actions.appendChild(b)}
       }
     });
   }
 
-  document.addEventListener('click',e=>{
-    const prepare=e.target.closest('[data-central-prepare],[data-return-prepare]');if(prepare){e.preventDefault();e.stopImmediatePropagation();const isReturn=prepare.hasAttribute('data-return-prepare');const id=isReturn?prepare.dataset.returnPrepare:prepare.dataset.centralPrepare;const svc=serviceFor(id);const leg=isReturn?'return':(svc?.roundTripSameMode&&svc?.returnDate?'outbound':'single');openRepasse(id,leg);return}
-    const keep=e.target.closest('[data-manager-keep]');if(keep){e.preventDefault();e.stopImmediatePropagation();markOwn(keep.dataset.managerKeep,keep.dataset.managerLeg==='return'?'return':'outbound');return}
-    const done=e.target.closest('[data-manager-own-done]');if(done){e.preventDefault();e.stopImmediatePropagation();markOwnDone(done.dataset.managerOwnDone,done.dataset.managerLeg==='return'?'return':'outbound')}
+  document.addEventListener('click',async e=>{
+    const prepare=e.target.closest('[data-central-prepare],[data-return-prepare]');if(prepare){e.preventDefault();e.stopImmediatePropagation();const isReturn=prepare.hasAttribute('data-return-prepare');const id=isReturn?prepare.dataset.returnPrepare:prepare.dataset.centralPrepare;const svc=serviceFor(id);const leg=isReturn?'return':(svc?.roundTripSameMode&&svc?.returnDate?'outbound':'single');await openRepasse(id,leg);return}
+    const keep=e.target.closest('[data-manager-keep]');if(keep){e.preventDefault();e.stopImmediatePropagation();await markOwn(keep.dataset.managerKeep,keep.dataset.managerLeg==='return'?'return':'outbound');return}
+    const done=e.target.closest('[data-manager-own-done]');if(done){e.preventDefault();e.stopImmediatePropagation();await markOwnDone(done.dataset.managerOwnDone,done.dataset.managerLeg==='return'?'return':'outbound')}
   },true);
 
   function cleanup(){document.querySelector('.repasse-tab[data-tab="central"]')?.classList.add('active');decorate()}
