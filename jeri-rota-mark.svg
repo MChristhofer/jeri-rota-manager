@@ -1,2 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 262 320" role="img" aria-label="Jeri Rota">
-  <image width="262" height="320" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAAFACAYAAADqCOwyAAC+1ElEQVR42uzdd5wU1f3/8c+ZmZ3d3d3dXa4UdCkq0VBRQETFDmKDsUexRjFGsaLGiA0W7NiwY8WeReyxePFHUECRJqJKEQoICL3c7ezu7MzM+f7IzO7s3nZ3Znd3Znd3vp/PZ7x8du7cmXPv+f4+z3m+53m+4lKpVCoAEREREREhMfmqDkBERERERMTUiAAiIiIiIkLiVwUQEREREZHiowKICIiIiEiJUQFERERERKTEqwKIiIiIiEiJVwUQEREREZEStwo...
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 648" role="img" aria-label="Jeri Rota">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9d7627"/>
+      <stop offset="0.28" stop-color="#e3bd62"/>
+      <stop offset="0.55" stop-color="#f4d27e"/>
+      <stop offset="0.78" stop-color="#b48733"/>
+      <stop offset="1" stop-color="#e6bf65"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#gold)" fill-rule="evenodd" d="M249 0 L142 26 L70 81 L11 184 L0 276 L22 367 L84 466 L255 344 L257 327 L203 270 L231 216 L228 261 L329 322 L336 347 L322 378 L171 541 L187 590 L260 647 L359 554 L454 432 L498 339 L511 254 L487 153 L436 77 L340 15 Z M58 226 L88 152 L141 97 L207 66 L283 62 L351 86 L408 134 L438 183 L454 259 L443 287 L402 276 L326 230 L252 164 L161 243 L84 285 L68 286 L58 277 Z"/>
+</svg>
