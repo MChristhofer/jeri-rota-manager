@@ -29,6 +29,9 @@
     .dashboard-foot-summary strong { color:var(--navy); }
     .compat-dashboard { display:none !important; }
     .reservation-heading-actions { display:flex; justify-content:space-between; align-items:end; gap:20px; width:100%; }
+    .required-mark { color:var(--coral); font-weight:700; }
+    .form-helper { margin:12px 0 0; color:var(--muted); font-size:11px; }
+    .form-helper strong { color:var(--navy); }
     @media (max-width:1000px) { .dashboard-summary-grid{grid-template-columns:repeat(2,1fr)} .dashboard-main-grid{grid-template-columns:1fr} }
     @media (max-width:620px) { .dashboard-summary-grid{grid-template-columns:1fr 1fr;gap:10px}.summary-card{padding:15px}.summary-card strong{font-size:19px}.reservation-heading-actions{align-items:flex-start;flex-direction:column}.reservation-heading-actions .primary-button{width:100%} }
   </style>
@@ -180,12 +183,23 @@
       <p class="modal-subtitle">Dados reais ficam protegidos no ambiente interno do Manager.</p>
       <form id="reservationForm">
         <div class="form-grid">
-          <label>Nome do cliente<input required name="client" placeholder="Ex.: Ana Souza" /></label>
-          <label>Telefone<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
-          <label>Experiência / serviço<input required name="service" placeholder="Ex.: Transfer Fortaleza → Jeri" /></label>
-          <label>Data da saída<input required name="date" type="date" /></label>
-          <label>Quantidade de pessoas<input required min="1" value="2" name="people" type="number" /></label>
-          <label>Valor total (R$)<input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
+          <label>Nome(s) do cliente / passageiros <span class="required-mark">*</span><input required name="client" autocomplete="name" placeholder="Ex.: Ana Souza / João Souza" /></label>
+          <label>Telefone <span class="required-mark">*</span><input required name="phone" autocomplete="tel" placeholder="Ex.: (85) 99999-9999" /></label>
+          <label>Serviço contratado <span class="required-mark">*</span><input required list="serviceOptions" name="service" placeholder="Escolha ou digite o serviço" /></label>
+          <datalist id="serviceOptions">
+            <option value="Passeio Lado Leste"></option>
+            <option value="Passeio Lado Oeste"></option>
+            <option value="Transfer Fortaleza → Jericoacoara"></option>
+            <option value="Transfer Jericoacoara → Fortaleza"></option>
+            <option value="Transfer Aeroporto JJD → Jericoacoara"></option>
+            <option value="Transfer Jericoacoara → Aeroporto JJD"></option>
+            <option value="Hospedagem"></option>
+            <option value="Pacote"></option>
+          </datalist>
+          <label>Data do serviço <span class="required-mark">*</span><input required name="date" type="date" /></label>
+          <label>Local de embarque <span class="required-mark">*</span><input required name="boarding" placeholder="Ex.: Aeroporto JJD, hotel ou pousada" /></label>
+          <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
+          <label>Valor da venda (R$) <span class="required-mark">*</span><input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
           <label>Cliente já pagou (R$)<input min="0" step="0.01" value="0" name="paidAmount" type="number" placeholder="0,00" /></label>
           <label>Quem está com o pagamento?<select name="collectedBy"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
           <div class="balance-preview" aria-live="polite"><span>Saldo do cliente</span><strong id="balancePreview">R$ 0,00</strong><small id="paymentPreview">Saldo pendente do cliente.</small></div>
@@ -203,7 +217,8 @@
             <div class="partner-preview" id="partnerPreview" aria-live="polite"><span>Prestação de contas</span><strong>Venda própria</strong><small>Sem lançamento para parceiro.</small></div>
           </div>
         </fieldset>
-        <label>Observações<textarea name="notes" placeholder="Hotel, ponto de embarque, roteiro, crédito autorizado ou observações importantes."></textarea></label>
+        <label>Observações<textarea name="notes" placeholder="Hotel, desembarque, roteiro ou observações importantes."></textarea></label>
+        <p class="form-helper"><strong>* Campos obrigatórios.</strong> O valor da venda pode ser R$ 0,00, mas precisa ser informado.</p>
         <button class="primary-button full" id="submitReservation" type="submit">Salvar reserva</button>
       </form>
     </div>
@@ -239,7 +254,8 @@
         agenda.innerHTML = upcoming.map(r => {
           const d = parseLocalDate(r.date);
           const partner = r.partnerOperation === 'enviada' ? (r.partner || 'Parceiro a definir') : (r.responsible || 'Responsável a definir');
-          return `<div class="agenda-row"><div class="agenda-date"><strong>${String(d.getDate()).padStart(2,'0')}</strong><small>${monthFormat.format(d).replace('.','')}</small></div><div><h4>${escapeHtml(r.client)}</h4><p>${escapeHtml(r.service)} · ${escapeHtml(partner)}</p></div><div class="agenda-price">${currency.format(r.amount)}</div></div>`;
+          const boarding = r.boarding ? ` · Embarque: ${escapeHtml(r.boarding)}` : '';
+          return `<div class="agenda-row"><div class="agenda-date"><strong>${String(d.getDate()).padStart(2,'0')}</strong><small>${monthFormat.format(d).replace('.','')}</small></div><div><h4>${escapeHtml(r.client)}</h4><p>${escapeHtml(r.service)}${boarding} · ${escapeHtml(partner)}</p></div><div class="agenda-price">${currency.format(r.amount)}</div></div>`;
         }).join('');
       }
 
@@ -262,6 +278,79 @@
     const baseRenderAll = renderAll;
     renderAll = function () { baseRenderAll(); updateSimplifiedDashboard(); };
     updateSimplifiedDashboard();
+
+    // Regra mínima de cadastro: sem esses dados a reserva não pode ser salva.
+    const requiredReservationFields = [
+      ['client', 'Informe o nome do cliente ou dos passageiros.'],
+      ['phone', 'Informe o telefone do cliente.'],
+      ['service', 'Escolha ou informe o serviço contratado.'],
+      ['date', 'Informe a data do serviço.'],
+      ['boarding', 'Informe o local de embarque.'],
+      ['amount', 'Informe o valor da venda. O valor pode ser R$ 0,00.']
+    ];
+
+    let pendingBoarding = '';
+    let pendingEditId = null;
+
+    requiredReservationFields.forEach(([name]) => {
+      const field = reservationForm.elements[name];
+      if (!field) return;
+      const clearError = () => field.setCustomValidity('');
+      field.addEventListener('input', clearError);
+      field.addEventListener('change', clearError);
+    });
+
+    reservationForm.addEventListener('submit', event => {
+      for (const [name, message] of requiredReservationFields) {
+        const field = reservationForm.elements[name];
+        const rawValue = String(field?.value ?? '');
+        const empty = name === 'amount' ? rawValue === '' : rawValue.trim() === '';
+        const negativeAmount = name === 'amount' && rawValue !== '' && Number(rawValue) < 0;
+        if (empty || negativeAmount) {
+          field.setCustomValidity(message);
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          field.reportValidity();
+          field.focus();
+          return;
+        }
+      }
+
+      pendingBoarding = reservationForm.elements.boarding.value.trim();
+      pendingEditId = editingReservationId;
+    }, true);
+
+    // O app legado ainda não conhece o campo "boarding". Persistimos sem quebrar os registros atuais.
+    reservationForm.addEventListener('submit', () => {
+      const target = pendingEditId
+        ? reservations.find(item => item.id === pendingEditId)
+        : reservations[reservations.length - 1];
+
+      if (target) {
+        target.boarding = pendingBoarding;
+        saveReservations();
+        renderAll();
+      }
+
+      pendingBoarding = '';
+      pendingEditId = null;
+    });
+
+    function fillBoardingOnEdit(id) {
+      const reservation = reservations.find(item => item.id === id);
+      const boardingField = reservationForm.elements.boarding;
+      if (boardingField) boardingField.value = reservation?.boarding || '';
+    }
+
+    document.getElementById('reservationsTable').addEventListener('click', event => {
+      const id = Number(event.target.dataset.edit);
+      if (id) setTimeout(() => fillBoardingOnEdit(id), 0);
+    }, true);
+
+    document.getElementById('settlementTable').addEventListener('click', event => {
+      const id = Number(event.target.dataset.settlementEdit);
+      if (id) setTimeout(() => fillBoardingOnEdit(id), 0);
+    }, true);
   </script>
 </body>
 </html>
