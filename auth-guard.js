@@ -83,11 +83,11 @@
       };
 
       const initReservationModules=()=>{
-        ['reservation-flow.css','reservation-enhancements.css','reservation-service-catalog.css'].forEach(href=>{
+        ['reservation-flow.css','reservation-enhancements.css','reservation-service-catalog.css','reservation-roundtrip.css'].forEach(href=>{
           if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
             link.rel='stylesheet';
-            link.href=`${href}?v=20260824-6`;
+            link.href=`${href}?v=20260824-7`;
             document.head.appendChild(link);
           }
         });
@@ -95,30 +95,38 @@
         const loadLocationSuggestions=()=>{
           if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){openRequestedReservation();return}
           const locations=document.createElement('script');
-          locations.src='reservation-location-suggestions.js?v=20260824-6';
+          locations.src='reservation-location-suggestions.js?v=20260824-7';
           locations.onload=openRequestedReservation;
           document.body.appendChild(locations);
         };
 
+        const loadRoundTrip=()=>{
+          if(document.querySelector('script[src^="reservation-roundtrip.js"]')){loadLocationSuggestions();return}
+          const rt=document.createElement('script');
+          rt.src='reservation-roundtrip.js?v=20260824-7';
+          rt.onload=loadLocationSuggestions;
+          document.body.appendChild(rt);
+        };
+
         const loadNetCatalog=()=>{
-          if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadLocationSuggestions();return}
+          if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadRoundTrip();return}
           const net=document.createElement('script');
-          net.src='reservation-service-catalog.js?v=20260824-6';
-          net.onload=loadLocationSuggestions;
+          net.src='reservation-service-catalog.js?v=20260824-7';
+          net.onload=loadRoundTrip;
           document.body.appendChild(net);
         };
 
         const loadEnhancements=()=>{
           if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadNetCatalog();return}
           const enhance=document.createElement('script');
-          enhance.src='reservation-enhancements.js?v=20260824-6';
+          enhance.src='reservation-enhancements.js?v=20260824-7';
           enhance.onload=loadNetCatalog;
           document.body.appendChild(enhance);
         };
 
         if(!document.querySelector('script[src^="reservation-flow.js"]')){
           const script=document.createElement('script');
-          script.src='reservation-flow.js?v=20260824-6';
+          script.src='reservation-flow.js?v=20260824-7';
           script.onload=()=>{
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
