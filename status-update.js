@@ -37,8 +37,8 @@
 
   function loadOperationalCentral(){
     loadScript('central-repasses.js',()=>{
-      loadScript('central-roundtrip.js',()=>{
-        loadScript('repasse-manager-flow.js');
+      loadScript('repasse-manager-flow.js',()=>{
+        loadScript('central-roundtrip.js');
       });
     });
   }
