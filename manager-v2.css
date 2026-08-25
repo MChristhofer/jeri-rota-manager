@@ -1,0 +1,211 @@
+/* Jeri Rota Manager · resumo operacional simplificado */
+.dashboard-summary-note {
+  margin: -8px 0 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.summary-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 5px 18px rgba(17,39,50,.035);
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #d7dadd;
+}
+.summary-card.received::before { background: var(--green); }
+.summary-card.receivable::before { background: var(--gold); }
+.summary-card.payable::before { background: var(--coral); }
+.summary-card.free::before { background: var(--navy-2); }
+.summary-card p {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.summary-card strong {
+  display: block;
+  color: var(--navy);
+  font: 700 clamp(22px, 2vw, 30px)/1.1 "Playfair Display", serif;
+  white-space: nowrap;
+}
+.summary-card small {
+  display: block;
+  color: #8a969c;
+  font-size: 10px;
+  margin-top: 7px;
+}
+.summary-card.payable strong { color: #9e433d; }
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, .8fr);
+  gap: 20px;
+}
+.dashboard-panel-link {
+  border: 0;
+  background: transparent;
+  color: var(--navy-2);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 0;
+}
+.pending-payments-list { display: grid; gap: 2px; }
+.payment-window {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #efede9;
+}
+.payment-window:last-child { border-bottom: 0; }
+.payment-window span { color: var(--muted); font-size: 12px; }
+.payment-window strong { color: var(--navy); font-size: 14px; }
+.payment-window.total {
+  margin-top: 7px;
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+.payment-window.total span,
+.payment-window.total strong { font-weight: 700; color: var(--navy); }
+.operational-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 18px;
+  padding: 14px 17px;
+  background: rgba(255,255,255,.58);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.operational-strip strong { color: var(--navy); }
+.reservation-heading-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, .72fr) minmax(0, 1.28fr);
+  gap: 20px;
+}
+.catalog-form {
+  display: grid;
+  gap: 13px;
+}
+.catalog-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--navy);
+  font-size: 11px;
+  font-weight: 700;
+}
+.catalog-form input,
+.catalog-form select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #dcdedb;
+  border-radius: 9px;
+  outline: none;
+  padding: 11px 12px;
+  color: var(--ink);
+}
+.catalog-form input:focus,
+.catalog-form select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(217,163,60,.12);
+}
+.catalog-actions { display: flex; gap: 9px; }
+.catalog-list { display: grid; gap: 10px; }
+.catalog-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 15px;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.catalog-item h4 { margin: 0 0 4px; color: var(--navy); font-size: 13px; }
+.catalog-item p { margin: 0; color: var(--muted); font-size: 11px; }
+.catalog-values { text-align: right; }
+.catalog-values strong { display: block; color: var(--navy); font-size: 12px; }
+.catalog-values small { color: var(--muted); font-size: 10px; }
+.catalog-remove {
+  margin-top: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--coral);
+  font-size: 10px;
+  font-weight: 700;
+}
+.partner-simple-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.partner-simple-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+.partner-simple-card h3 { font-size: 15px; margin-bottom: 8px; }
+.partner-simple-card p { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+.partner-simple-card strong { color: var(--navy); font-size: 14px; }
+.agenda-preview-list { display: grid; gap: 10px; }
+.agenda-preview-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0,1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #efede9;
+}
+.agenda-preview-item:last-child { border-bottom: 0; }
+.agenda-preview-date {
+  padding: 9px 7px;
+  border-radius: 10px;
+  background: var(--sand);
+  color: var(--navy);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.agenda-preview-item h4 { margin: 0 0 3px; color: var(--navy); font-size: 13px; }
+.agenda-preview-item p { margin: 0; color: var(--muted); font-size: 11px; }
+.hidden-compat { display: none !important; }
+@media (max-width: 1050px) {
+  .summary-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .dashboard-main-grid, .catalog-grid { grid-template-columns: 1fr; }
+  .partner-simple-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 650px) {
+  .summary-metrics { grid-template-columns: 1fr; }
+  .partner-simple-grid { grid-template-columns: 1fr; }
+  .reservation-heading-actions { align-items: stretch; flex-direction: column; }
+  .reservation-heading-actions .primary-button { width: 100%; }
+  .agenda-preview-item { grid-template-columns: 60px 1fr; }
+  .agenda-preview-item > strong { grid-column: 2; }
+}
