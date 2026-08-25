@@ -87,30 +87,38 @@
           if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
             link.rel='stylesheet';
-            link.href=`${href}?v=20260824-5`;
+            link.href=`${href}?v=20260824-6`;
             document.head.appendChild(link);
           }
         });
 
+        const loadLocationSuggestions=()=>{
+          if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){openRequestedReservation();return}
+          const locations=document.createElement('script');
+          locations.src='reservation-location-suggestions.js?v=20260824-6';
+          locations.onload=openRequestedReservation;
+          document.body.appendChild(locations);
+        };
+
         const loadNetCatalog=()=>{
-          if(document.querySelector('script[src^="reservation-service-catalog.js"]')){openRequestedReservation();return}
+          if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadLocationSuggestions();return}
           const net=document.createElement('script');
-          net.src='reservation-service-catalog.js?v=20260824-5';
-          net.onload=openRequestedReservation;
+          net.src='reservation-service-catalog.js?v=20260824-6';
+          net.onload=loadLocationSuggestions;
           document.body.appendChild(net);
         };
 
         const loadEnhancements=()=>{
           if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadNetCatalog();return}
           const enhance=document.createElement('script');
-          enhance.src='reservation-enhancements.js?v=20260824-5';
+          enhance.src='reservation-enhancements.js?v=20260824-6';
           enhance.onload=loadNetCatalog;
           document.body.appendChild(enhance);
         };
 
         if(!document.querySelector('script[src^="reservation-flow.js"]')){
           const script=document.createElement('script');
-          script.src='reservation-flow.js?v=20260824-5';
+          script.src='reservation-flow.js?v=20260824-6';
           script.onload=()=>{
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
