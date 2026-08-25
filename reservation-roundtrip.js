@@ -86,6 +86,5 @@
     },260);
   },true);
 
-  const wait=setInterval(()=>{const host=document.getElementById('reservationServiceDrafts');if(!host)return;clearInterval(wait);new MutationObserver(()=>setTimeout(decorate,0)).observe(host,{childList:true});decorate()},80);
-  window.addEventListener('jeri-service-catalog-ready',decorate);
+  const wait=setInterval(()=>{const host=document.getElementById('reservationServiceDrafts');if(!host)return;clearInterval(wait);new MutationObserver(()=>setTimeout(decorate,0)).observe(host,{childList:true});decorate();let tries=0;const retry=setInterval(()=>{tries+=1;decorate();if(tries>=30||document.querySelector('#reservationServiceDrafts [data-service-catalog-select]'))clearInterval(retry)},200)},80);
 })();
