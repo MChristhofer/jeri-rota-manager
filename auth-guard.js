@@ -65,26 +65,44 @@
     }
 
     if(currentPage==='index.html'||currentPage===''){
+      const openRequestedReservation=()=>{
+        const id=new URLSearchParams(location.search).get('openReservation');
+        if(!id)return;
+        const tryOpen=()=>{
+          if(typeof window.setSection==='function')window.setSection('reservas');
+          else if(typeof setSection==='function')setSection('reservas');
+          if(typeof window.openModal==='function')window.openModal(Number(id));
+          else if(typeof openModal==='function')openModal(Number(id));
+          else return false;
+          return true;
+        };
+        if(!tryOpen()){
+          let attempts=0;
+          const timer=setInterval(()=>{attempts+=1;if(tryOpen()||attempts>20)clearInterval(timer)},100);
+        }
+      };
+
       const initReservationModules=()=>{
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{
           if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
             link.rel='stylesheet';
-            link.href=`${href}?v=20260824-3`;
+            link.href=`${href}?v=20260824-4`;
             document.head.appendChild(link);
           }
         });
 
         const loadEnhancements=()=>{
-          if(document.querySelector('script[src^="reservation-enhancements.js"]'))return;
+          if(document.querySelector('script[src^="reservation-enhancements.js"]')){openRequestedReservation();return}
           const enhance=document.createElement('script');
-          enhance.src='reservation-enhancements.js?v=20260824-3';
+          enhance.src='reservation-enhancements.js?v=20260824-4';
+          enhance.onload=openRequestedReservation;
           document.body.appendChild(enhance);
         };
 
         if(!document.querySelector('script[src^="reservation-flow.js"]')){
           const script=document.createElement('script');
-          script.src='reservation-flow.js?v=20260824-3';
+          script.src='reservation-flow.js?v=20260824-4';
           script.onload=()=>{
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
