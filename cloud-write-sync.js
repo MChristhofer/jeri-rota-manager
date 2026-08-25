@@ -75,12 +75,8 @@
     if(!r)return;
     const row=rowReservation(r);
     let result;
-    if(row.code){
-      result=await client.from('reservations').upsert(row,{onConflict:'code'}).select('id,code').single();
-    }else{
-      delete row.code;
-      result=await client.from('reservations').insert(row).select('id,code').single();
-    }
+    if(row.code){result=await client.from('reservations').upsert(row,{onConflict:'code'}).select('id,code').single()}
+    else{delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
     if(result.error)throw result.error;
 
     r.cloudId=result.data.id;
@@ -101,22 +97,17 @@
     const {data:cloudServices,error:cloudServicesError}=await client.from('reservation_services').select('id,source_key').eq('reservation_id',result.data.id);
     if(cloudServicesError)throw cloudServicesError;
     for(const old of cloudServices||[]){
-      if(old.source_key&&!sourceKeys.includes(old.source_key)){
+      if(!old.source_key||!sourceKeys.includes(old.source_key)){
         const del=await client.from('reservation_services').delete().eq('id',old.id);
         if(del.error)throw del.error;
       }
     }
 
-    await client.from('reservation_phones').delete().eq('reservation_id',result.data.id);
+    const phoneDelete=await client.from('reservation_phones').delete().eq('reservation_id',result.data.id);
+    if(phoneDelete.error)throw phoneDelete.error;
     const phones=Array.isArray(r.phones)&&r.phones.length?r.phones:(r.phone?[{phone:r.phone,phoneE164:'',phoneCountry:'br'}]:[]);
     if(phones.length){
-      const phoneInsert=await client.from('reservation_phones').insert(phones.map((p,i)=>({
-        reservation_id:result.data.id,
-        phone:p.phone||null,
-        phone_e164:p.phoneE164||null,
-        phone_country:p.phoneCountry||null,
-        sort_order:i
-      })));
+      const phoneInsert=await client.from('reservation_phones').insert(phones.map((p,i)=>({reservation_id:result.data.id,phone:p.phone||null,phone_e164:p.phoneE164||null,phone_country:p.phoneCountry||null,sort_order:i})));
       if(phoneInsert.error)throw phoneInsert.error;
     }
 
@@ -136,19 +127,20 @@
     return list[list.length-1]||null;
   }
 
+  async function reconcileAll(){
+    const list=read(RESERVATIONS_KEY);
+    for(const reservation of list)await syncReservation(reservation);
+    if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+  }
+
   form.addEventListener('submit',()=>{
     setTimeout(async()=>{
-      const reservation=findJustSaved();
-      if(!reservation)return;
-      try{
-        await syncReservation(reservation);
-        if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
-      }catch(error){
-        console.error('Falha ao salvar reserva no Supabase:',error);
-        alert('A reserva ficou salva neste navegador, mas não foi possível sincronizar com o banco. Verifique a conexão antes de fechar o sistema.');
-      }
-    },700);
+      const reservation=findJustSaved();if(!reservation)return;
+      try{await syncReservation(reservation);if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache()}
+      catch(error){console.error('Falha ao salvar reserva no Supabase:',error);alert('A reserva ficou salva neste navegador, mas não foi possível sincronizar com o banco. Verifique a conexão antes de fechar o sistema.')}
+    },900);
   });
 
-  window.JeriCloudWrite={syncReservation};
+  setTimeout(()=>reconcileAll().catch(error=>console.error('Falha na reconciliação inicial com o Supabase:',error)),2500);
+  window.JeriCloudWrite={syncReservation,reconcileAll};
 })();
