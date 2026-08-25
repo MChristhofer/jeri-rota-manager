@@ -39,9 +39,31 @@
       if(idx>=0){items[idx].repasseStatus='Repassado';items[idx].lastRepasseAt=new Date().toISOString();localStorage.setItem(SERVICES_KEY,JSON.stringify(items))}
     }catch{}
   }
-  document.getElementById('repasseForm')?.addEventListener('submit',()=>setTimeout(markServiceRepassed,0));
-  document.getElementById('saveWhatsappButton')?.addEventListener('click',()=>setTimeout(markServiceRepassed,0));
 
-  setTimeout(apply,120);
-  window.addEventListener('load',()=>setTimeout(apply,180),{once:true});
+  async function linkCloud(){
+    try{
+      if(!window.supabase||!payload.reservationCode)return;
+      const cloud=window.supabase.createClient('https://euqixdlpkjajhigqwhvi.supabase.co','sb_publishable_D9hnQLDMekew4_jZWXa2BA_G3UF9TIP',{auth:{persistSession:true,autoRefreshToken:true}});
+      const {data:{user}}=await cloud.auth.getUser();if(!user)return;
+      const {data:reservation}=await cloud.from('reservations').select('id,code').eq('code',payload.reservationCode).maybeSingle();
+      if(!reservation)return;
+      let serviceQuery=cloud.from('reservation_services').select('id,title,service,service_date').eq('reservation_id',reservation.id);
+      if(payload.date)serviceQuery=serviceQuery.eq('service_date',payload.date);
+      const {data:services}=await serviceQuery;
+      const service=(services||[]).find(s=>s.service===payload.service||s.title===payload.service)||(services||[])[0]||null;
+      const reps=typeof getRepasses==='function'?getRepasses():[];
+      const local=[...reps].reverse().find(x=>x.reservationCode===payload.reservationCode||x.reservationServiceId===payload.serviceId);
+      if(local?.code){
+        await cloud.from('repasses').update({reservation_id:reservation.id,reservation_service_id:service?.id||null,reservation_code:payload.reservationCode}).eq('code',local.code);
+      }
+      if(service?.id)await cloud.from('reservation_services').update({repasse_status:'Repassado',updated_at:new Date().toISOString()}).eq('id',service.id);
+    }catch(err){console.error('Não foi possível vincular o repasse à reserva no banco:',err)}
+  }
+
+  function afterSave(){markServiceRepassed();setTimeout(linkCloud,900)}
+  document.getElementById('repasseForm')?.addEventListener('submit',()=>setTimeout(afterSave,0));
+  document.getElementById('saveWhatsappButton')?.addEventListener('click',()=>setTimeout(afterSave,0));
+
+  setTimeout(apply,160);
+  window.addEventListener('load',()=>setTimeout(apply,220),{once:true});
 })();
