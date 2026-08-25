@@ -65,26 +65,26 @@
     }
 
     if(currentPage==='index.html'||currentPage===''){
-      window.addEventListener('load',()=>{
+      const initReservationModules=()=>{
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{
-          if(!document.querySelector(`link[href="${href}"]`)){
+          if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
             link.rel='stylesheet';
-            link.href=href;
+            link.href=`${href}?v=20260824-3`;
             document.head.appendChild(link);
           }
         });
 
         const loadEnhancements=()=>{
-          if(document.querySelector('script[src="reservation-enhancements.js"]'))return;
+          if(document.querySelector('script[src^="reservation-enhancements.js"]'))return;
           const enhance=document.createElement('script');
-          enhance.src='reservation-enhancements.js';
+          enhance.src='reservation-enhancements.js?v=20260824-3';
           document.body.appendChild(enhance);
         };
 
-        if(!document.querySelector('script[src="reservation-flow.js"]')){
+        if(!document.querySelector('script[src^="reservation-flow.js"]')){
           const script=document.createElement('script');
-          script.src='reservation-flow.js';
+          script.src='reservation-flow.js?v=20260824-3';
           script.onload=()=>{
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
@@ -92,8 +92,16 @@
             loadEnhancements();
           };
           document.body.appendChild(script);
-        }else loadEnhancements();
-      },{once:true});
+        }else{
+          const form=document.getElementById('reservationForm');
+          form?.querySelector('[name="service"]')?.removeAttribute('required');
+          form?.querySelector('[name="date"]')?.removeAttribute('required');
+          loadEnhancements();
+        }
+      };
+
+      if(document.readyState==='complete') initReservationModules();
+      else window.addEventListener('load',initReservationModules,{once:true});
     }
   }catch(error){
     console.error('Erro ao validar sessão:',error);
