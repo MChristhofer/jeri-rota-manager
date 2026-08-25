@@ -23,12 +23,33 @@
     style.id='managerRepassesSectionStyle';
     style.textContent=`
       .manager-repasses-section{padding:0!important;margin:0!important}
-      .manager-embed-frame-wrap{width:100%;min-height:calc(100vh - 110px);border-radius:18px;overflow:hidden;background:transparent}
+      .manager-embed-frame-wrap{width:100%;min-height:calc(100vh - 110px);overflow:hidden;background:transparent}
       #managerRepassesFrame{display:block;width:100%;min-height:calc(100vh - 110px);height:calc(100vh - 110px);border:0;background:transparent}
       @media(max-width:760px){#managerRepassesFrame,.manager-embed-frame-wrap{min-height:calc(100vh - 88px);height:calc(100vh - 88px)}}
     `;
     document.head.appendChild(style);
   }
+
+  const frame=document.getElementById('managerRepassesFrame');
+  function applyEmbedMode(){
+    try{
+      const doc=frame?.contentDocument;if(!doc)return;
+      doc.documentElement.classList.add('repasse-embedded');
+      if(doc.getElementById('parentManagerEmbedStyle'))return;
+      const style=doc.createElement('style');
+      style.id='parentManagerEmbedStyle';
+      style.textContent=`
+        html.repasse-embedded,html.repasse-embedded body{background:transparent!important}
+        html.repasse-embedded .app-shell{display:block!important;min-height:auto!important}
+        html.repasse-embedded .sidebar,html.repasse-embedded .topbar{display:none!important}
+        html.repasse-embedded .main-content{margin:0!important;width:100%!important;max-width:none!important;padding:16px 8px 36px!important;min-height:auto!important}
+        html.repasse-embedded .repasse-tabs{margin-top:0!important}
+        @media(max-width:760px){html.repasse-embedded .main-content{padding:10px 4px 24px!important}}
+      `;
+      doc.head.appendChild(style);
+    }catch(error){console.warn('Não foi possível ativar o modo embutido de Repasses:',error)}
+  }
+  frame?.addEventListener('load',applyEmbedMode);
 
   function openRepasses(event){
     event?.preventDefault?.();
@@ -37,6 +58,7 @@
     const title=document.getElementById('pageTitle');if(title)title.textContent='Central de repasses';
     const button=document.getElementById('newReservationButton');if(button)button.style.display='none';
     document.getElementById('sidebar')?.classList.remove('open');
+    applyEmbedMode();
   }
 
   nav.addEventListener('click',openRepasses,true);
