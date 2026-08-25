@@ -10,104 +10,20 @@
   function receiptLabel(v){return v==='commission_first'?'Comissão primeiro':'NET primeiro'}
   function displayName(item){return [item.name,item.modality].filter(Boolean).join(' · ')}
   function routeText(item){return item.route_code||[item.origin,item.destination].filter(Boolean).join(' → ')||'Sem rota'}
-  function syncLegacyServices(){
-    const active=catalog.filter(x=>x.active).map(displayName);
-    try{localStorage.setItem('jeri-rota-manager-servicos-v1',JSON.stringify(active))}catch{}
-  }
+  function syncLegacyServices(){const active=catalog.filter(x=>x.active).map(displayName);try{localStorage.setItem('jeri-rota-manager-servicos-v1',JSON.stringify(active))}catch{}}
   function ensureTab(){
-    const tab=byId('tab-servicos');
-    if(!tab)return false;
-    tab.innerHTML=`
-      <div class="section-heading"><div><p class="eyebrow">CATÁLOGO MESTRE</p><h2>Serviços + NET</h2><p>Cadastre o serviço uma vez e reutilize nas reservas com NET, modalidade e regra financeira automáticos.</p></div></div>
-      <div class="service-net-shell">
-        <article class="panel catalog-panel">
-          <form id="serviceNetForm" class="service-net-form">
-            <label class="span-2">Nome do serviço<input id="serviceNetName" placeholder="Ex.: Transfer Jijoca → Jeri" required></label>
-            <label>Categoria<select id="serviceNetCategory"><option>Transfer</option><option>Passeio</option><option>Hospedagem</option><option>Outro</option></select></label>
-            <label>Modalidade<select id="serviceNetModality"><option>Compartilhado</option><option>Privativo</option><option>Regular</option><option>Outro</option></select></label>
-            <label>Sigla da rota<input id="serviceNetRoute" placeholder="Ex.: Jijoca-Jeri"></label>
-            <label>Origem<input id="serviceNetOrigin" placeholder="Ex.: Jijoca"></label>
-            <label>Destino<input id="serviceNetDestination" placeholder="Ex.: Jericoacoara"></label>
-            <label>Base do NET<select id="serviceNetBasis"><option value="per_person">Por pessoa</option><option value="per_vehicle">Por veículo</option><option value="fixed">Valor fixo</option></select></label>
-            <label>NET unitário (R$)<input id="serviceNetValue" type="number" min="0" step="0.01" placeholder="0,00" required></label>
-            <label>Venda padrão (R$) <small class="field-help">Opcional</small><input id="serviceSaleValue" type="number" min="0" step="0.01" placeholder="0,00"></label>
-            <label>Regra do recebimento<select id="serviceReceiptRule"><option value="net_first">NET primeiro</option><option value="commission_first">Comissão primeiro</option></select></label>
-            <label>Status<select id="serviceNetActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
-            <div class="service-net-help full"><strong>Como funciona:</strong> “Por pessoa” multiplica o NET pela quantidade de passageiros; “Por veículo” usa a quantidade de carros; “Valor fixo” usa o NET uma única vez. Em passeios, você pode escolher “Comissão primeiro” para considerar o sinal primeiro como comissão.</div>
-            <div class="service-net-actions full"><button class="outline-button" id="cancelServiceNetEdit" type="button" style="display:none">Cancelar edição</button><button class="primary-button" id="saveServiceNet" type="submit">Salvar serviço</button></div>
-          </form>
-        </article>
-        <article class="panel catalog-panel"><div class="panel-head"><div><p class="eyebrow">SERVIÇOS CADASTRADOS</p><h3>Catálogo disponível nas reservas</h3></div><span id="serviceNetCount"></span></div><div class="service-net-list" id="serviceNetList"></div></article>
-      </div>`;
+    const tab=byId('tab-servicos');if(!tab)return false;
+    tab.innerHTML=`<div class="section-heading"><div><p class="eyebrow">CATÁLOGO MESTRE</p><h2>Serviços + NET</h2><p>Cadastre o serviço uma vez e reutilize nas reservas com NET, modalidade e regra financeira automáticos.</p></div></div><div class="service-net-shell"><article class="panel catalog-panel"><form id="serviceNetForm" class="service-net-form"><label class="span-2">Nome do serviço<input id="serviceNetName" placeholder="Ex.: Transfer Jijoca → Jeri" required></label><label>Categoria<select id="serviceNetCategory"><option>Transfer</option><option>Passeio</option><option>Hospedagem</option><option>Outro</option></select></label><label>Modalidade<select id="serviceNetModality"><option>Compartilhado</option><option>Privativo</option><option>Regular</option><option>Outro</option></select></label><label>Sigla da rota<input id="serviceNetRoute" placeholder="Ex.: Jijoca-Jeri"></label><label>Origem<input id="serviceNetOrigin" placeholder="Ex.: Jijoca"></label><label>Destino<input id="serviceNetDestination" placeholder="Ex.: Jericoacoara"></label><label>Base do NET<select id="serviceNetBasis"><option value="per_person">Por pessoa</option><option value="per_vehicle">Por veículo</option><option value="fixed">Valor fixo</option></select></label><label>NET unitário (R$)<input id="serviceNetValue" type="number" min="0" step="0.01" placeholder="0,00" required></label><label>Venda padrão (R$) <small class="field-help">Opcional</small><input id="serviceSaleValue" type="number" min="0" step="0.01" placeholder="0,00"></label><label>Regra do recebimento<select id="serviceReceiptRule"><option value="net_first">NET primeiro</option><option value="commission_first">Comissão primeiro</option></select></label><label>Status<select id="serviceNetActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></label><div class="service-net-help full"><strong>Como funciona:</strong> “Por pessoa” multiplica o NET pela quantidade de passageiros; “Por veículo” usa a quantidade de carros; “Valor fixo” usa o NET uma única vez. Em passeios, você pode escolher “Comissão primeiro” para considerar o sinal primeiro como comissão.</div><div class="service-net-actions full"><button class="outline-button" id="cancelServiceNetEdit" type="button" style="display:none">Cancelar edição</button><button class="primary-button" id="saveServiceNet" type="submit">Salvar serviço</button></div></form></article><article class="panel catalog-panel"><div class="panel-head"><div><p class="eyebrow">SERVIÇOS CADASTRADOS</p><h3>Catálogo disponível nas reservas</h3></div><span id="serviceNetCount"></span></div><div class="service-net-list" id="serviceNetList"></div></article></div>`;
     return true;
   }
-
-  function formRow(){
-    return{
-      name:byId('serviceNetName').value.trim(),
-      category:byId('serviceNetCategory').value||null,
-      route_code:byId('serviceNetRoute').value.trim()||null,
-      origin:byId('serviceNetOrigin').value.trim()||null,
-      destination:byId('serviceNetDestination').value.trim()||null,
-      modality:byId('serviceNetModality').value||null,
-      pricing_basis:byId('serviceNetBasis').value,
-      net_value:Number(byId('serviceNetValue').value)||0,
-      default_sale_value:byId('serviceSaleValue').value===''?null:Number(byId('serviceSaleValue').value)||0,
-      receipt_rule:byId('serviceReceiptRule').value,
-      active:byId('serviceNetActive').value==='true',
-      updated_at:new Date().toISOString()
-    };
-  }
-  function resetForm(){
-    editingId=null;byId('serviceNetForm')?.reset();
-    if(byId('serviceNetCategory'))byId('serviceNetCategory').value='Transfer';
-    if(byId('serviceNetModality'))byId('serviceNetModality').value='Compartilhado';
-    if(byId('serviceNetBasis'))byId('serviceNetBasis').value='per_person';
-    if(byId('serviceReceiptRule'))byId('serviceReceiptRule').value='net_first';
-    if(byId('serviceNetActive'))byId('serviceNetActive').value='true';
-    if(byId('saveServiceNet'))byId('saveServiceNet').textContent='Salvar serviço';
-    if(byId('cancelServiceNetEdit'))byId('cancelServiceNetEdit').style.display='none';
-  }
-  function edit(item){
-    editingId=item.id;
-    byId('serviceNetName').value=item.name||'';byId('serviceNetCategory').value=item.category||'Transfer';byId('serviceNetRoute').value=item.route_code||'';byId('serviceNetOrigin').value=item.origin||'';byId('serviceNetDestination').value=item.destination||'';byId('serviceNetModality').value=item.modality||'Compartilhado';byId('serviceNetBasis').value=item.pricing_basis||'fixed';byId('serviceNetValue').value=Number(item.net_value||0);byId('serviceSaleValue').value=item.default_sale_value===null||item.default_sale_value===undefined?'':Number(item.default_sale_value);byId('serviceReceiptRule').value=item.receipt_rule||'net_first';byId('serviceNetActive').value=String(item.active!==false);
-    byId('saveServiceNet').textContent='Salvar alterações';byId('cancelServiceNetEdit').style.display='inline-flex';byId('serviceNetName').focus();
-  }
-  function render(){
-    const list=byId('serviceNetList');if(!list)return;
-    byId('serviceNetCount').textContent=`${catalog.length} ${catalog.length===1?'serviço':'serviços'}`;
-    if(!catalog.length){list.innerHTML='<div class="service-net-empty">Nenhum serviço cadastrado.</div>';return}
-    list.innerHTML=catalog.map(item=>`<div class="service-net-card">
-      <div class="service-net-main"><strong>${escape(displayName(item))}</strong><small>${escape(item.category||'Serviço')} · ${escape(routeText(item))}</small></div>
-      <div class="service-net-stat"><span>NET</span><strong>${currency.format(Number(item.net_value)||0)}</strong></div>
-      <div class="service-net-stat"><span>Cálculo</span><strong>${basisLabel(item.pricing_basis)}</strong></div>
-      <div class="service-net-stat"><span>Recebimento</span><strong>${receiptLabel(item.receipt_rule)}</strong></div>
-      <div class="service-net-stat"><span>Status</span><strong><span class="service-net-badge ${item.active?'':'inactive'}">${item.active?'Ativo':'Inativo'}</span></strong></div>
-      <div class="service-net-row-actions"><button class="mini-button" data-service-net-edit="${item.id}">Editar</button><button class="mini-button" data-service-net-toggle="${item.id}">${item.active?'Desativar':'Ativar'}</button><button class="mini-button" data-service-net-delete="${item.id}">Excluir</button></div>
-    </div>`).join('');
-  }
-  async function load(){
-    if(!client)return;
-    const {data,error}=await client.from('service_catalog').select('*').order('name').order('modality');
-    if(error){console.error(error);if(typeof toast==='function')toast('Não foi possível carregar o catálogo de serviços.');return}
-    catalog=data||[];window.jeriServiceCatalog=catalog;syncLegacyServices();render();
-  }
-  async function save(event){
-    event.preventDefault();if(!client)return;
-    const row=formRow();if(!row.name)return;
-    const result=editingId?await client.from('service_catalog').update(row).eq('id',editingId):await client.from('service_catalog').insert(row);
-    if(result.error){console.error(result.error);if(typeof toast==='function')toast('Não foi possível salvar o serviço. Verifique se já existe igual.');return}
-    resetForm();await load();if(typeof toast==='function')toast(editingId?'Serviço atualizado.':'Serviço salvo com NET.');
-  }
-  async function handleList(event){
-    const editId=event.target.dataset.serviceNetEdit,toggleId=event.target.dataset.serviceNetToggle,deleteId=event.target.dataset.serviceNetDelete;
-    if(editId){const item=catalog.find(x=>x.id===editId);if(item)edit(item);return}
-    if(toggleId){const item=catalog.find(x=>x.id===toggleId);if(!item)return;const {error}=await client.from('service_catalog').update({active:!item.active,updated_at:new Date().toISOString()}).eq('id',toggleId);if(!error)await load();return}
-    if(deleteId){const item=catalog.find(x=>x.id===deleteId);if(!item||!confirm(`Excluir “${displayName(item)}”?`))return;const {error}=await client.from('service_catalog').delete().eq('id',deleteId);if(error){if(typeof toast==='function')toast('Esse serviço pode estar vinculado a reservas. Desative em vez de excluir.');return}await load()}
-  }
-  function init(){
-    if(!ensureTab())return setTimeout(init,80);
-    byId('serviceNetForm')?.addEventListener('submit',save);byId('cancelServiceNetEdit')?.addEventListener('click',resetForm);byId('serviceNetList')?.addEventListener('click',handleList);resetForm();load();
-  }
+  function formRow(){return{name:byId('serviceNetName').value.trim(),category:byId('serviceNetCategory').value||null,route_code:byId('serviceNetRoute').value.trim()||null,origin:byId('serviceNetOrigin').value.trim()||null,destination:byId('serviceNetDestination').value.trim()||null,modality:byId('serviceNetModality').value||null,pricing_basis:byId('serviceNetBasis').value,net_value:Number(byId('serviceNetValue').value)||0,default_sale_value:byId('serviceSaleValue').value===''?null:Number(byId('serviceSaleValue').value)||0,receipt_rule:byId('serviceReceiptRule').value,active:byId('serviceNetActive').value==='true',updated_at:new Date().toISOString()}}
+  function resetForm(){editingId=null;byId('serviceNetForm')?.reset();if(byId('serviceNetCategory'))byId('serviceNetCategory').value='Transfer';if(byId('serviceNetModality'))byId('serviceNetModality').value='Compartilhado';if(byId('serviceNetBasis'))byId('serviceNetBasis').value='per_person';if(byId('serviceReceiptRule'))byId('serviceReceiptRule').value='net_first';if(byId('serviceNetActive'))byId('serviceNetActive').value='true';if(byId('saveServiceNet'))byId('saveServiceNet').textContent='Salvar serviço';if(byId('cancelServiceNetEdit'))byId('cancelServiceNetEdit').style.display='none'}
+  function edit(item){editingId=item.id;byId('serviceNetName').value=item.name||'';byId('serviceNetCategory').value=item.category||'Transfer';byId('serviceNetRoute').value=item.route_code||'';byId('serviceNetOrigin').value=item.origin||'';byId('serviceNetDestination').value=item.destination||'';byId('serviceNetModality').value=item.modality||'Compartilhado';byId('serviceNetBasis').value=item.pricing_basis||'fixed';byId('serviceNetValue').value=Number(item.net_value||0);byId('serviceSaleValue').value=item.default_sale_value===null||item.default_sale_value===undefined?'':Number(item.default_sale_value);byId('serviceReceiptRule').value=item.receipt_rule||'net_first';byId('serviceNetActive').value=String(item.active!==false);byId('saveServiceNet').textContent='Salvar alterações';byId('cancelServiceNetEdit').style.display='inline-flex';byId('serviceNetName').focus()}
+  function render(){const list=byId('serviceNetList');if(!list)return;byId('serviceNetCount').textContent=`${catalog.length} ${catalog.length===1?'serviço':'serviços'}`;if(!catalog.length){list.innerHTML='<div class="service-net-empty">Nenhum serviço cadastrado.</div>';return}list.innerHTML=catalog.map(item=>`<div class="service-net-card"><div class="service-net-main"><strong>${escape(displayName(item))}</strong><small>${escape(item.category||'Serviço')} · ${escape(routeText(item))}</small></div><div class="service-net-stat"><span>NET</span><strong>${currency.format(Number(item.net_value)||0)}</strong></div><div class="service-net-stat"><span>Cálculo</span><strong>${basisLabel(item.pricing_basis)}</strong></div><div class="service-net-stat"><span>Recebimento</span><strong>${receiptLabel(item.receipt_rule)}</strong></div><div class="service-net-stat"><span>Status</span><strong><span class="service-net-badge ${item.active?'':'inactive'}">${item.active?'Ativo':'Inativo'}</span></strong></div><div class="service-net-row-actions"><button class="mini-button" data-service-net-edit="${item.id}">Editar</button><button class="mini-button" data-service-net-toggle="${item.id}">${item.active?'Desativar':'Ativar'}</button><button class="mini-button" data-service-net-delete="${item.id}">Excluir</button></div></div>`).join('')}
+  async function load(){if(!client)return;const {data,error}=await client.from('service_catalog').select('*').order('name').order('modality');if(error){console.error(error);if(typeof toast==='function')toast('Não foi possível carregar o catálogo de serviços.');return}catalog=data||[];window.jeriServiceCatalog=catalog;syncLegacyServices();render();window.dispatchEvent(new Event('jeri-service-catalog-ready'))}
+  async function save(event){event.preventDefault();if(!client)return;const row=formRow();if(!row.name)return;const wasEditing=Boolean(editingId);const result=editingId?await client.from('service_catalog').update(row).eq('id',editingId):await client.from('service_catalog').insert(row);if(result.error){console.error(result.error);if(typeof toast==='function')toast('Não foi possível salvar o serviço. Verifique se já existe igual.');return}resetForm();await load();if(typeof toast==='function')toast(wasEditing?'Serviço atualizado.':'Serviço salvo com NET.')}
+  async function handleList(event){const editId=event.target.dataset.serviceNetEdit,toggleId=event.target.dataset.serviceNetToggle,deleteId=event.target.dataset.serviceNetDelete;if(editId){const item=catalog.find(x=>x.id===editId);if(item)edit(item);return}if(toggleId){const item=catalog.find(x=>x.id===toggleId);if(!item)return;const {error}=await client.from('service_catalog').update({active:!item.active,updated_at:new Date().toISOString()}).eq('id',toggleId);if(!error)await load();return}if(deleteId){const item=catalog.find(x=>x.id===deleteId);if(!item||!confirm(`Excluir “${displayName(item)}”?`))return;const {error}=await client.from('service_catalog').delete().eq('id',deleteId);if(error){if(typeof toast==='function')toast('Esse serviço pode estar vinculado a reservas. Desative em vez de excluir.');return}await load()}}
+  function ensureCentralRoundTrip(){if(document.querySelector('script[src^="central-roundtrip.js"]'))return;const script=document.createElement('script');script.src='central-roundtrip.js?v=20260824-7';document.body.appendChild(script)}
+  function init(){if(!ensureTab())return setTimeout(init,80);byId('serviceNetForm')?.addEventListener('submit',save);byId('cancelServiceNetEdit')?.addEventListener('click',resetForm);byId('serviceNetList')?.addEventListener('click',handleList);resetForm();load();ensureCentralRoundTrip()}
   init();
 })();
