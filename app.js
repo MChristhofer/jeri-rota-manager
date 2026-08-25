@@ -75,7 +75,6 @@ function parseLocalDate(value) {
 }
 function saveReservations() { localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations)); }
 function statusClass(status) { return String(status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-function isToday(date) { return date === dateOffset(0); }
 function receivedAmount(reservation) { return clamp(Number(reservation.paidAmount) || 0, 0, Number(reservation.amount) || 0); }
 function cashReceivedByJeri(reservation) { return reservation.collectedBy === 'Jeri Rota' ? receivedAmount(reservation) : 0; }
 function remainingAmount(reservation) { return Math.max(0, Number(reservation.amount || 0) - receivedAmount(reservation)); }
@@ -114,23 +113,37 @@ function collectionHolderLabel(reservation) {
 
 function renderDashboard() {
   const active = reservations.filter(r => r.status !== 'Cancelada');
-  const confirmed = reservations.filter(r => r.status === 'Confirmada');
   const received = active.reduce((sum, r) => sum + cashReceivedByJeri(r), 0);
-  const open = active.reduce((sum, r) => sum + remainingAmount(r), 0);
-  const total = active.reduce((sum, r) => sum + Number(r.amount), 0);
-  const today = active.filter(r => isToday(r.date)).length;
-  const upcoming = [...active].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
-  const percent = total ? Math.round((received / total) * 100) : 0;
+  const customerReceivable = active.reduce((sum, r) => sum + remainingAmount(r), 0);
+  const partnerReceivable = active.filter(r => r.partnerOperation === 'recebida').reduce((sum, r) => sum + settlementRemaining(r), 0);
+  const payable = active.filter(r => r.partnerOperation === 'enviada').reduce((sum, r) => sum + settlementRemaining(r), 0);
+  const receivable = customerReceivable + partnerReceivable;
+  const freeBalance = received - payable;
+  const today = dateOffset(0);
+  const upcoming = active.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
 
-  document.getElementById('confirmedMetric').textContent = confirmed.length;
-  document.getElementById('todayMetric').textContent = today;
-  document.getElementById('revenueMetric').textContent = currency.format(received);
-  document.getElementById('pendingMetric').textContent = currency.format(open);
-  document.getElementById('nextTripCount').textContent = upcoming.length;
-  document.getElementById('paymentPercent').textContent = `${percent}%`;
-  document.getElementById('receivedValue').textContent = currency.format(received);
-  document.getElementById('openValue').textContent = currency.format(open);
-  document.getElementById('paymentDonut').style.background = `conic-gradient(var(--green) 0deg ${percent * 3.6}deg, #efece6 ${percent * 3.6}deg 360deg)`;
+  document.getElementById('dashboardReceived').textContent = currency.format(received);
+  document.getElementById('dashboardReceivable').textContent = currency.format(receivable);
+  document.getElementById('dashboardPayable').textContent = currency.format(payable);
+  const freeBalanceElement = document.getElementById('dashboardFreeBalance');
+  freeBalanceElement.textContent = currency.format(freeBalance);
+  freeBalanceElement.classList.toggle('negative-value', freeBalance < 0);
+
+  const pendingReservations = active.filter(r => remainingAmount(r) > 0);
+  const periods = [
+    { label: 'Até 7 dias', detail: 'inclui pagamentos vencidos', className: 'urgent', matches: days => days <= 7 },
+    { label: 'De 8 a 30 dias', detail: 'próximos recebimentos', className: 'attention', matches: days => days > 7 && days <= 30 },
+    { label: 'Após 30 dias', detail: 'previsão de longo prazo', className: 'future', matches: days => days > 30 }
+  ];
+  document.getElementById('pendingPaymentPeriods').innerHTML = periods.map(period => {
+    const entries = pendingReservations.filter(r => period.matches(Math.ceil((parseLocalDate(r.date) - parseLocalDate(today)) / 86400000)));
+    const value = entries.reduce((sum, r) => sum + remainingAmount(r), 0);
+    return `<div class="pending-period ${period.className}">
+      <span class="period-marker" aria-hidden="true"></span>
+      <div><strong>${period.label}</strong><small>${period.detail}</small></div>
+      <div class="period-total"><strong>${currency.format(value)}</strong><small>${entries.length} reserva${entries.length === 1 ? '' : 's'}</small></div>
+    </div>`;
+  }).join('');
 
   const agenda = document.getElementById('upcomingReservations');
   if (!upcoming.length) {
@@ -267,6 +280,7 @@ function setSection(section) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
   const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas e clientes', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
   document.getElementById('pageTitle').textContent = titles[section];
+  document.getElementById('newReservationButton').hidden = section !== 'reservas';
   document.getElementById('sidebar').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
