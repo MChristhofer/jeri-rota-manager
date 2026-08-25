@@ -93,7 +93,6 @@
             </div>
             <div id="upcomingReservations" class="agenda-list"></div>
           </article>
-
         </div>
       </section>
 
@@ -184,12 +183,23 @@
       <p class="modal-subtitle">Dados reais ficam protegidos no ambiente interno do Manager.</p>
       <form id="reservationForm">
         <div class="form-grid">
-          <label>Nome do cliente<input required name="client" placeholder="Ex.: Ana Souza" /></label>
-          <label>Telefone<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
-          <label>Experiência / serviço<input required name="service" placeholder="Ex.: Transfer Fortaleza → Jeri" /></label>
-          <label>Data da saída<input required name="date" type="date" /></label>
-          <label>Quantidade de pessoas<input required min="1" value="2" name="people" type="number" /></label>
-          <label>Valor total (R$)<input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
+          <label>Nome(s) do cliente / passageiros *<input required name="client" placeholder="Ex.: Ana Souza / João Souza" /></label>
+          <label>Telefone *<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
+          <label>Serviço contratado *<input required list="serviceOptions" name="service" placeholder="Escolha ou digite o serviço" /></label>
+          <datalist id="serviceOptions">
+            <option value="Passeio Lado Leste"></option>
+            <option value="Passeio Lado Oeste"></option>
+            <option value="Transfer Fortaleza → Jericoacoara"></option>
+            <option value="Transfer Jericoacoara → Fortaleza"></option>
+            <option value="Transfer Aeroporto JJD → Jericoacoara"></option>
+            <option value="Transfer Jericoacoara → Aeroporto JJD"></option>
+            <option value="Hospedagem"></option>
+            <option value="Pacote"></option>
+          </datalist>
+          <label>Data do serviço *<input required name="date" type="date" /></label>
+          <label>Local de embarque *<input required name="boarding" placeholder="Ex.: Aeroporto JJD, hotel ou pousada" /></label>
+          <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
+          <label>Valor total (R$) *<input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
           <label>Cliente já pagou (R$)<input min="0" step="0.01" value="0" name="paidAmount" type="number" placeholder="0,00" /></label>
           <label>Quem está com o pagamento?<select name="collectedBy"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
           <div class="balance-preview" aria-live="polite"><span>Saldo do cliente</span><strong id="balancePreview">R$ 0,00</strong><small id="paymentPreview">Saldo pendente do cliente.</small></div>
@@ -209,7 +219,8 @@
           </div>
         </fieldset>
 
-        <label>Observações<textarea name="notes" placeholder="Hotel, ponto de embarque, roteiro, crédito autorizado ou observações importantes."></textarea></label>
+        <label>Observações<textarea name="notes" placeholder="Hotel, desembarque, roteiro, crédito autorizado ou observações importantes."></textarea></label>
+        <small style="display:block;margin:10px 0 16px;color:#6e7b83">* Campos obrigatórios. O valor pode ser R$ 0,00, mas precisa ser informado.</small>
         <button class="primary-button full" id="submitReservation" type="submit">Salvar reserva</button>
       </form>
     </div>
@@ -219,5 +230,76 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Validação mínima obrigatória da reserva.
+    (() => {
+      const form = document.getElementById('reservationForm');
+      const requiredFields = [
+        ['client', 'Informe o nome do cliente ou passageiro.'],
+        ['phone', 'Informe o telefone.'],
+        ['service', 'Informe o serviço contratado.'],
+        ['date', 'Informe a data do serviço.'],
+        ['boarding', 'Informe o local de embarque.'],
+        ['amount', 'Informe o valor da reserva. O valor pode ser R$ 0,00.']
+      ];
+      let boardingValue = '';
+      let editingIdBeforeSubmit = null;
+
+      requiredFields.forEach(([name]) => {
+        const field = form.elements[name];
+        if (!field) return;
+        const clear = () => field.setCustomValidity('');
+        field.addEventListener('input', clear);
+        field.addEventListener('change', clear);
+      });
+
+      form.addEventListener('submit', event => {
+        for (const [name, message] of requiredFields) {
+          const field = form.elements[name];
+          const raw = String(field?.value ?? '');
+          const invalid = name === 'amount' ? raw === '' || Number(raw) < 0 : raw.trim() === '';
+          if (invalid) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            field.setCustomValidity(message);
+            field.reportValidity();
+            field.focus();
+            return;
+          }
+        }
+        boardingValue = form.elements.boarding.value.trim();
+        editingIdBeforeSubmit = typeof editingReservationId !== 'undefined' ? editingReservationId : null;
+      }, true);
+
+      // Persiste o embarque sem alterar a estrutura atual do app.js.
+      form.addEventListener('submit', () => {
+        const target = editingIdBeforeSubmit
+          ? reservations.find(item => item.id === editingIdBeforeSubmit)
+          : reservations[reservations.length - 1];
+        if (target) {
+          target.boarding = boardingValue;
+          saveReservations();
+          renderAll();
+        }
+        boardingValue = '';
+        editingIdBeforeSubmit = null;
+      });
+
+      const fillBoarding = id => {
+        const row = reservations.find(item => item.id === id);
+        if (form.elements.boarding) form.elements.boarding.value = row?.boarding || '';
+      };
+
+      document.getElementById('reservationsTable').addEventListener('click', event => {
+        const id = Number(event.target.dataset.edit);
+        if (id) setTimeout(() => fillBoarding(id), 0);
+      }, true);
+
+      document.getElementById('settlementTable').addEventListener('click', event => {
+        const id = Number(event.target.dataset.settlementEdit);
+        if (id) setTimeout(() => fillBoarding(id), 0);
+      }, true);
+    })();
+  </script>
 </body>
 </html>
