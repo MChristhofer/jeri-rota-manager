@@ -66,12 +66,22 @@
 
     if(currentPage==='index.html'||currentPage===''){
       window.addEventListener('load',()=>{
-        if(!document.querySelector('link[href="reservation-flow.css"]')){
-          const link=document.createElement('link');
-          link.rel='stylesheet';
-          link.href='reservation-flow.css';
-          document.head.appendChild(link);
-        }
+        ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{
+          if(!document.querySelector(`link[href="${href}"]`)){
+            const link=document.createElement('link');
+            link.rel='stylesheet';
+            link.href=href;
+            document.head.appendChild(link);
+          }
+        });
+
+        const loadEnhancements=()=>{
+          if(document.querySelector('script[src="reservation-enhancements.js"]'))return;
+          const enhance=document.createElement('script');
+          enhance.src='reservation-enhancements.js';
+          document.body.appendChild(enhance);
+        };
+
         if(!document.querySelector('script[src="reservation-flow.js"]')){
           const script=document.createElement('script');
           script.src='reservation-flow.js';
@@ -79,9 +89,10 @@
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
             form?.querySelector('[name="date"]')?.removeAttribute('required');
+            loadEnhancements();
           };
           document.body.appendChild(script);
-        }
+        }else loadEnhancements();
       },{once:true});
     }
   }catch(error){
