@@ -3,9 +3,19 @@
   const form=document.getElementById('loginForm');
   const email=document.getElementById('email');
   const password=document.getElementById('password');
+  const passwordToggle=document.getElementById('passwordToggle');
   const button=document.getElementById('loginButton');
   const message=document.getElementById('loginMessage');
   const next=new URLSearchParams(location.search).get('next')||'index.html';
+
+  passwordToggle?.addEventListener('click',()=>{
+    const show=password.type==='password';
+    password.type=show?'text':'password';
+    passwordToggle.textContent=show?'Ocultar':'Mostrar';
+    passwordToggle.setAttribute('aria-label',show?'Ocultar senha':'Mostrar senha');
+    passwordToggle.setAttribute('aria-pressed',String(show));
+    password.focus();
+  });
 
   const {data:{user}}=await client.auth.getUser();
   if(user){location.replace(next);return}
@@ -35,7 +45,7 @@
     if(error){
       message.textContent='E-mail ou senha inválidos.';
       button.disabled=false;
-      button.textContent='Entrar';
+      button.textContent='Entrar no Manager';
       return;
     }
     location.replace(next);
