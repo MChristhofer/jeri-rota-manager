@@ -29,13 +29,20 @@
 
   if(typeof renderHistory === 'function') renderHistory();
 
-  function loadCentralRepasses(){
-    if(document.querySelector('script[src="central-repasses.js"]')) return;
-    const script=document.createElement('script');
-    script.src='central-repasses.js';
-    document.body.appendChild(script);
+  function loadScript(src,next){
+    const existing=[...document.scripts].find(s=>s.getAttribute('src')===src||s.src.endsWith('/'+src));
+    if(existing){setTimeout(()=>next?.(),0);return}
+    const script=document.createElement('script');script.src=src;script.onload=()=>next?.();document.body.appendChild(script);
   }
 
-  if(document.readyState==='complete') setTimeout(loadCentralRepasses,0);
-  else window.addEventListener('load',loadCentralRepasses,{once:true});
+  function loadOperationalCentral(){
+    loadScript('central-repasses.js',()=>{
+      loadScript('central-roundtrip.js',()=>{
+        loadScript('repasse-manager-flow.js');
+      });
+    });
+  }
+
+  if(document.readyState==='complete') setTimeout(loadOperationalCentral,0);
+  else window.addEventListener('load',loadOperationalCentral,{once:true});
 })();
