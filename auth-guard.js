@@ -21,8 +21,6 @@
     const button=document.getElementById('logoutSystemButton');
     const profile=document.querySelector('.profile-mini');
 
-    // Mantém o logout sempre dentro da área visível do perfil,
-    // inclusive em notebooks e telas com pouca altura.
     if(button&&profile){
       profile.appendChild(button);
       button.style.margin='0 0 0 auto';
@@ -65,6 +63,22 @@
       email.style.whiteSpace='nowrap';
       email.title=user.email;
       profileInfo.appendChild(email);
+    }
+
+    if(currentPage==='index.html'||currentPage===''){
+      window.addEventListener('load',()=>{
+        if(!document.querySelector('link[href="reservation-flow.css"]')){
+          const link=document.createElement('link');
+          link.rel='stylesheet';
+          link.href='reservation-flow.css';
+          document.head.appendChild(link);
+        }
+        if(!document.querySelector('script[src="reservation-flow.js"]')){
+          const script=document.createElement('script');
+          script.src='reservation-flow.js';
+          document.body.appendChild(script);
+        }
+      },{once:true});
     }
   }catch(error){
     console.error('Erro ao validar sessão:',error);
