@@ -1,0 +1,25 @@
+.manager-services-section .section-heading{margin-bottom:18px}
+.manager-services-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);gap:18px;align-items:start}
+.manager-services-panel{padding:20px}
+.manager-services-panel .panel-head{margin-bottom:16px}
+.manager-service-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.manager-service-form .full{grid-column:1/-1}
+.manager-service-form label,.manager-location-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--navy,#061f33)}
+.manager-service-form input,.manager-service-form select,.manager-location-form input,.manager-location-form select{width:100%;min-height:42px;border:1px solid #ded4c5;border-radius:10px;background:#fff;padding:9px 11px;font:500 13px 'DM Sans',sans-serif;color:#102b3d;outline:none}
+.manager-service-form input:focus,.manager-service-form select:focus,.manager-location-form input:focus,.manager-location-form select:focus{border-color:#c99a3b;box-shadow:0 0 0 3px rgba(214,169,78,.13)}
+.manager-service-help{grid-column:1/-1;padding:11px 12px;border:1px dashed #dec48f;border-radius:10px;background:#fffaf0;color:#65532f;font-size:12px;line-height:1.45}
+.manager-service-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px}
+.manager-service-list,.manager-location-list{display:grid;gap:10px}
+.manager-service-card,.manager-location-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px;border:1px solid #e5dccf;border-radius:12px;background:#fff}
+.manager-service-main strong,.manager-location-main strong{display:block;color:#09283f;font-size:14px;margin-bottom:4px}
+.manager-service-main small,.manager-location-main small{display:block;color:#6f7b82;font-size:11px;line-height:1.45}
+.manager-service-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.manager-service-tag{padding:4px 7px;border-radius:999px;background:#f7f2e9;color:#64502a;font-size:10px;font-weight:700}
+.manager-service-tag.inactive{background:#f3eeee;color:#8b4e4e}
+.manager-card-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.manager-services-empty{padding:26px 12px;text-align:center;border:1px dashed #ded4c5;border-radius:12px;color:#7b8387}
+.manager-location-form{display:grid;grid-template-columns:1fr 160px;gap:11px;margin-bottom:15px}
+.manager-location-form .full{grid-column:1/-1}
+.manager-location-actions{grid-column:1/-1;display:flex;justify-content:flex-end}
+@media(max-width:1050px){.manager-services-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.manager-service-form,.manager-location-form{grid-template-columns:1fr}.manager-service-form .full,.manager-location-form .full{grid-column:auto}.manager-service-card,.manager-location-card{grid-template-columns:1fr}.manager-card-actions{justify-content:flex-start}.manager-service-actions,.manager-location-actions{justify-content:stretch}.manager-service-actions button,.manager-location-actions button{flex:1}}
