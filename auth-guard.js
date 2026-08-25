@@ -2,6 +2,12 @@
   const client=window.jeriSupabase;
   const currentPage=location.pathname.split('/').pop()||'index.html';
   const loginUrl=`login.html?next=${encodeURIComponent(currentPage)}`;
+  const reservationCacheKey='jeri-rota-manager-reservas-v1';
+
+  // Evita que o app.js crie dados de demonstração enquanto a autenticação é validada.
+  if((currentPage==='index.html'||currentPage==='')&&!localStorage.getItem(reservationCacheKey)){
+    localStorage.setItem(reservationCacheKey,'[]');
+  }
 
   if(!client){
     console.error('Supabase não foi inicializado.');
@@ -14,6 +20,29 @@
     if(error||!user){
       location.replace(loginUrl);
       return;
+    }
+
+    async function loadCloudData(){
+      if(!(currentPage==='index.html'||currentPage===''))return;
+      if(!window.JeriCloudData){
+        await new Promise((resolve,reject)=>{
+          const existing=document.querySelector('script[src^="cloud-data-sync.js"]');
+          if(existing){
+            if(window.JeriCloudData){resolve();return}
+            existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;
+          }
+          const script=document.createElement('script');script.src='cloud-data-sync.js?v=20260825-1';script.onload=resolve;script.onerror=reject;document.body.appendChild(script);
+        });
+      }
+      if(window.JeriCloudData?.refresh)await window.JeriCloudData.refresh();
+    }
+
+    try{
+      await loadCloudData();
+    }catch(syncError){
+      console.error('Falha ao carregar dados do Supabase:',syncError);
+      const hasCache=(()=>{try{return JSON.parse(localStorage.getItem(reservationCacheKey)||'[]').length>0}catch{return false}})();
+      if(!hasCache)alert('Não foi possível carregar os dados do sistema. Verifique sua conexão e atualize a página.');
     }
 
     document.body.style.visibility='visible';
@@ -85,17 +114,24 @@
       const loadManagerRepasses=()=>{
         if(document.querySelector('script[src^="manager-repasses-section.js"]'))return;
         const script=document.createElement('script');
-        script.src='manager-repasses-section.js?v=20260824-1';
+        script.src='manager-repasses-section.js?v=20260825-2';
+        document.body.appendChild(script);
+      };
+      const loadManagerServices=()=>{
+        if(document.querySelector('script[src^="manager-services-section.js"]'))return;
+        const script=document.createElement('script');
+        script.src='manager-services-section.js?v=20260825-2';
         document.body.appendChild(script);
       };
 
       const initReservationModules=()=>{
         loadManagerRepasses();
+        loadManagerServices();
         ['reservation-flow.css','reservation-enhancements.css','reservation-service-catalog.css','reservation-roundtrip.css'].forEach(href=>{
           if(!document.querySelector(`link[href^="${href}"]`)){
             const link=document.createElement('link');
             link.rel='stylesheet';
-            link.href=`${href}?v=20260824-7`;
+            link.href=`${href}?v=20260825-2`;
             document.head.appendChild(link);
           }
         });
@@ -103,7 +139,7 @@
         const loadLocationSuggestions=()=>{
           if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){openRequestedReservation();return}
           const locations=document.createElement('script');
-          locations.src='reservation-location-suggestions.js?v=20260824-7';
+          locations.src='reservation-location-suggestions.js?v=20260825-2';
           locations.onload=openRequestedReservation;
           document.body.appendChild(locations);
         };
@@ -111,7 +147,7 @@
         const loadRoundTrip=()=>{
           if(document.querySelector('script[src^="reservation-roundtrip.js"]')){loadLocationSuggestions();return}
           const rt=document.createElement('script');
-          rt.src='reservation-roundtrip.js?v=20260824-7';
+          rt.src='reservation-roundtrip.js?v=20260825-2';
           rt.onload=loadLocationSuggestions;
           document.body.appendChild(rt);
         };
@@ -119,7 +155,7 @@
         const loadNetCatalog=()=>{
           if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadRoundTrip();return}
           const net=document.createElement('script');
-          net.src='reservation-service-catalog.js?v=20260824-7';
+          net.src='reservation-service-catalog.js?v=20260825-2';
           net.onload=loadRoundTrip;
           document.body.appendChild(net);
         };
@@ -127,14 +163,14 @@
         const loadEnhancements=()=>{
           if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadNetCatalog();return}
           const enhance=document.createElement('script');
-          enhance.src='reservation-enhancements.js?v=20260824-7';
+          enhance.src='reservation-enhancements.js?v=20260825-2';
           enhance.onload=loadNetCatalog;
           document.body.appendChild(enhance);
         };
 
         if(!document.querySelector('script[src^="reservation-flow.js"]')){
           const script=document.createElement('script');
-          script.src='reservation-flow.js?v=20260824-7';
+          script.src='reservation-flow.js?v=20260825-2';
           script.onload=()=>{
             const form=document.getElementById('reservationForm');
             form?.querySelector('[name="service"]')?.removeAttribute('required');
