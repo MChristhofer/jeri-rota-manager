@@ -92,7 +92,7 @@
     [...tbody.querySelectorAll('tr')].forEach(row=>{
       const edit=row.querySelector('[data-edit]');if(!edit)return;const id=Number(edit.dataset.edit);const r=reservations.find(x=>x.id===id);if(!r)return;
       const firstCell=row.cells[0];if(firstCell&&!firstCell.querySelector('.reservation-code-small'))firstCell.insertAdjacentHTML('afterbegin',`<small class="reservation-code-small">${escape(r.reservationCode||'')}</small>`);
-      const actions=row.querySelector('.row-actions');if(actions&&!actions.querySelector('[data-services]')){const b=document.createElement('button');b.type='button';b.className='edit-button';b.dataset.services=id;b.textContent='Serviços / Repassar';actions.prepend(b)}
+      const actions=row.querySelector('.row-actions');if(actions&&!actions.querySelector('[data-services]')){const b=document.createElement('button');b.type='button';b.className='edit-button';b.dataset.services=id;b.textContent='Repasse';actions.prepend(b)}
     });
   }
   const baseRenderReservations=window.renderReservations||renderReservations;
@@ -100,17 +100,36 @@
 
   function openServiceManager(id){
     const r=reservations.find(x=>x.id===id);if(!r)return;
-    let modal=byId('serviceRepasseModal');if(!modal){modal=document.createElement('div');modal.id='serviceRepasseModal';modal.className='modal-backdrop';document.body.appendChild(modal)}
     const list=reservationServices(id);
-    modal.innerHTML=`<div class="modal service-repasse-modal"><button class="close-button" type="button" data-close-services>×</button><p class="eyebrow">${escape(r.reservationCode)}</p><h2>${escape(r.client)}</h2><p class="modal-subtitle">Escolha o serviço que deseja repassar. Os dados da reserva serão levados automaticamente.</p><div class="linked-services-list">${list.length?list.map(s=>`<article class="linked-service"><div><strong>${escape(s.title||s.service||s.tour||'Serviço')}</strong><small>${s.date?new Date(s.date+'T12:00:00').toLocaleDateString('pt-BR'): 'Sem data'}${s.route?` · ${escape(s.route)}`:''}${s.boarding?` · ${escape(s.boarding)}`:''}</small><span class="status ${s.repasseStatus==='Repassado'?'pago':'pendente'}">${escape(s.repasseStatus||'Aguardando repasse')}</span></div><button class="primary-button" type="button" data-repass-service="${escape(s.id)}">${s.repasseStatus==='Repassado'?'Repassar novamente':'Repassar'}</button></article>`).join(''):`<div class="empty-state"><strong>Sem serviços cadastrados.</strong><p>Edite a reserva para adicionar serviços.</p></div>`}</div><button class="outline-button full" type="button" data-edit-reservation="${id}">Editar serviços da reserva</button></div>`;
+    if(list.length<=1){startRepasse(r,list[0]||{});return}
+    let modal=byId('serviceRepasseModal');if(!modal){modal=document.createElement('div');modal.id='serviceRepasseModal';modal.className='modal-backdrop';document.body.appendChild(modal)}
+    modal.innerHTML=`<div class="modal service-repasse-modal"><button class="close-button" type="button" data-close-services>×</button><p class="eyebrow">${escape(r.reservationCode)}</p><h2>${escape(r.client)}</h2><p class="modal-subtitle">Escolha o serviço que será enviado pelo WhatsApp.</p><div class="linked-services-list">${list.map(s=>`<article class="linked-service"><div><strong>${escape(s.title||s.service||s.tour||'Serviço')}</strong><small>${s.date?new Date(s.date+'T12:00:00').toLocaleDateString('pt-BR'): 'Sem data'}${s.route?` · ${escape(s.route)}`:''}${s.boarding?` · ${escape(s.boarding)}`:''}</small></div><button class="primary-button" type="button" data-repass-service="${escape(s.id)}">Abrir WhatsApp</button></article>`).join('')}</div></div>`;
     modal.classList.add('open');modal.setAttribute('aria-hidden','false');
     modal.querySelector('[data-close-services]')?.addEventListener('click',()=>modal.classList.remove('open'));
-    modal.querySelector('[data-edit-reservation]')?.addEventListener('click',()=>{modal.classList.remove('open');openModal(id)});
-    modal.querySelectorAll('[data-repass-service]').forEach(b=>b.addEventListener('click',()=>startRepasse(r,list.find(s=>s.id===b.dataset.repassService))));
+    modal.querySelectorAll('[data-repass-service]').forEach(b=>b.addEventListener('click',()=>{modal.classList.remove('open');startRepasse(r,list.find(s=>s.id===b.dataset.repassService))}));
   }
   function startRepasse(r,s){
-    const payload={reservationId:r.id,reservationCode:r.reservationCode,serviceId:s.id,client:r.client,phone:r.phone,people:r.people,date:s.date||r.date||'',returnDate:s.returnDate||'',tour:s.tour||'',service:s.service||s.title||'',route:s.route||'',boarding:s.boarding||'',dropoff:s.dropoff||'',apartment:s.apartment||'',amount:s.repasseAmount??'',responsible:s.responsible||r.responsible||''};
-    sessionStorage.setItem('jeri-rota-repasse-from-reservation',JSON.stringify(payload));location.href='repasses.html?fromReservation=1';
+    const formatDate=value=>{if(!value)return'Não informada';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString('pt-BR')};
+    const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
+    const leg={outbound:'IDA',return:'VOLTA',single:'IDA'}[s.reservationLeg||s.leg]||'IDA';
+    const service=s.service||s.title||s.tour||r.service||'Não informado';
+    const time=s.time||s.serviceTime||s.boardingTime||r.time||r.serviceTime||'Não informado';
+    const people=Math.max(1,Number(r.people)||String(r.client||'').split('/').filter(name=>name.trim()).length||1);
+    const message=[
+      'JERI ROTA — DADOS DA RESERVA',
+      `Reserva: ${r.reservationCode||'Não informada'}`,
+      `Serviço: ${service}`,
+      `Data: ${formatDate(s.date||r.date)}`,
+      `Horário: ${time}`,
+      `Trecho: ${leg}`,
+      `Embarque: ${s.boarding||r.boarding||'Não informado'}`,
+      `Desembarque: ${s.dropoff||r.dropoff||'Não informado'}`,
+      `Passageiro(s): ${r.client||'Não informado'}`,
+      `Telefone: ${r.phone||'Não informado'}`,
+      `Quantidade: ${people} ${people===1?'pessoa':'pessoas'}`,
+      `Valor do repasse: ${money(s.repasseAmount??s.netTotal??r.netAmount)}`
+    ].join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer');
   }
   byId('reservationsTable')?.addEventListener('click',e=>{const id=Number(e.target.dataset.services);if(id){e.preventDefault();e.stopPropagation();openServiceManager(id)}});
 
