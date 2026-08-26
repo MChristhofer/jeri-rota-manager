@@ -166,6 +166,8 @@ function renderReservations() {
     return (!query || fullText.includes(query)) && (filter === 'todos' || r.status === filter);
   }).sort((a, b) => a.date.localeCompare(b.date));
   const tbody = document.getElementById('reservationsTable');
+  const clearAllButton = document.getElementById('clearAllReservations');
+  if (clearAllButton) clearAllButton.disabled = reservations.length === 0;
   if (!filtered.length) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><strong>Nenhuma reserva encontrada.</strong><p>Ajuste os filtros ou cadastre uma nova reserva.</p></div></td></tr>`;
     return;
@@ -457,6 +459,80 @@ document.addEventListener('click', event => {
     if (!menu.contains(event.target)) menu.removeAttribute('open');
   });
 });
+
+function showReservationToast(message, type = 'success') {
+  let toast = document.getElementById('reservationToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'reservationToast';
+    toast.className = 'reservation-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.dataset.type = type;
+  toast.classList.add('show');
+  clearTimeout(showReservationToast.timer);
+  showReservationToast.timer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+function openClearReservationsConfirmation() {
+  if (!reservations.length) return;
+  let backdrop = document.getElementById('clearReservationsModal');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'clearReservationsModal';
+    backdrop.className = 'modal-backdrop';
+    document.body.appendChild(backdrop);
+  }
+  const count = reservations.length;
+  backdrop.innerHTML = `<div class="modal clear-reservations-modal" role="alertdialog" aria-modal="true" aria-labelledby="clearReservationsTitle">
+    <button class="close-button" type="button" data-cancel-clear aria-label="Fechar">×</button>
+    <p class="eyebrow">AÇÃO IRREVERSÍVEL</p>
+    <h2 id="clearReservationsTitle">Apagar todas as reservas?</h2>
+    <p>Serão apagadas <strong>${count} reserva${count === 1 ? '' : 's'}</strong> e todos os serviços vinculados. Outros dados do sistema não serão alterados.</p>
+    <div class="clear-reservations-actions"><button class="outline-button" type="button" data-cancel-clear>Cancelar</button><button class="danger-button" type="button" data-confirm-clear>Apagar ${count} reserva${count === 1 ? '' : 's'}</button></div>
+  </div>`;
+  const close = () => { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden', 'true'); };
+  backdrop.querySelectorAll('[data-cancel-clear]').forEach(button => button.addEventListener('click', close));
+  backdrop.querySelector('[data-confirm-clear]').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Apagando...';
+    try {
+      const client = window.jeriSupabase;
+      if (client) {
+        for (const reservation of reservations) {
+          const query = reservation.cloudId
+            ? client.from('reservations').delete().eq('id', reservation.cloudId)
+            : reservation.reservationCode
+              ? client.from('reservations').delete().eq('code', reservation.reservationCode)
+              : null;
+          if (!query) continue;
+          const { error } = await query;
+          if (error) throw error;
+        }
+      }
+      reservations = [];
+      saveReservations();
+      localStorage.setItem('jeri-rota-manager-reservation-services-v1', '[]');
+      close();
+      renderAll();
+      showReservationToast(`${count} reserva${count === 1 ? '' : 's'} apagada${count === 1 ? '' : 's'}.`);
+    } catch (error) {
+      console.error('Falha ao apagar todas as reservas:', error);
+      button.disabled = false;
+      button.textContent = `Tentar apagar novamente`;
+      showReservationToast('Não foi possível apagar todas as reservas. Nenhum dado local foi removido.', 'error');
+    }
+  });
+  backdrop.classList.add('open');
+  backdrop.setAttribute('aria-hidden', 'false');
+  setTimeout(() => backdrop.querySelector('[data-cancel-clear]')?.focus(), 40);
+}
+
+document.getElementById('clearAllReservations')?.addEventListener('click', openClearReservationsConfirmation);
 
 document.getElementById('settlementTable').addEventListener('click', event => {
   const id = Number(event.target.dataset.settlementEdit);
