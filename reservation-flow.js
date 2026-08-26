@@ -129,7 +129,18 @@
       `Quantidade: ${people} ${people===1?'pessoa':'pessoas'}`,
       `Valor do repasse: ${money(s.repasseAmount??s.netTotal??r.netAmount)}`
     ].join('\n');
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer');
+    openRepassePreview(message,r.reservationCode);
+  }
+  function openRepassePreview(message,reservationCode){
+    let modal=byId('repasseMessagePreviewModal');
+    if(!modal){modal=document.createElement('div');modal.id='repasseMessagePreviewModal';modal.className='modal-backdrop';document.body.appendChild(modal)}
+    modal.innerHTML=`<div class="modal repasse-message-preview-modal"><button class="close-button" type="button" data-close-repasse-preview aria-label="Fechar">×</button><p class="eyebrow">${escape(reservationCode||'REPASSE')}</p><h2>Confirmar mensagem</h2><p class="modal-subtitle">Confira os dados antes de abrir o WhatsApp.</p><textarea readonly data-repasse-preview aria-label="Prévia da mensagem"></textarea><div class="repasse-preview-actions"><button class="outline-button" type="button" data-close-repasse-preview>Cancelar</button><button class="outline-button" type="button" data-copy-repasse-preview>Copiar mensagem</button><button class="primary-button" type="button" data-confirm-repasse>Confirmar e abrir WhatsApp</button></div><small class="reservation-repasse-feedback" data-repasse-preview-feedback aria-live="polite"></small></div>`;
+    const preview=modal.querySelector('[data-repasse-preview]');preview.value=message;
+    const close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')};
+    modal.querySelectorAll('[data-close-repasse-preview]').forEach(button=>button.addEventListener('click',close));
+    modal.querySelector('[data-copy-repasse-preview]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(message)}catch{preview.select();document.execCommand('copy');preview.setSelectionRange(0,0)}const feedback=modal.querySelector('[data-repasse-preview-feedback]');if(feedback)feedback.textContent='Mensagem copiada.'});
+    modal.querySelector('[data-confirm-repasse]')?.addEventListener('click',()=>{window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer');close()});
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
   }
   byId('reservationsTable')?.addEventListener('click',e=>{const id=Number(e.target.dataset.services);if(id){e.preventDefault();e.stopPropagation();openServiceManager(id)}});
 

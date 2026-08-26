@@ -48,3 +48,26 @@
   .reservation-repasse-message summary small { display: none; }
   .reservation-repasse-actions { grid-template-columns: 1fr; }
 }
+
+.repasse-message-preview-modal textarea {
+  width: 100%;
+  min-height: 285px;
+  box-sizing: border-box;
+  margin-top: 15px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.repasse-preview-actions {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.repasse-preview-actions button { margin: 0; }
+
+@media (max-width: 620px) {
+  .repasse-preview-actions { grid-template-columns: 1fr; }
+}
