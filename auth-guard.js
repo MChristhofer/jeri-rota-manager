@@ -32,7 +32,11 @@
       const loadCloudWriter=()=>{if(document.querySelector('script[src^="cloud-write-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-write-sync.js?v=20260825-2';document.body.appendChild(script)};
       const loadManagerFinance=()=>{if(!document.querySelector('link[href^="manager-finance-enhancements.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-finance-enhancements.css?v=20260825-1';document.head.appendChild(link)}if(document.querySelector('script[src^="manager-finance-enhancements.js"]'))return;const script=document.createElement('script');script.src='manager-finance-enhancements.js?v=20260825-1';document.body.appendChild(script)};
       const loadCompactUi=()=>{if(!document.querySelector('link[href^="reservation-compact-ui.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='reservation-compact-ui.css?v=20260825-1';document.head.appendChild(link)}if(document.querySelector('script[src^="reservation-compact-ui.js"]'))return;const script=document.createElement('script');script.src='reservation-compact-ui.js?v=20260825-1';document.body.appendChild(script)};
-      const loadUiPolish=()=>{if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}};
+      const loadUiPolish=()=>{
+        if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}
+        if(!document.querySelector('link[href^="sidebar-motion.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='sidebar-motion.css?v=20260826-1';document.head.appendChild(link)}
+        if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
+      };
 
       const initReservationModules=()=>{
         loadUiPolish();loadManagerRepasses();loadManagerServices();loadCloudWriter();loadManagerFinance();
