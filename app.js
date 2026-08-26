@@ -167,23 +167,20 @@ function renderReservations() {
   }).sort((a, b) => a.date.localeCompare(b.date));
   const tbody = document.getElementById('reservationsTable');
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><strong>Nenhuma reserva encontrada.</strong><p>Ajuste os filtros ou cadastre uma nova venda.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><strong>Nenhuma reserva encontrada.</strong><p>Ajuste os filtros ou cadastre uma nova reserva.</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(r => {
     const payment = paymentStatus(r);
     const balance = remainingAmount(r);
     return `<tr>
-      <td><strong>${escapeHtml(r.client)}</strong><small>${escapeHtml(r.phone)}</small></td>
-      <td>${escapeHtml(r.service)}${isPartnerReservation(r) ? `<small>${escapeHtml(r.partner)}</small>` : ''}</td>
-      <td>${dateFormat.format(parseLocalDate(r.date))}</td>
-      <td>${r.people}</td>
-      <td><strong>${currency.format(r.amount)}</strong></td>
-      <td>${currency.format(receivedAmount(r))}<small>${escapeHtml(collectionHolderLabel(r))}</small></td>
-      <td><strong class="balance-value">${currency.format(balance)}</strong><small>${balance ? 'pendente do cliente' : 'quitado'}</small></td>
-      <td><span class="status ${payment.className}">${payment.label}</span></td>
+      <td class="reservation-client"><strong>${escapeHtml(r.client)}</strong><small>${escapeHtml(r.phone)}</small></td>
+      <td class="reservation-service"><strong>${escapeHtml(r.service)}</strong><small>${dateFormat.format(parseLocalDate(r.date))}${isPartnerReservation(r) ? ` · ${escapeHtml(r.partner)}` : ''}</small></td>
+      <td><span class="people-count">${r.people}</span></td>
+      <td class="reservation-total"><strong>${currency.format(r.amount)}</strong></td>
+      <td class="payment-summary"><strong>${currency.format(receivedAmount(r))} <span>de ${currency.format(r.amount)}</span></strong><small>Saldo ${currency.format(balance)} · ${payment.label}</small></td>
       <td><span class="status ${statusClass(r.status)}">${r.status}</span></td>
-      <td class="row-actions"><button class="edit-button" data-edit="${r.id}">Editar</button><button class="delete-button" data-delete="${r.id}" aria-label="Excluir reserva">Excluir</button></td>
+      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}">Excluir</button></div></details></td>
     </tr>`;
   }).join('');
 }
@@ -276,10 +273,14 @@ function renderAll() { renderDashboard(); renderReservations(); renderOperation(
 function escapeHtml(value = '') { return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
 
 function setSection(section) {
+  document.body.dataset.section = section;
   document.querySelectorAll('.content-section').forEach(el => el.classList.toggle('active', el.id === section));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
-  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas e clientes', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
+  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
   document.getElementById('pageTitle').textContent = titles[section];
+  const pageSubtitle = document.getElementById('pageSubtitle');
+  pageSubtitle.hidden = section !== 'reservas';
+  pageSubtitle.textContent = section === 'reservas' ? 'Gerencie clientes, serviços e pagamentos em um só lugar.' : '';
   document.getElementById('newReservationButton').hidden = section !== 'reservas';
   document.getElementById('sidebar').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -449,6 +450,12 @@ document.getElementById('reservationsTable').addEventListener('click', event => 
     saveReservations();
     renderAll();
   }
+});
+
+document.addEventListener('click', event => {
+  document.querySelectorAll('.reservation-action-menu[open]').forEach(menu => {
+    if (!menu.contains(event.target)) menu.removeAttribute('open');
+  });
 });
 
 document.getElementById('settlementTable').addEventListener('click', event => {

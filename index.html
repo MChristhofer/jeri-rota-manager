@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="manager-brand.css" />
+  <link rel="stylesheet" href="reservation-list-premium.css?v=20260826-1" />
 </head>
 <body style="visibility:hidden">
   <div class="app-shell">
@@ -46,6 +47,7 @@
         <div>
           <p class="eyebrow">CENTRAL DE OPERAÇÕES</p>
           <h1 id="pageTitle">Olá, Jeri Rota</h1>
+          <p class="page-subtitle" id="pageSubtitle" hidden></p>
         </div>
         <div class="topbar-actions">
           <div class="date-badge" id="todayLabel"></div>
@@ -97,17 +99,14 @@
       </section>
 
       <section class="content-section" id="reservas">
-        <div class="section-heading">
-          <div><p class="eyebrow">GESTÃO COMERCIAL</p><h2>Reservas</h2><p>Cadastre, consulte e organize cada experiência vendida.</p></div>
-        </div>
-        <div class="filters">
-          <input id="searchInput" type="search" placeholder="Buscar por cliente, destino, serviço ou parceira..." />
-          <select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select>
+        <div class="reservation-toolbar" role="search" aria-label="Buscar e filtrar reservas">
+          <label class="reservation-search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" aria-label="Buscar reservas" placeholder="Buscar por cliente, serviço, telefone ou parceira" /></label>
+          <label class="reservation-filter"><span class="sr-only">Filtrar por status</span><select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
         </div>
         <article class="panel table-panel">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Cliente</th><th>Experiência</th><th>Data</th><th>Pessoas</th><th>Total</th><th>Cliente pagou</th><th>Saldo</th><th>Pagamento</th><th>Reserva</th><th></th></tr></thead>
+              <thead><tr><th>Cliente</th><th>Serviço / Data</th><th>Pessoas</th><th>Valor</th><th>Pagamento</th><th>Status</th><th class="actions-heading">Ações</th></tr></thead>
               <tbody id="reservationsTable"></tbody>
             </table>
           </div>
@@ -229,7 +228,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js?v=20260826-3"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260826-1"></script>
   <script>
     // Validação mínima obrigatória da reserva.
     (() => {
