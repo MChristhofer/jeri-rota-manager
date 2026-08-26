@@ -366,7 +366,7 @@ function openModal(id = null) {
     netAmountInput.value = reservation.netAmount || 0;
     settledAmountInput.value = reservation.settledAmount || 0;
     reservationForm.querySelector('[name="settlementDate"]').value = reservation.settlementDate || '';
-    document.getElementById('modalTitle').textContent = 'Editar reserva e prestação';
+    document.getElementById('modalTitle').textContent = 'Editar reserva';
     document.getElementById('submitReservation').textContent = 'Salvar alterações';
     updatePaymentPreview();
     updatePartnerPreview();

@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="manager-brand.css" />
   <link rel="stylesheet" href="reservation-list-premium.css?v=20260826-1" />
+  <link rel="stylesheet" href="reservation-operational-form.css?v=20260826-1" />
+  <link rel="stylesheet" href="reservation-repasse-message.css?v=20260826-3" />
 </head>
 <body style="visibility:hidden">
   <div class="app-shell">
@@ -181,10 +183,18 @@
       <h2 id="modalTitle">Cadastrar reserva</h2>
       <p class="modal-subtitle">Dados reais ficam protegidos no ambiente interno do Manager.</p>
       <form id="reservationForm">
-        <div class="form-grid">
-          <label>Nome(s) do cliente / passageiros *<input required name="client" placeholder="Ex.: Ana Souza / João Souza" /></label>
-          <label>Telefone *<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
-          <label>Serviço contratado *<input required list="serviceOptions" name="service" placeholder="Escolha ou digite o serviço" /></label>
+        <fieldset class="reservation-client-section">
+          <legend>1. Dados do cliente</legend>
+          <div class="form-grid reservation-client-grid">
+            <label>Passageiro(s) *<input required name="client" placeholder="Ex.: Ana Souza / João Souza" /></label>
+            <label>Telefone *<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
+            <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
+            <label>Status<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
+          </div>
+        </fieldset>
+
+        <div class="reservation-compat-fields" aria-hidden="true">
+          <label>Serviço contratado<input required list="serviceOptions" name="service" tabindex="-1" /></label>
           <datalist id="serviceOptions">
             <option value="Passeio Lado Leste"></option>
             <option value="Passeio Lado Oeste"></option>
@@ -195,14 +205,12 @@
             <option value="Hospedagem"></option>
             <option value="Pacote"></option>
           </datalist>
-          <label>Data do serviço *<input required name="date" type="date" /></label>
-          <label>Local de embarque *<input required name="boarding" placeholder="Ex.: Aeroporto JJD, hotel ou pousada" /></label>
-          <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
-          <label>Valor total (R$) *<input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
-          <label>Cliente já pagou (R$)<input min="0" step="0.01" value="0" name="paidAmount" type="number" placeholder="0,00" /></label>
-          <label>Quem está com o pagamento?<select name="collectedBy"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
+          <label>Data do serviço<input required name="date" type="date" tabindex="-1" /></label>
+          <label>Local de embarque<input required name="boarding" tabindex="-1" /></label>
+          <label>Valor total<input required min="0" step="0.01" name="amount" type="number" tabindex="-1" /></label>
+          <label>Cliente já pagou<input min="0" step="0.01" value="0" name="paidAmount" type="number" tabindex="-1" /></label>
+          <label>Quem está com o pagamento?<select name="collectedBy" tabindex="-1"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
           <div class="balance-preview" aria-live="polite"><span>Saldo do cliente</span><strong id="balancePreview">R$ 0,00</strong><small id="paymentPreview">Saldo pendente do cliente.</small></div>
-          <label>Status da reserva<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
           <label>Responsável<input name="responsible" placeholder="Ex.: Motorista a confirmar" /></label>
           <label>Tipo de operação<select name="partnerOperation"><option value="propria">Venda e operação próprias</option><option value="recebida">Parceira vendeu · Jeri Rota executa</option><option value="enviada">Jeri Rota vendeu · Parceira executa</option></select></label>
         </div>
@@ -218,8 +226,8 @@
           </div>
         </fieldset>
 
-        <label>Observações<textarea name="notes" placeholder="Hotel, desembarque, roteiro, crédito autorizado ou observações importantes."></textarea></label>
-        <small style="display:block;margin:10px 0 16px;color:#6e7b83">* Campos obrigatórios. O valor pode ser R$ 0,00, mas precisa ser informado.</small>
+        <label class="reservation-general-notes"><span>3. Observações gerais</span><textarea name="notes" placeholder="Informações gerais importantes para toda a reserva."></textarea></label>
+        <small class="reservation-required-note">* Campos obrigatórios.</small>
         <button class="primary-button full" id="submitReservation" type="submit">Salvar reserva</button>
       </form>
     </div>
@@ -227,8 +235,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="auth-guard.js?v=20260826-4"></script>
-  <script src="app.js?v=20260826-1"></script>
+  <script src="auth-guard.js?v=20260826-5"></script>
+  <script src="app.js?v=20260826-2"></script>
   <script>
     // Validação mínima obrigatória da reserva.
     (() => {
