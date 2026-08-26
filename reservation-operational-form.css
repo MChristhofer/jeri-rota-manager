@@ -1,7 +1,8 @@
 .reservation-compat-fields,
 #reservationForm > .partner-fields,
 #reservationFinanceSummary,
-#reservationRepasseMessage {
+#reservationRepasseMessage,
+.reservation-status-field {
   display: none !important;
 }
 
