@@ -15,6 +15,8 @@
   const read=key=>{try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
   const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
   const countPassengers=value=>String(value||'').split('/').map(x=>x.trim()).filter(Boolean).length||1;
+  const capitalizePassengerNames=value=>String(value||'').replace(/(^|[\s/,-])(\p{L})/gu,(match,boundary,letter)=>boundary+letter.toLocaleUpperCase('pt-BR'));
+  function normalizePassengerNames(){if(!passengerInput)return;const normalized=capitalizePassengerNames(passengerInput.value);if(normalized!==passengerInput.value){const start=passengerInput.selectionStart,end=passengerInput.selectionEnd;passengerInput.value=normalized;try{passengerInput.setSelectionRange(start,end)}catch{}}}
   function syncPeople(){if(!passengerInput||!peopleInput)return;peopleInput.value=countPassengers(passengerInput.value);peopleInput.readOnly=true}
   function setLabelText(input,text){const label=input?.closest('label');if(!label)return;const node=[...label.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);if(node)node.textContent=text}
 
@@ -73,7 +75,7 @@
   }
   function updateFinanceSummary(){if(!byId('reservationFinanceSummary'))injectFinanceSummary();const sale=Math.max(0,Number(amountInput?.value)||0),paid=Math.min(Math.max(0,Number(paidInput?.value)||0),sale||Infinity),balance=Math.max(0,sale-paid),net=serviceCosts();if(byId('resFinSale'))byId('resFinSale').textContent=money(sale);if(byId('resFinPaid'))byId('resFinPaid').textContent=money(paid);if(byId('resFinBalance'))byId('resFinBalance').textContent=money(balance);if(byId('resFinCosts'))byId('resFinCosts').textContent=money(net)}
 
-  simplifyBaseForm();syncPeople();passengerInput?.addEventListener('input',syncPeople);setupPhoneEditor().then(()=>loadPhoneState(null));
+  simplifyBaseForm();normalizePassengerNames();syncPeople();passengerInput?.addEventListener('input',()=>{normalizePassengerNames();syncPeople()});passengerInput?.addEventListener('blur',normalizePassengerNames);setupPhoneEditor().then(()=>loadPhoneState(null));
 
   const waitForServices=setInterval(()=>{const host=byId('reservationServiceDrafts');if(!host)return;clearInterval(waitForServices);injectFinanceSummary();new MutationObserver(()=>setTimeout(updateFinanceSummary,0)).observe(host,{childList:true,subtree:true});updateFinanceSummary()},80);
   form.addEventListener('input',e=>{if(e.target===amountInput||e.target===paidInput||e.target.matches?.('[data-field="repasseAmount"],[data-net-quantity],[data-roundtrip-toggle],[data-roundtrip-date],[data-service-catalog-select]'))setTimeout(updateFinanceSummary,0)});
@@ -86,5 +88,6 @@
     try{openModal=window.openModal}catch{}
   }
 
+  form.addEventListener('submit',normalizePassengerNames,true);
   form.addEventListener('submit',()=>{const capturedPhones=collectPhones();setTimeout(()=>{const target=editingReservationId?reservations.find(r=>String(r.id)===String(editingReservationId)):reservations[reservations.length-1];if(!target)return;target.phones=capturedPhones;target.phone=capturedPhones[0]?.phone||target.phone||'';target.people=countPassengers(target.client);saveReservations();renderAll()},40)});
 })();
