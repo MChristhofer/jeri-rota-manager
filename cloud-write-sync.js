@@ -146,20 +146,24 @@
     return list[list.length-1]||null;
   }
 
-  async function reconcileAll(){
-    const list=read(RESERVATIONS_KEY);
-    for(const reservation of list)await syncReservation(reservation);
+  async function restoreOfficialCloudState(){
     if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+    try{if(typeof getReservations==='function')reservations=getReservations();if(typeof renderAll==='function')renderAll()}catch{}
   }
 
   form.addEventListener('submit',()=>{
     setTimeout(async()=>{
       const reservation=findJustSaved();if(!reservation)return;
-      try{await syncReservation(reservation);if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache()}
-      catch(error){console.error('Falha ao salvar reserva no Supabase:',error);alert('A reserva ficou salva neste navegador, mas não foi possível sincronizar com o banco. Verifique a conexão antes de fechar o sistema.')}
+      try{
+        await syncReservation(reservation);
+        if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+      }catch(error){
+        console.error('Falha ao salvar reserva no Supabase:',error);
+        try{await restoreOfficialCloudState()}catch(refreshError){console.error('Falha ao restaurar dados oficiais:',refreshError)}
+        alert('Não foi possível salvar esta alteração no Supabase. Os dados oficiais do banco foram restaurados. Verifique a conexão e tente novamente.');
+      }
     },900);
   });
 
-  setTimeout(()=>reconcileAll().catch(error=>console.error('Falha na reconciliação inicial com o Supabase:',error)),2500);
-  window.JeriCloudWrite={syncReservation,reconcileAll};
+  window.JeriCloudWrite={syncReservation,restoreOfficialCloudState};
 })();
