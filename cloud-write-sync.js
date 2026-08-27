@@ -91,8 +91,9 @@
     r.cloudId=result.data.id;
     if(result.data.code)r.reservationCode=result.data.code;
 
-    const allServices=read(SERVICES_KEY);
-    const localServices=allServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    const allServices=read(SERVICES_KEY);const seenServices=new Set();
+    const localServices=allServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).filter(service=>{const key=[service.title,service.date,service.returnDate,service.tour,service.service,service.route,service.boarding,service.dropoff,service.apartment,service.responsible,Number(service.saleTotal)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');if(seenServices.has(key))return false;seenServices.add(key);return true});
+    if(localServices.length){r.amount=localServices.reduce((sum,service)=>sum+(Number(service.saleTotal)||0),0);r.paidAmount=Math.min(Number(r.paidAmount)||0,r.amount);row.amount=r.amount;row.paid_amount=r.paidAmount}
     const sourceKeys=[];
     for(let i=0;i<localServices.length;i++){
       const payload=rowService(localServices[i],result.data.id,i);

@@ -14,6 +14,8 @@
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
   const num=value=>value===null||value===undefined||value===''?null:Number(value);
   const isoDate=value=>value?String(value).slice(0,10):'';
+  const reservationKey=row=>{const code=String(row?.code||row?.reservationCode||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code)return code;if(row?.legacy_id!==null&&row?.legacy_id!==undefined&&row?.legacy_id!=='')return `legacy:${row.legacy_id}`;return `id:${row?.id||''}`};
+  const serviceSignature=row=>[row.title,row.service_date,row.return_date,row.tour,row.service,row.route,row.boarding,row.dropoff,row.apartment,row.responsible,Number(row.sale_total)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');
 
   function isDemoReservation(r){
     const legacy=Number(r?.legacy_id??r?.id);
@@ -227,17 +229,22 @@
     for(const result of [rRes,sRes,pRes,repRes])if(result.error)throw result.error;
     const uniqueRows=new Map();
     (rRes.data||[]).filter(r=>!isDemoReservation(r)).forEach(row=>{
-      const key=row.code||row.id;const current=uniqueRows.get(key);
+      const key=reservationKey(row);const current=uniqueRows.get(key);
       if(!current||String(row.updated_at||row.created_at||'')>String(current.updated_at||current.created_at||''))uniqueRows.set(key,row);
     });
     const reservationRows=[...uniqueRows.values()];
     const validIds=new Set(reservationRows.map(r=>r.id));
-    const serviceRows=(sRes.data||[]).filter(s=>validIds.has(s.reservation_id));
+    const uniqueServices=new Map();
+    (sRes.data||[]).filter(s=>validIds.has(s.reservation_id)).forEach(row=>{
+      const key=`${row.reservation_id}|${serviceSignature(row)}`;const current=uniqueServices.get(key);
+      if(!current||String(row.updated_at||'')>String(current.updated_at||''))uniqueServices.set(key,row);
+    });
+    const serviceRows=[...uniqueServices.values()];
     const phoneRows=(pRes.data||[]).filter(p=>validIds.has(p.reservation_id));
     const servicesByReservation=new Map();serviceRows.forEach(s=>{if(!servicesByReservation.has(s.reservation_id))servicesByReservation.set(s.reservation_id,[]);servicesByReservation.get(s.reservation_id).push(s)});
     const phonesByReservation=new Map();phoneRows.forEach(p=>{if(!phonesByReservation.has(p.reservation_id))phonesByReservation.set(p.reservation_id,[]);phonesByReservation.get(p.reservation_id).push(p)});
     const reservationMap=new Map();
-    const localReservations=reservationRows.map(row=>{const r=localReservation(row,phonesByReservation.get(row.id)||[],(servicesByReservation.get(row.id)||[])[0]);reservationMap.set(row.id,r);return r});
+    const localReservations=reservationRows.map(row=>{const linkedServices=servicesByReservation.get(row.id)||[];const r=localReservation(row,phonesByReservation.get(row.id)||[],linkedServices[0]);if(linkedServices.length)r.amount=linkedServices.reduce((sum,service)=>sum+(Number(service.sale_total)||0),0);r.paidAmount=Math.min(r.paidAmount,r.amount);reservationMap.set(row.id,r);return r});
     const cachedReservations=read(KEYS.reservations);const cachedByCode=new Map(cachedReservations.filter(r=>r.reservationCode).map(r=>[r.reservationCode,r]));const cachedByCloudId=new Map(cachedReservations.filter(r=>r.cloudId).map(r=>[r.cloudId,r]));
     localReservations.forEach(reservation=>{const cached=cachedByCloudId.get(reservation.cloudId)||cachedByCode.get(reservation.reservationCode);if(!Array.isArray(cached?.payments)||!cached.payments.length)return;const cachedTotal=cached.payments.reduce((sum,payment)=>sum+(Number(payment.amount)||0),0);if(Math.abs(cachedTotal-reservation.paidAmount)<0.01)reservation.payments=cached.payments});
     const serviceMap=new Map();const localServices=[];

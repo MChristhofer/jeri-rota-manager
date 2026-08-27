@@ -11,7 +11,13 @@
   function writeServices(v){localStorage.setItem(SERVICES_KEY,JSON.stringify(v))}
   function nextReservationNumber(){const current=Number(localStorage.getItem(RESERVATION_CODE_KEY)||0)+1;localStorage.setItem(RESERVATION_CODE_KEY,String(current));return current}
   function ensureReservationCode(r){if(r.reservationCode)return r.reservationCode;const n=nextReservationNumber();r.reservationCode=`JR-${String(n).padStart(5,'0')}`;return r.reservationCode}
-  function reservationServices(id){return readServices().filter(s=>String(s.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
+  function reservationServices(id){
+    const seen=new Set();
+    return readServices().filter(s=>String(s.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).filter(service=>{
+      const key=[service.title,service.date,service.returnDate,service.tour,service.service,service.route,service.boarding,service.dropoff,service.apartment,service.responsible,Number(service.saleTotal)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');
+      if(seen.has(key))return false;seen.add(key);return true;
+    });
+  }
   function escape(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   const OP_META_PREFIX='JR_OP_V1:';
   function decodeOperationalMeta(value){if(!String(value||'').startsWith(OP_META_PREFIX))return{};try{return JSON.parse(decodeURIComponent(String(value).slice(OP_META_PREFIX.length)))}catch{return{}}}
