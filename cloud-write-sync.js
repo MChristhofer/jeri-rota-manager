@@ -6,6 +6,13 @@
   const RESERVATIONS_KEY='jeri-rota-manager-reservas-v1';
   const SERVICES_KEY='jeri-rota-manager-reservation-services-v1';
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
+  const normalizeRepasseStatus=value=>{
+    const status=String(value||'').trim().toLowerCase();
+    if(['pago','quitado','realizado'].includes(status))return'Realizado';
+    if(status==='repassado')return'Repassado';
+    if(status==='cancelado')return'Cancelado';
+    return'Aguardando repasse';
+  };
 
   const rowReservation=r=>({
     code:r.reservationCode||null,
@@ -41,7 +48,7 @@
     apartment:s.apartment||null,
     responsible:s.responsible||null,
     repasse_amount:s.repasseAmount??null,
-    repasse_status:s.repasseStatus||'Aguardando repasse',
+    repasse_status:normalizeRepasseStatus(s.repasseStatus),
     service_catalog_id:s.serviceCatalogId||null,
     pricing_basis:s.pricingBasis||null,
     net_unit:s.netUnit??null,
@@ -59,7 +66,7 @@
     return_service:s.returnService||null,
     return_route:s.returnRoute||null,
     return_repasse_amount:s.returnRepasseAmount??null,
-    return_repasse_status:s.returnRepasseStatus||'Aguardando repasse',
+    return_repasse_status:normalizeRepasseStatus(s.returnRepasseStatus),
     execution_mode:s.executionMode||'undecided',
     execution_partner_name:s.executionPartnerName||null,
     execution_partner_phone:s.executionPartnerPhone||null,
@@ -102,6 +109,8 @@
       if(saved.error)throw saved.error;
       localServices[i].cloudId=saved.data.id;
       localServices[i].sourceKey=saved.data.source_key;
+      localServices[i].repasseStatus=payload.repasse_status;
+      if(localServices[i].returnRepasseStatus!==undefined)localServices[i].returnRepasseStatus=payload.return_repasse_status;
     }
 
     const {data:cloudServices,error:cloudServicesError}=await client.from('reservation_services').select('id,source_key').eq('reservation_id',result.data.id);
@@ -125,7 +134,7 @@
     const ri=currentReservations.findIndex(x=>String(x.id)===String(r.id));
     if(ri>=0){currentReservations[ri]={...currentReservations[ri],cloudId:r.cloudId,reservationCode:r.reservationCode};localStorage.setItem(RESERVATIONS_KEY,JSON.stringify(currentReservations))}
     const currentServices=read(SERVICES_KEY);
-    localServices.forEach(local=>{const i=currentServices.findIndex(x=>String(x.id)===String(local.id));if(i>=0)currentServices[i]={...currentServices[i],cloudId:local.cloudId,sourceKey:local.sourceKey}});
+    localServices.forEach(local=>{const i=currentServices.findIndex(x=>String(x.id)===String(local.id));if(i>=0)currentServices[i]={...currentServices[i],cloudId:local.cloudId,sourceKey:local.sourceKey,repasseStatus:local.repasseStatus,returnRepasseStatus:local.returnRepasseStatus}});
     localStorage.setItem(SERVICES_KEY,JSON.stringify(currentServices));
   }
 
