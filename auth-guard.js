@@ -27,7 +27,7 @@
 
     if(currentPage==='index.html'||currentPage===''){
       const openRequestedReservation=()=>{const id=new URLSearchParams(location.search).get('openReservation');if(!id)return;const tryOpen=()=>{if(typeof window.setSection==='function')window.setSection('reservas');else if(typeof setSection==='function')setSection('reservas');if(typeof window.openModal==='function')window.openModal(Number(id));else if(typeof openModal==='function')openModal(Number(id));else return false;return true};if(!tryOpen()){let attempts=0;const timer=setInterval(()=>{attempts+=1;if(tryOpen()||attempts>20)clearInterval(timer)},100)}};
-      const loadCloudWriter=()=>{if(document.querySelector('script[src^="cloud-write-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-write-sync.js?v=20260826-4';document.body.appendChild(script)};
+      const loadCloudWriter=()=>{if(document.querySelector('script[src^="cloud-write-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-write-sync.js?v=20260827-5';document.body.appendChild(script)};
       const loadUiPolish=()=>{
         if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="sidebar-motion.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='sidebar-motion.css?v=20260826-1';document.head.appendChild(link)}
@@ -39,9 +39,9 @@
         loadUiPolish();loadCloudWriter();
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260826-5`;document.head.appendChild(link)}});
         const loadCommitments=()=>{
-          if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-2';document.head.appendChild(link)}
+          if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-3';document.head.appendChild(link)}
           if(document.querySelector('script[src^="finance-basic.js"]')){openRequestedReservation();return}
-          const script=document.createElement('script');script.src='finance-basic.js?v=20260827-2';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
+          const script=document.createElement('script');script.src='finance-basic.js?v=20260827-3';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
         };
         const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCommitments();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260826-9';locations.onload=loadCommitments;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260826-8';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
