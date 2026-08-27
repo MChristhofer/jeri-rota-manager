@@ -1,5 +1,5 @@
 /* Financeiro básico integrado às reservas */
-.main-nav .nav-item[data-section="financeiro"]{
+body .main-nav .nav-item[data-section="financeiro"]{
   display:flex!important;
 }
 
