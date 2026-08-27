@@ -40,9 +40,9 @@
         loadUiPolish();loadCloudWriter();
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260826-5`;document.head.appendChild(link)}});
         const loadCommitments=()=>{
-          if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-3';document.head.appendChild(link)}
+          if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-4';document.head.appendChild(link)}
           if(document.querySelector('script[src^="finance-basic.js"]')){openRequestedReservation();return}
-          const script=document.createElement('script');script.src='finance-basic.js?v=20260827-3';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
+          const script=document.createElement('script');script.src='finance-basic.js?v=20260827-4';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
         };
         const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCommitments();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260826-9';locations.onload=loadCommitments;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260826-8';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
