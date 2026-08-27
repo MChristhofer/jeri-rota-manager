@@ -10,6 +10,7 @@
   let netDrafts=new Map();
   let draftSession='';
   let pendingSubmitId='';
+  let serviceObserver=null;
 
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
@@ -41,7 +42,8 @@
     const output=document.getElementById('reservationServicesNetTotal');
     if(!output)return;
     const total=[...netDrafts.values()].reduce((sum,value)=>sum+number(value),0);
-    output.textContent=money.format(total);
+    const formatted=money.format(total);
+    if(output.textContent!==formatted)output.textContent=formatted;
   }
 
   function ensureNetSummary(){
@@ -78,6 +80,15 @@
     });
   }
 
+  function installServiceObserver(){
+    const draftsHost=document.getElementById('reservationServiceDrafts');
+    if(!draftsHost||serviceObserver)return;
+    serviceObserver=new MutationObserver(()=>{
+      requestAnimationFrame(injectNetFields);
+    });
+    serviceObserver.observe(draftsHost,{childList:true,subtree:true});
+  }
+
   function shiftNetDraftsAfterRemoval(index){
     const next=new Map();
     [...netDrafts.entries()].forEach(([key,value])=>{
@@ -102,7 +113,7 @@
       draftSession='';
       netDrafts=new Map();
       const result=base(id);
-      setTimeout(()=>{loadNetDrafts(id);injectNetFields()},25);
+      setTimeout(()=>{loadNetDrafts(id);installServiceObserver();injectNetFields()},25);
       return result;
     };
     wrapped.__commitmentsWrapped=true;
@@ -291,6 +302,7 @@
   wrapReservationModal();
   wrapRenderAll();
   loadNetDrafts(form.dataset.editingReservationId||'');
+  installServiceObserver();
   injectNetFields();
   renderCommitments();
 })();
