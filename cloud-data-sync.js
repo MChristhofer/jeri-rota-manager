@@ -43,6 +43,7 @@
       people:Number(row.people)||1,
       amount:Number(row.amount)||0,
       paidAmount:Number(row.paid_amount)||0,
+      payments:Number(row.paid_amount)>0?[{id:`cloud-legacy-${row.id}`,amount:Number(row.paid_amount),receivedAt:row.updated_at||row.created_at||null,kind:'payment',source:'supabase_paid_amount'}]:[],
       collectedBy:row.collected_by||'Jeri Rota',
       status:row.status||'Pendente',
       responsible:firstService?.responsible||'Responsável a definir',
@@ -225,6 +226,8 @@
     const phonesByReservation=new Map();phoneRows.forEach(p=>{if(!phonesByReservation.has(p.reservation_id))phonesByReservation.set(p.reservation_id,[]);phonesByReservation.get(p.reservation_id).push(p)});
     const reservationMap=new Map();
     const localReservations=reservationRows.map(row=>{const r=localReservation(row,phonesByReservation.get(row.id)||[],(servicesByReservation.get(row.id)||[])[0]);reservationMap.set(row.id,r);return r});
+    const cachedReservations=read(KEYS.reservations);const cachedByCode=new Map(cachedReservations.filter(r=>r.reservationCode).map(r=>[r.reservationCode,r]));const cachedByCloudId=new Map(cachedReservations.filter(r=>r.cloudId).map(r=>[r.cloudId,r]));
+    localReservations.forEach(reservation=>{const cached=cachedByCloudId.get(reservation.cloudId)||cachedByCode.get(reservation.reservationCode);if(!Array.isArray(cached?.payments)||!cached.payments.length)return;const cachedTotal=cached.payments.reduce((sum,payment)=>sum+(Number(payment.amount)||0),0);if(Math.abs(cachedTotal-reservation.paidAmount)<0.01)reservation.payments=cached.payments});
     const serviceMap=new Map();const localServices=[];
     serviceRows.forEach(row=>{const r=reservationMap.get(row.reservation_id);if(!r)return;const s=localService(row,r.id);serviceMap.set(row.id,s);localServices.push(s)});
     const localRepasses=(repRes.data||[]).filter(x=>!x.reservation_id||validIds.has(x.reservation_id)).map(row=>localRepasse(row,reservationMap,serviceMap));

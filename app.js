@@ -23,7 +23,15 @@ function normalizeReservation(reservation) {
   const hasPaidAmount = Object.prototype.hasOwnProperty.call(reservation, 'paidAmount');
   // Migração dos registros iniciais: o status Confirmada era usado como pagamento integral.
   const legacyPaidAmount = reservation.status === 'Confirmada' ? amount : 0;
-  const paidAmount = clamp(Number(hasPaidAmount ? reservation.paidAmount : legacyPaidAmount) || 0, 0, amount);
+  const requestedPaidAmount = clamp(Number(hasPaidAmount ? reservation.paidAmount : legacyPaidAmount) || 0, 0, amount);
+  let payments = Array.isArray(reservation.payments)
+    ? reservation.payments.map((payment, index) => ({ id: payment.id || `payment-${reservation.id || 'new'}-${index}`, amount: Number(payment.amount) || 0, receivedAt: payment.receivedAt || null, kind: payment.kind || 'payment', source: payment.source || 'reservation' })).filter(payment => payment.amount !== 0)
+    : [];
+  if (!payments.length && requestedPaidAmount > 0) payments = [{ id: `legacy-${reservation.id || Date.now()}`, amount: requestedPaidAmount, receivedAt: reservation.createdAt || null, kind: 'payment', source: 'legacy_paid_amount' }];
+  const paymentsTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const adjustment = Number((requestedPaidAmount - paymentsTotal).toFixed(2));
+  if (adjustment !== 0) payments.push({ id: `adjustment-${Date.now()}`, amount: adjustment, receivedAt: new Date().toISOString(), kind: 'adjustment', source: 'reservation_summary' });
+  const paidAmount = clamp(payments.reduce((sum, payment) => sum + payment.amount, 0), 0, amount);
   const allowedOperations = ['propria', 'recebida', 'enviada'];
   const partnerOperation = allowedOperations.includes(reservation.partnerOperation) ? reservation.partnerOperation : 'propria';
   const netAmount = number(reservation.netAmount);
@@ -35,6 +43,7 @@ function normalizeReservation(reservation) {
     ...reservation,
     amount,
     paidAmount,
+    payments,
     collectedBy,
     people: Math.max(1, Number(reservation.people) || 1),
     responsible: reservation.responsible || 'Responsável a definir',
@@ -407,6 +416,7 @@ reservationForm.addEventListener('submit', event => {
   const partnerOperation = data.partnerOperation || 'propria';
   const netAmount = partnerOperation === 'propria' ? 0 : Math.max(0, Number(data.netAmount) || 0);
   const settledAmount = partnerOperation === 'propria' ? 0 : clamp(Number(data.settledAmount) || 0, 0, netAmount);
+  const currentReservation = editingReservationId ? reservations.find(item => item.id === editingReservationId) : null;
   const reservation = normalizeReservation({
     id: editingReservationId || Date.now(),
     client: data.client.trim(),
@@ -416,6 +426,7 @@ reservationForm.addEventListener('submit', event => {
     people: Math.max(1, Number(data.people)),
     amount,
     paidAmount,
+    payments: currentReservation?.payments || [],
     collectedBy: data.collectedBy || 'Jeri Rota',
     status: data.status,
     responsible: data.responsible.trim() || 'Responsável a definir',
