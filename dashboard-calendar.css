@@ -30,6 +30,18 @@
 .calendar-event small{margin-top:2px;color:#66747c;font-size:8.5px;line-height:1.3}
 .calendar-event-place::before{content:"● ";color:var(--gold);font-size:6px}
 .calendar-empty{padding:34px;text-align:center;color:var(--muted);font-size:12px}
+.calendar-preview-modal{width:min(680px,100%);padding:28px}
+.calendar-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.calendar-preview-heading h2{font-size:28px}.calendar-preview-heading p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.calendar-preview-leg{flex:none;border-radius:99px;padding:6px 10px;background:#e9f2f7;color:var(--navy-2);font-size:9px;font-weight:800;letter-spacing:1px}
+.calendar-preview-leg.volta{background:#fff3d7;color:#8a6418}
+.calendar-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--line)}
+.calendar-detail{min-width:0;padding:13px 14px;background:#fff}
+.calendar-detail span,.calendar-preview-notes span{display:block;margin-bottom:4px;color:#8a959b;font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+.calendar-detail strong{display:block;color:var(--navy);font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.calendar-preview-notes{margin-top:12px;padding:14px;border:1px solid #eadfca;border-radius:11px;background:#fffaf0}
+.calendar-preview-notes p{margin:0;color:#4e5e67;font-size:11px;line-height:1.55;white-space:pre-wrap}
+.calendar-preview-actions{display:flex;justify-content:flex-end;margin-top:18px}
 @media(max-width:760px){
   .reservations-panel .panel-head{align-items:flex-start;flex-direction:column;padding:17px}
   .calendar-controls{width:100%;display:grid;grid-template-columns:auto 32px 1fr 32px}
@@ -40,4 +52,5 @@
   .calendar-day-number{align-content:start;justify-content:center;margin:0;padding-top:3px}.calendar-day-number b{display:none}
   .calendar-day-events{min-width:0}.calendar-event strong{font-size:11px}.calendar-event small{font-size:9px}
   .calendar-grid:has(.has-events) .calendar-empty{display:none}
+  .calendar-preview-modal{padding:24px 17px}.calendar-preview-heading h2{font-size:23px}.calendar-preview-grid{grid-template-columns:1fr}
 }

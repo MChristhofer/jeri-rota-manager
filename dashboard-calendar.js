@@ -8,6 +8,7 @@
   const dateKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   const parseDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12):null};
   const monthLabel=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'});
+  const fullDate=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const shortTime=value=>String(value||'').slice(0,5);
   let visibleMonth=null;
 
@@ -37,7 +38,28 @@
   function eventCard(event){
     const time=event.time?`<span class="calendar-event-time">${escape(event.time)}</span>`:'';
     const returnTime=event.leg==='IDA'&&event.endTime?`<small>Retorno previsto ${escape(event.endTime)}</small>`:'';
-    return `<button type="button" class="calendar-event ${event.leg.toLowerCase()}" data-calendar-reservation="${event.reservationId}" aria-label="Abrir reserva de ${escape(event.client)}"><span class="calendar-event-top"><b>${event.leg}</b>${time}</span><strong>${escape(event.client)}</strong><small>${escape(event.title)}</small>${event.place?`<small class="calendar-event-place">${escape(event.place)}</small>`:''}${returnTime}</button>`;
+    return `<button type="button" class="calendar-event ${event.leg.toLowerCase()}" data-calendar-reservation="${event.reservationId}" data-calendar-service="${event.serviceIndex}" data-calendar-leg="${event.leg}" aria-label="Visualizar reserva de ${escape(event.client)}"><span class="calendar-event-top"><b>${event.leg}</b>${time}</span><strong>${escape(event.client)}</strong><small>${escape(event.title)}</small>${event.place?`<small class="calendar-event-place">${escape(event.place)}</small>`:''}${returnTime}</button>`;
+  }
+
+  function detail(label,value){return value?`<div class="calendar-detail"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`:''}
+  function openReservationPreview(id,serviceIndex,leg){
+    const reservation=reservations.find(item=>String(item.id)===String(id));if(!reservation)return;
+    const linked=readServices().filter(service=>String(service.reservationId)===String(reservation.id));
+    const service=linked[serviceIndex]||{date:reservation.date,title:reservation.service,service:reservation.service,boarding:reservation.boarding||'',responsible:reservation.responsible||''};
+    const meta=decodeMeta(service.responsible);const isReturn=leg==='VOLTA';
+    const serviceDate=parseDate(isReturn?service.returnDate:(service.date||reservation.date));
+    const time=shortTime(isReturn?(service.endTime||meta.endTime||service.startTime||meta.startTime):(service.startTime||service.time||meta.startTime));
+    const boardingPoints=(meta.boardingPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean);
+    const dropoffPoints=(meta.dropoffPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean);
+    const boarding=boardingPoints.join(' / ')||service.boarding||reservation.boarding||'';
+    const dropoff=dropoffPoints.join(' / ')||service.dropoff||'';
+    const title=service.title||service.service||service.tour||reservation.service||'Serviço';
+    let modal=byId('calendarReservationPreview');if(!modal){modal=document.createElement('div');modal.id='calendarReservationPreview';modal.className='modal-backdrop calendar-preview-backdrop';document.body.appendChild(modal)}
+    modal.innerHTML=`<article class="modal calendar-preview-modal" role="dialog" aria-modal="true" aria-labelledby="calendarPreviewTitle"><button type="button" class="close-button" data-close-calendar-preview aria-label="Fechar">×</button><p class="eyebrow">${escape(reservation.reservationCode||'RESERVA')}</p><div class="calendar-preview-heading"><div><h2 id="calendarPreviewTitle">${escape(reservation.client)}</h2><p>Visualização da reserva · sem edição</p></div><span class="calendar-preview-leg ${leg.toLowerCase()}">${leg}</span></div><div class="calendar-preview-grid">${detail('Serviço',title)}${detail('Data',serviceDate?fullDate.format(serviceDate):'')}${detail('Horário',time||'Não informado')}${detail('Passageiros',`${reservation.people||1} pessoa${Number(reservation.people)===1?'':'s'}`)}${detail('Telefone',reservation.phone)}${detail('Status',reservation.status)}${detail('Embarque',boarding)}${detail('Desembarque',dropoff)}</div>${reservation.notes?`<div class="calendar-preview-notes"><span>Observações gerais</span><p>${escape(reservation.notes)}</p></div>`:''}<div class="calendar-preview-actions"><button type="button" class="outline-button" data-close-calendar-preview>Fechar visualização</button></div></article>`;
+    const close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')};
+    modal.querySelectorAll('[data-close-calendar-preview]').forEach(button=>button.addEventListener('click',close));
+    modal.addEventListener('click',event=>{if(event.target===modal)close()},{once:true});
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.querySelector('[data-close-calendar-preview]')?.focus();
   }
 
   function renderCalendar(){
@@ -58,7 +80,7 @@
     panel.querySelector('[data-calendar-prev]')?.addEventListener('click',()=>{visibleMonth=new Date(year,monthIndex-1,1);renderCalendar()});
     panel.querySelector('[data-calendar-next]')?.addEventListener('click',()=>{visibleMonth=new Date(year,monthIndex+1,1);renderCalendar()});
     panel.querySelector('[data-calendar-today]')?.addEventListener('click',()=>{const today=new Date();visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);renderCalendar()});
-    host.querySelectorAll('[data-calendar-reservation]').forEach(button=>button.addEventListener('click',()=>{const id=Number(button.dataset.calendarReservation);if(typeof window.openModal==='function')window.openModal(id);else try{openModal(id)}catch{}}));
+    host.querySelectorAll('[data-calendar-reservation]').forEach(button=>button.addEventListener('click',()=>openReservationPreview(Number(button.dataset.calendarReservation),Number(button.dataset.calendarService),button.dataset.calendarLeg||'IDA')));
   }
 
   const baseRender=window.renderDashboard||renderDashboard;
