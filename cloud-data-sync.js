@@ -23,7 +23,7 @@
     return DEMO_CLIENTS.has(String(r?.client||''))&&legacy>=1&&legacy<=5&&/^JR-0000[1-5]$/.test(code||`JR-0000${legacy}`);
   }
   function stableId(uuid,legacy){
-    const n=Number(legacy);if(Number.isSafeInteger(n)&&n>0&&!([1,2,3,4,5].includes(n)))return n;
+    if(!uuid){const n=Number(legacy);if(Number.isSafeInteger(n)&&n>0)return n}
     let hash=2166136261;for(const ch of String(uuid||'')){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619)}
     return 1000000000+(Math.abs(hash>>>0)%800000000);
   }
@@ -273,10 +273,10 @@
 
   document.addEventListener('click',event=>{
     const button=event.target.closest?.('[data-delete]');if(!button)return;
-    const id=Number(button.dataset.delete);let snapshot=null;try{snapshot=reservations.find(r=>Number(r.id)===id)}catch{snapshot=read(KEYS.reservations).find(r=>Number(r.id)===id)}
+    const id=Number(button.dataset.delete),cloudId=button.dataset.deleteCloud||'';let snapshot=null;try{snapshot=reservations.find(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}catch{snapshot=read(KEYS.reservations).find(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}
     if(!snapshot)return;
     setTimeout(()=>{
-      let exists=false;try{exists=reservations.some(r=>Number(r.id)===id)}catch{exists=read(KEYS.reservations).some(r=>Number(r.id)===id)}
+      let exists=false;try{exists=reservations.some(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}catch{exists=read(KEYS.reservations).some(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}
       if(!exists)deleteReservation(snapshot).catch(error=>console.error('Falha ao excluir reserva no Supabase:',error));
     },250);
   },true);

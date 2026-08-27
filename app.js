@@ -191,7 +191,7 @@ function renderReservations() {
       <td class="reservation-total"><strong>${currency.format(r.amount)}</strong></td>
       <td class="payment-summary"><strong>${currency.format(receivedAmount(r))} <span>de ${currency.format(r.amount)}</span></strong><small>Saldo ${currency.format(balance)} · ${payment.label}</small></td>
       <td><span class="status ${statusClass(r.status)}">${r.status}</span></td>
-      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}">Excluir</button></div></details></td>
+      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}" data-delete-cloud="${escapeHtml(r.cloudId || '')}">Excluir</button></div></details></td>
     </tr>`;
   }).join('');
 }
@@ -455,16 +455,18 @@ reservationForm.addEventListener('submit', event => {
 });
 
 document.getElementById('reservationsTable').addEventListener('click', event => {
-  const editId = Number(event.target.dataset.edit);
+  const actionButton = event.target.closest?.('button');
+  const editId = Number(actionButton?.dataset.edit);
   if (editId) {
     openModal(editId);
     return;
   }
-  const id = Number(event.target.dataset.delete);
+  const id = Number(actionButton?.dataset.delete);
   if (!id) return;
-  const reservation = reservations.find(r => r.id === id);
+  const cloudId = actionButton.dataset.deleteCloud || '';
+  const reservation = reservations.find(r => cloudId ? String(r.cloudId) === cloudId : String(r.id) === String(id));
   if (reservation && confirm(`Excluir a reserva de ${reservation.client}?`)) {
-    reservations = reservations.filter(r => r.id !== id);
+    reservations = reservations.filter(r => r !== reservation);
     saveReservations();
     renderAll();
   }
