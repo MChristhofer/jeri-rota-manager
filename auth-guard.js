@@ -12,10 +12,10 @@
 
     async function loadCloudData(){
       if(!(currentPage==='index.html'||currentPage===''))return;
-      if(!window.JeriCloudData){await new Promise((resolve,reject)=>{const existing=document.querySelector('script[src^="cloud-data-sync.js"]');if(existing){if(window.JeriCloudData){resolve();return}existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return}const script=document.createElement('script');script.src='cloud-data-sync.js?v=20260826-13';script.onload=resolve;script.onerror=reject;document.body.appendChild(script)})}
-      if(window.JeriCloudData?.refresh)await window.JeriCloudData.refresh();
+      if(!window.JeriCloudData){await new Promise((resolve,reject)=>{const existing=document.querySelector('script[src^="cloud-data-sync.js"]');if(existing){if(window.JeriCloudData){resolve();return}existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return}const script=document.createElement('script');script.src='cloud-data-sync.js?v=20260827-20';script.onload=resolve;script.onerror=reject;document.body.appendChild(script)})}
+      if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
     }
-    try{await loadCloudData()}catch(syncError){console.error('Falha ao carregar dados do Supabase:',syncError);const hasCache=(()=>{try{return JSON.parse(localStorage.getItem(reservationCacheKey)||'[]').length>0}catch{return false}})();if(!hasCache)alert('Não foi possível carregar os dados do sistema. Verifique sua conexão e atualize a página.')}
+    try{await loadCloudData()}catch(syncError){console.error('Falha ao carregar dados do Supabase:',syncError);alert('Não foi possível carregar os dados oficiais do Supabase. Verifique a conexão e atualize a página.');location.replace(loginUrl);return}
 
     document.body.style.visibility='visible';
     const button=document.getElementById('logoutSystemButton');const profile=document.querySelector('.profile-mini');
@@ -27,11 +27,12 @@
 
     if(currentPage==='index.html'||currentPage===''){
       const openRequestedReservation=()=>{const id=new URLSearchParams(location.search).get('openReservation');if(!id)return;const tryOpen=()=>{if(typeof window.setSection==='function')window.setSection('reservas');else if(typeof setSection==='function')setSection('reservas');if(typeof window.openModal==='function')window.openModal(Number(id));else if(typeof openModal==='function')openModal(Number(id));else return false;return true};if(!tryOpen()){let attempts=0;const timer=setInterval(()=>{attempts+=1;if(tryOpen()||attempts>20)clearInterval(timer)},100)}};
-      const loadCloudWriter=()=>{if(document.querySelector('script[src^="cloud-write-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-write-sync.js?v=20260827-5';document.body.appendChild(script)};
+      const loadCloudDelete=()=>{if(document.querySelector('script[src^="cloud-delete-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-delete-sync.js?v=20260827-1';document.body.appendChild(script)};
+      const loadCloudWriter=()=>{if(document.querySelector('script[src^="cloud-write-sync.js"]'))return;const script=document.createElement('script');script.src='cloud-write-sync.js?v=20260827-6';script.onload=loadCloudDelete;document.body.appendChild(script)};
       const loadUiPolish=()=>{
         if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="sidebar-motion.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='sidebar-motion.css?v=20260826-1';document.head.appendChild(link)}
-        if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260826-1';document.head.appendChild(link)}
+        if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260827-2';document.head.appendChild(link)}
         if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
       };
 
