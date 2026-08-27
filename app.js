@@ -341,6 +341,7 @@ function updatePartnerPreview() {
 
 function resetForm() {
   reservationForm.reset();
+  delete reservationForm.dataset.editingReservationId;
   reservationForm.querySelector('[name="people"]').value = 2;
   reservationForm.querySelector('[name="collectedBy"]').value = 'Jeri Rota';
   partnerOperationInput.value = 'propria';
@@ -358,9 +359,10 @@ function resetForm() {
 function openModal(id = null) {
   resetForm();
   if (id) {
-    const reservation = reservations.find(item => item.id === id);
+    const reservation = reservations.find(item => String(item.id) === String(id));
     if (!reservation) return;
     editingReservationId = id;
+    reservationForm.dataset.editingReservationId = String(id);
     reservationForm.querySelector('[name="client"]').value = reservation.client;
     reservationForm.querySelector('[name="phone"]').value = reservation.phone;
     reservationForm.querySelector('[name="service"]').value = reservation.service;
@@ -411,14 +413,17 @@ settledAmountInput.addEventListener('input', updatePartnerPreview);
 reservationForm.addEventListener('submit', event => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target).entries());
+  const formEditingId = event.target.dataset.editingReservationId;
+  const activeEditingId = formEditingId ? Number(formEditingId) : editingReservationId;
   const amount = Math.max(0, Number(data.amount));
   const paidAmount = clamp(Number(data.paidAmount) || 0, 0, amount);
   const partnerOperation = data.partnerOperation || 'propria';
   const netAmount = partnerOperation === 'propria' ? 0 : Math.max(0, Number(data.netAmount) || 0);
   const settledAmount = partnerOperation === 'propria' ? 0 : clamp(Number(data.settledAmount) || 0, 0, netAmount);
-  const currentReservation = editingReservationId ? reservations.find(item => item.id === editingReservationId) : null;
+  const currentReservation = activeEditingId ? reservations.find(item => String(item.id) === String(activeEditingId)) : null;
   const reservation = normalizeReservation({
-    id: editingReservationId || Date.now(),
+    ...(currentReservation || {}),
+    id: activeEditingId || Date.now(),
     client: data.client.trim(),
     phone: data.phone.trim(),
     service: data.service.trim(),
@@ -438,8 +443,8 @@ reservationForm.addEventListener('submit', event => {
     settlementDate: partnerOperation === 'propria' ? '' : data.settlementDate
   });
 
-  if (editingReservationId) {
-    reservations = reservations.map(item => item.id === editingReservationId ? reservation : item);
+  if (activeEditingId) {
+    reservations = reservations.map(item => String(item.id) === String(activeEditingId) ? reservation : item);
   } else {
     reservations.push(reservation);
   }
