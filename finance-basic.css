@@ -1,4 +1,4 @@
-/* Compromissos mensais - versão simples */
+/* Compromissos mensais - visão resumida */
 body .main-nav .nav-item[data-section="financeiro"]{display:flex!important}
 .content-section#financeiro{display:none!important}
 .content-section#financeiro.active{display:block!important}
@@ -10,24 +10,46 @@ body .main-nav .nav-item[data-section="financeiro"]{display:flex!important}
 .reservation-payment-item.net-total small{display:block;margin-top:3px;color:#7a746b;font-size:9px;font-weight:400}
 
 .commitments-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px}
+.commitments-head-simple{align-items:flex-start}
 .commitments-head h2{margin:4px 0 5px}
-.commitments-head p:not(.eyebrow){margin:0;color:#64748b;max-width:690px}
-.commitments-filters{display:grid;grid-template-columns:155px minmax(230px,1fr);gap:10px;width:min(520px,100%)}
-.commitments-filters label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#516174;font-size:11px;font-weight:700}
-.commitments-filters input{width:100%;min-width:0;height:42px;border:1px solid #ded6c8;border-radius:11px;background:#fff;padding:0 12px;color:#0d2940;font:inherit;font-size:13px;font-weight:500;box-sizing:border-box;outline:none}
-.commitments-filters input:focus{border-color:#c69b3c;box-shadow:0 0 0 3px rgba(198,155,60,.12)}
+.commitments-head p:not(.eyebrow){margin:0;color:#64748b;max-width:760px}
 
-.commitment-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
-.commitment-cards article{min-width:0;padding:18px;background:#fff;border:1px solid #e7dfd2;border-radius:15px;box-shadow:0 7px 20px rgba(13,41,64,.035)}
-.commitment-cards span{display:block;margin-bottom:7px;color:#637083;font-size:12px;font-weight:700}
-.commitment-cards strong{display:block;color:#0b2b43;font-size:25px;line-height:1.15;letter-spacing:-.4px}
-.commitment-cards small{display:block;margin-top:7px;color:#87919e;font-size:11px}
-.commitment-cards .commitment-cover-card{border-color:rgba(198,155,60,.5);background:linear-gradient(180deg,#fffdf8,#fffaf0)}
-.commitment-cards .commitment-cover-card strong{color:#9a6b0a}
+.commitment-month-overview{margin-top:10px;padding:20px;border:1px solid #e7dfd2;border-radius:18px;background:linear-gradient(180deg,#fff,#fffdf8);box-shadow:0 8px 24px rgba(13,41,64,.035)}
+.commitment-month-overview-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.commitment-month-overview-head h3{margin:3px 0 0;color:#0b2b43;font-size:18px}
+.commitment-month-overview-head small{color:#87919e;font-size:11px}
+.commitment-month-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.commitment-month-card{position:relative;min-width:0;text-align:left;padding:18px;border:1px solid #e7dfd2;border-radius:15px;background:#fff;color:#0d2940;font:inherit;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.commitment-month-card:hover{transform:translateY(-2px);border-color:rgba(198,155,60,.55);box-shadow:0 10px 22px rgba(13,41,64,.08)}
+.commitment-month-card.active{border-color:#c69b3c;background:linear-gradient(180deg,#fffdf8,#fff9eb);box-shadow:0 0 0 2px rgba(198,155,60,.1)}
+.commitment-month-card.active:before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:#c69b3c}
+.commitment-month-name{display:block;margin-bottom:14px;color:#536174;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.commitment-month-card small{display:block;color:#7b8793;font-size:11px;font-weight:600}
+.commitment-month-card strong{display:block;margin:5px 0 12px;color:#9a6b0a;font-size:27px;line-height:1.1;letter-spacing:-.5px}
+.commitment-month-count{display:block;color:#697789;font-size:11px}
+.commitment-month-empty{grid-column:1/-1;padding:30px;text-align:center;border:1px dashed #ded6c8;border-radius:14px;background:#fffdf9}
+.commitment-month-empty strong{display:block;color:#0b2b43}
+.commitment-month-empty p{margin:6px 0 0;color:#7b8793;font-size:12px}
 
-.commitments-panel{margin-top:14px}
+.commitments-panel{margin-top:18px}
+.commitments-detail-panel[hidden]{display:none!important}
 .commitments-panel .panel-head{align-items:flex-start}
 .commitments-panel .panel-head p:not(.eyebrow){margin:4px 0 0;color:#7b8793;font-size:12px}
+.commitments-detail-head{gap:18px}
+.commitment-detail-actions{display:flex;align-items:flex-end;gap:10px}
+.commitment-detail-actions label{display:flex;flex-direction:column;gap:6px;color:#516174;font-size:11px;font-weight:700}
+.commitment-detail-actions input{width:250px;max-width:42vw;height:40px;border:1px solid #ded6c8;border-radius:10px;background:#fff;padding:0 12px;color:#0d2940;font:inherit;font-size:12px;box-sizing:border-box;outline:none}
+.commitment-detail-actions input:focus{border-color:#c69b3c;box-shadow:0 0 0 3px rgba(198,155,60,.12)}
+.commitment-close-detail{height:40px;padding:0 13px;border:1px solid #ded6c8;border-radius:10px;background:#fff;color:#536174;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.commitment-close-detail:hover{border-color:#c69b3c;color:#0d2940}
+
+.commitment-detail-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 18px 16px}
+.commitment-detail-summary>div{padding:13px 14px;border:1px solid #e8e1d6;border-radius:12px;background:#fffdf9}
+.commitment-detail-summary span{display:block;margin-bottom:4px;color:#7b8793;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.commitment-detail-summary strong{display:block;color:#0b2b43;font-size:19px}
+.commitment-detail-summary .company{border-color:rgba(198,155,60,.5);background:#fff9ec}
+.commitment-detail-summary .company strong{color:#9a6b0a}
+
 .commitments-panel table td strong+small,.commitments-panel table td small{display:block;margin-top:3px;color:#7b8793;font-size:11px}
 .commitment-client-value{color:#2f6f87}
 .commitment-company-value{color:#9a6b0a}
@@ -37,13 +59,22 @@ body .main-nav .nav-item[data-section="financeiro"]{display:flex!important}
 .commitments-note{padding:13px 17px;border-top:1px solid #ece6dc;background:#fffdf9;color:#7b8793;font-size:11px;line-height:1.5}
 .finance-legacy-hooks{display:none!important}
 
-@media(max-width:1050px){
-  .commitments-head{align-items:flex-start;flex-direction:column}
-  .commitments-filters{width:100%}
+@media(max-width:1150px){
+  .commitment-month-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .commitment-month-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .commitments-detail-head{flex-direction:column}
+  .commitment-detail-actions{width:100%}
+  .commitment-detail-actions label{flex:1}
+  .commitment-detail-actions input{width:100%;max-width:none}
 }
 @media(max-width:760px){
   .reservation-sale-total{grid-template-columns:1fr!important}
-  .commitments-filters{grid-template-columns:1fr}
-  .commitment-cards{grid-template-columns:1fr}
-  .commitment-cards strong{font-size:22px}
+  .commitment-month-overview{padding:14px}
+  .commitment-month-overview-head{align-items:flex-start;flex-direction:column}
+  .commitment-month-grid{grid-template-columns:1fr}
+  .commitment-month-card strong{font-size:24px}
+  .commitment-detail-summary{grid-template-columns:1fr;padding:0 12px 14px}
+  .commitment-detail-actions{align-items:stretch;flex-direction:column}
 }
