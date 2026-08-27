@@ -38,16 +38,17 @@
 
       const initReservationModules=()=>{
         loadUiPolish();loadCloudWriter();
-        ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260826-5`;document.head.appendChild(link)}});
+        ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260827-6`;document.head.appendChild(link)}});
         const loadCommitments=()=>{
           if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-4';document.head.appendChild(link)}
           if(document.querySelector('script[src^="finance-basic.js"]')){openRequestedReservation();return}
           const script=document.createElement('script');script.src='finance-basic.js?v=20260827-4';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
         };
-        const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCommitments();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260826-9';locations.onload=loadCommitments;document.body.appendChild(locations)};
+        const loadCatalog=()=>{if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadCommitments();return}const catalog=document.createElement('script');catalog.src='reservation-service-catalog.js?v=20260827-2';catalog.onload=loadCommitments;catalog.onerror=()=>{console.error('Falha ao carregar catálogo de serviços.');loadCommitments()};document.body.appendChild(catalog)};
+        const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCatalog();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260826-9';locations.onload=loadCatalog;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260826-8';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
         const releaseCompatibilityRequired=()=>{const form=document.getElementById('reservationForm');['service','date','boarding','amount'].forEach(name=>form?.elements[name]?.removeAttribute('required'))};
-        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260826-11';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
+        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260827-12';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
       };
       if(document.readyState==='complete')initReservationModules();else window.addEventListener('load',initReservationModules,{once:true});
     }
