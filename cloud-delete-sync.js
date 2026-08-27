@@ -15,6 +15,15 @@
     if(error)throw error;
   }
 
+  async function restoreFromCloud(message){
+    try{
+      if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+      try{if(typeof getReservations==='function')reservations=getReservations();if(typeof renderAll==='function')renderAll()}catch{}
+    }finally{
+      if(message)alert(message);
+    }
+  }
+
   document.addEventListener('click',event=>{
     const deleteButton=event.target.closest?.('[data-delete]');
     if(deleteButton){
@@ -33,7 +42,7 @@
           if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
         }catch(error){
           console.error('Falha ao excluir reserva do Supabase:',error);
-          alert('A reserva foi removida deste navegador, mas não foi possível removê-la do banco. Atualize a página e tente novamente.');
+          await restoreFromCloud('Não foi possível excluir a reserva no Supabase. A lista foi restaurada com os dados oficiais do banco.');
         }
       },0);
       return;
@@ -50,10 +59,10 @@
         if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
       }catch(error){
         console.error('Falha ao excluir todas as reservas do Supabase:',error);
-        alert('As reservas foram removidas deste navegador, mas houve falha ao limpar o banco. Atualize a página antes de continuar.');
+        await restoreFromCloud('Não foi possível concluir a exclusão no Supabase. A lista foi restaurada com os dados oficiais do banco.');
       }
     },0);
-  });
+  },true);
 
   window.JeriCloudDelete={deleteReservation:deleteCloudReservation};
 })();
