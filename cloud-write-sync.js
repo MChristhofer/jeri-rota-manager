@@ -75,8 +75,17 @@
     if(!r)return;
     const row=rowReservation(r);
     let result;
-    if(row.code){result=await client.from('reservations').upsert(row,{onConflict:'code'}).select('id,code').single()}
-    else{delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
+    if(r.cloudId){
+      result=await client.from('reservations').update(row).eq('id',r.cloudId).select('id,code').single();
+    }else if(row.code){
+      const existing=await client.from('reservations').select('id,code').eq('code',row.code).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+      if(existing.error)throw existing.error;
+      result=existing.data
+        ?await client.from('reservations').update(row).eq('id',existing.data.id).select('id,code').single()
+        :await client.from('reservations').insert(row).select('id,code').single();
+    }else{
+      delete row.code;result=await client.from('reservations').insert(row).select('id,code').single();
+    }
     if(result.error)throw result.error;
 
     r.cloudId=result.data.id;

@@ -175,8 +175,15 @@
 
   async function uploadLocalReservation(r,localServices){
     let result;
-    if(r.reservationCode){result=await client.from('reservations').upsert(reservationRow(r),{onConflict:'code'}).select('id,code').single()}
-    else{const row=reservationRow(r);delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
+    const row=reservationRow(r);
+    if(r.cloudId){result=await client.from('reservations').update(row).eq('id',r.cloudId).select('id,code').single()}
+    else if(r.reservationCode){
+      const existing=await client.from('reservations').select('id,code').eq('code',r.reservationCode).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+      if(existing.error)throw existing.error;
+      result=existing.data
+        ?await client.from('reservations').update(row).eq('id',existing.data.id).select('id,code').single()
+        :await client.from('reservations').insert(row).select('id,code').single();
+    }else{delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
     if(result.error)throw result.error;
     r.cloudId=result.data.id;r.reservationCode=result.data.code||r.reservationCode||'';
     const svcs=localServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
@@ -218,7 +225,12 @@
       client.from('repasses').select('*').order('created_at',{ascending:true})
     ]);
     for(const result of [rRes,sRes,pRes,repRes])if(result.error)throw result.error;
-    const reservationRows=(rRes.data||[]).filter(r=>!isDemoReservation(r));
+    const uniqueRows=new Map();
+    (rRes.data||[]).filter(r=>!isDemoReservation(r)).forEach(row=>{
+      const key=row.code||row.id;const current=uniqueRows.get(key);
+      if(!current||String(row.updated_at||row.created_at||'')>String(current.updated_at||current.created_at||''))uniqueRows.set(key,row);
+    });
+    const reservationRows=[...uniqueRows.values()];
     const validIds=new Set(reservationRows.map(r=>r.id));
     const serviceRows=(sRes.data||[]).filter(s=>validIds.has(s.reservation_id));
     const phoneRows=(pRes.data||[]).filter(p=>validIds.has(p.reservation_id));
