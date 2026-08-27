@@ -3,6 +3,7 @@
   const SERVICES_KEY='jeri-rota-manager-reservation-services-v1';
   const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
   const dateFmt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const monthFmt=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'});
   const form=document.getElementById('reservationForm');
   const financeSection=document.getElementById('financeiro');
   if(!form||!financeSection)return;
@@ -11,16 +12,22 @@
   let draftSession='';
   let pendingSubmitId='';
   let serviceObserver=null;
+  let selectedMonth=null;
 
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
   const number=value=>Math.max(0,Number(String(value??0).replace(',','.'))||0);
   const escape=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const monthOf=value=>String(value||'').slice(0,7);
-  const currentMonth=()=>new Date().toISOString().slice(0,7);
-  const isPaid=status=>/^(pago|quitado|repassado)$/i.test(String(status||'').trim());
+  const isPaid=status=>/^(pago|quitado|repassado|realizado)$/i.test(String(status||'').trim());
   const serviceName=service=>service.title||service.service||service.tour||'Serviço';
   const formatDate=value=>{if(!value)return'—';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):dateFmt.format(date)};
+  const formatMonth=value=>{
+    const [year,month]=String(value||'').split('-').map(Number);
+    if(!year||!month)return'Período';
+    const label=monthFmt.format(new Date(year,month-1,1,12));
+    return label.charAt(0).toUpperCase()+label.slice(1);
+  };
 
   function reservationServices(id){
     return read(SERVICES_KEY)
@@ -33,9 +40,7 @@
     if(session===draftSession)return;
     draftSession=session;
     netDrafts=new Map();
-    if(id){
-      reservationServices(id).forEach((service,index)=>netDrafts.set(index,number(service.repasseAmount??service.netTotal)));
-    }
+    if(id){reservationServices(id).forEach((service,index)=>netDrafts.set(index,number(service.repasseAmount??service.netTotal)))}
   }
 
   function updateNetSummary(){
@@ -83,9 +88,7 @@
   function installServiceObserver(){
     const draftsHost=document.getElementById('reservationServiceDrafts');
     if(!draftsHost||serviceObserver)return;
-    serviceObserver=new MutationObserver(()=>{
-      requestAnimationFrame(injectNetFields);
-    });
+    serviceObserver=new MutationObserver(()=>requestAnimationFrame(injectNetFields));
     serviceObserver.observe(draftsHost,{childList:true,subtree:true});
   }
 
@@ -101,9 +104,7 @@
   document.addEventListener('click',event=>{
     const removeService=event.target.closest?.('.remove-service-draft');
     if(removeService)shiftNetDraftsAfterRemoval(Number(removeService.dataset.index)||0);
-    if(event.target.closest?.('#addReservationService,.remove-service-draft,.add-location-point,.remove-location-point')){
-      setTimeout(injectNetFields,0);
-    }
+    if(event.target.closest?.('#addReservationService,.remove-service-draft,.add-location-point,.remove-location-point'))setTimeout(injectNetFields,0);
   },true);
 
   function wrapReservationModal(){
@@ -131,9 +132,7 @@
 
     const services=read(SERVICES_KEY);
     const indexes=[];
-    services.forEach((service,arrayIndex)=>{
-      if(String(service.reservationId)===String(target.id))indexes.push(arrayIndex);
-    });
+    services.forEach((service,arrayIndex)=>{if(String(service.reservationId)===String(target.id))indexes.push(arrayIndex)});
     indexes.sort((a,b)=>(Number(services[a].sortOrder)||0)-(Number(services[b].sortOrder)||0));
 
     indexes.forEach((arrayIndex,index)=>{
@@ -158,28 +157,46 @@
 
   function setupFinanceMarkup(){
     financeSection.innerHTML=`
-      <div class="commitments-head">
+      <div class="commitments-head commitments-head-simple">
         <div>
           <p class="eyebrow">CONTROLE MENSAL</p>
           <h2>Compromissos</h2>
-          <p>Somente o que ainda falta pagar, usando o saldo dos clientes para reduzir a necessidade de caixa.</p>
-        </div>
-        <div class="commitments-filters">
-          <label><span>Mês</span><input id="commitmentMonth" type="month" value="${currentMonth()}"></label>
-          <label><span>Buscar</span><input id="commitmentSearch" type="search" placeholder="Cliente, reserva ou serviço"></label>
+          <p>Veja rapidamente quanto a empresa precisa cobrir em cada mês. Clique em um mês para abrir os detalhes.</p>
         </div>
       </div>
 
-      <div class="commitment-cards">
-        <article><span>NET ainda a pagar</span><strong id="commitmentNetTotal">R$ 0,00</strong><small>Compromissos pendentes do mês</small></article>
-        <article><span>Clientes ainda vão pagar</span><strong id="commitmentClientTotal">R$ 0,00</strong><small>Saldo alocado para cobrir estes NETs</small></article>
-        <article class="commitment-cover-card"><span>Empresa precisa cobrir</span><strong id="commitmentCompanyTotal">R$ 0,00</strong><small>NET menos saldo esperado dos clientes</small></article>
-      </div>
-
-      <article class="panel commitments-panel">
-        <div class="panel-head">
-          <div><p class="eyebrow">PENDÊNCIAS</p><h3>Compromissos do mês</h3><p>Ao marcar um NET como pago, ele sai desta lista e deixa de compor o total pendente.</p></div>
+      <section class="commitment-month-overview" aria-labelledby="commitmentMonthOverviewTitle">
+        <div class="commitment-month-overview-head">
+          <div>
+            <p class="eyebrow">VISÃO RÁPIDA</p>
+            <h3 id="commitmentMonthOverviewTitle">Quanto precisa sair do caixa</h3>
+          </div>
+          <small>Somente meses com NET pendente</small>
         </div>
+        <div id="commitmentMonthCards" class="commitment-month-grid"></div>
+      </section>
+
+      <article id="commitmentDetailPanel" class="panel commitments-panel commitments-detail-panel" hidden>
+        <div class="panel-head commitments-detail-head">
+          <div>
+            <p class="eyebrow">DETALHAMENTO</p>
+            <h3 id="commitmentDetailTitle">Compromissos do mês</h3>
+            <p>Os valores abaixo formam o total que você viu no card do mês.</p>
+          </div>
+          <div class="commitment-detail-actions">
+            <label><span>Buscar neste mês</span><input id="commitmentSearch" type="search" placeholder="Cliente, reserva ou serviço"></label>
+            <button type="button" id="commitmentCloseDetail" class="commitment-close-detail">Ocultar detalhes</button>
+          </div>
+        </div>
+
+        <input id="commitmentMonth" type="hidden" value="">
+
+        <div class="commitment-detail-summary">
+          <div><span>NET pendente</span><strong id="commitmentNetTotal">R$ 0,00</strong></div>
+          <div><span>Clientes ainda pagam</span><strong id="commitmentClientTotal">R$ 0,00</strong></div>
+          <div class="company"><span>Empresa cobre</span><strong id="commitmentCompanyTotal">R$ 0,00</strong></div>
+        </div>
+
         <div class="table-wrap">
           <table>
             <thead><tr><th>Data</th><th>Reserva / Cliente</th><th>Serviço</th><th>NET a pagar</th><th>Cliente ainda paga</th><th>Empresa cobre</th><th></th></tr></thead>
@@ -191,7 +208,19 @@
 
       <div class="finance-legacy-hooks" aria-hidden="true"><strong id="financeReceived"></strong><strong id="financePending"></strong><strong id="financeTotal"></strong><table><tbody id="financeTable"></tbody></table></div>`;
 
-    document.getElementById('commitmentMonth')?.addEventListener('change',renderCommitments);
+    document.getElementById('commitmentMonthCards')?.addEventListener('click',event=>{
+      const card=event.target.closest?.('[data-commitment-month]');
+      if(!card)return;
+      selectedMonth=card.dataset.commitmentMonth;
+      const search=document.getElementById('commitmentSearch');
+      if(search)search.value='';
+      renderCommitments();
+      setTimeout(()=>document.getElementById('commitmentDetailPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),40);
+    });
+    document.getElementById('commitmentCloseDetail')?.addEventListener('click',()=>{
+      selectedMonth=null;
+      renderCommitments();
+    });
     document.getElementById('commitmentSearch')?.addEventListener('input',renderCommitments);
     document.getElementById('commitmentTable')?.addEventListener('click',handlePayAction);
   }
@@ -229,12 +258,57 @@
     return rows;
   }
 
+  function groupByMonth(rows){
+    const groups=new Map();
+    rows.forEach(row=>{
+      const month=monthOf(row.service.date);
+      if(!/^\d{4}-\d{2}$/.test(month))return;
+      if(!groups.has(month))groups.set(month,{month,rows:[],net:0,client:0,company:0});
+      const group=groups.get(month);
+      group.rows.push(row);
+      group.net+=row.net;
+      group.client+=row.clientContribution;
+      group.company+=row.companyCover;
+    });
+    return [...groups.values()].sort((a,b)=>a.month.localeCompare(b.month));
+  }
+
+  function renderMonthCards(groups){
+    const host=document.getElementById('commitmentMonthCards');
+    if(!host)return;
+    if(!groups.length){
+      host.innerHTML='<div class="commitment-month-empty"><strong>Nenhum NET pendente.</strong><p>Quando houver compromissos nas reservas, os meses aparecerão aqui automaticamente.</p></div>';
+      return;
+    }
+    host.innerHTML=groups.map(group=>`
+      <button type="button" class="commitment-month-card${selectedMonth===group.month?' active':''}" data-commitment-month="${escape(group.month)}" aria-expanded="${selectedMonth===group.month?'true':'false'}">
+        <span class="commitment-month-name">${escape(formatMonth(group.month))}</span>
+        <small>Empresa precisa cobrir</small>
+        <strong>${money.format(group.company)}</strong>
+        <span class="commitment-month-count">${group.rows.length} compromisso${group.rows.length===1?'':'s'} pendente${group.rows.length===1?'':'s'}</span>
+      </button>`).join('');
+  }
+
   function renderCommitments(){
-    if(!document.getElementById('commitmentTable'))return;
-    const month=document.getElementById('commitmentMonth')?.value||currentMonth();
-    const query=(document.getElementById('commitmentSearch')?.value||'').trim().toLowerCase();
     const allRows=buildPendingCommitments();
-    const monthRows=allRows.filter(row=>monthOf(row.service.date)===month);
+    const groups=groupByMonth(allRows);
+    renderMonthCards(groups);
+
+    const panel=document.getElementById('commitmentDetailPanel');
+    if(!panel)return;
+    if(!selectedMonth){
+      panel.hidden=true;
+      return;
+    }
+
+    panel.hidden=false;
+    const hiddenMonth=document.getElementById('commitmentMonth');
+    if(hiddenMonth)hiddenMonth.value=selectedMonth;
+    const title=document.getElementById('commitmentDetailTitle');
+    if(title)title.textContent=`Compromissos de ${formatMonth(selectedMonth)}`;
+
+    const monthRows=allRows.filter(row=>monthOf(row.service.date)===selectedMonth);
+    const query=(document.getElementById('commitmentSearch')?.value||'').trim().toLowerCase();
     const visibleRows=monthRows.filter(row=>{
       if(!query)return true;
       return `${row.reservation.reservationCode||''} ${row.reservation.client||''} ${serviceName(row.service)}`.toLowerCase().includes(query);
@@ -259,7 +333,7 @@
         <td><strong class="commitment-company-value">${money.format(row.companyCover)}</strong></td>
         <td class="row-actions"><button type="button" class="commitment-paid-button" data-commitment-service="${escape(serviceKey)}" data-commitment-reservation="${escape(row.service.reservationId)}">Marcar como pago</button></td>
       </tr>`;
-    }).join(''):`<tr><td colspan="7"><div class="empty-state"><strong>Nenhum compromisso pendente neste mês.</strong><p>Os NETs informados nas reservas aparecerão aqui automaticamente.</p></div></td></tr>`;
+    }).join(''):`<tr><td colspan="7"><div class="empty-state"><strong>Nenhum compromisso pendente neste mês.</strong><p>O mês pode ter sido totalmente pago ou o filtro não encontrou resultados.</p></div></td></tr>`;
   }
 
   async function handlePayAction(event){
