@@ -38,10 +38,10 @@
       const initReservationModules=()=>{
         loadUiPolish();loadCloudWriter();
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260826-5`;document.head.appendChild(link)}});
-        const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){openRequestedReservation();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260825-4';locations.onload=openRequestedReservation;document.body.appendChild(locations)};
+        const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){openRequestedReservation();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260826-9';locations.onload=openRequestedReservation;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260826-8';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
         const releaseCompatibilityRequired=()=>{const form=document.getElementById('reservationForm');['service','date','boarding','amount'].forEach(name=>form?.elements[name]?.removeAttribute('required'))};
-        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260826-6';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
+        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260826-9';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
       };
       if(document.readyState==='complete')initReservationModules();else window.addEventListener('load',initReservationModules,{once:true});
     }
