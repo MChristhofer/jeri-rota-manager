@@ -81,6 +81,39 @@ function cashReceivedByJeri(reservation) { return reservation.collectedBy === 'J
 function remainingAmount(reservation) { return Math.max(0, Number(reservation.amount || 0) - receivedAmount(reservation)); }
 function isPartnerReservation(reservation) { return reservation.partnerOperation !== 'propria' && Boolean(reservation.partner) && Number(reservation.netAmount) > 0; }
 function settlementRemaining(reservation) { return Math.max(0, Number(reservation.netAmount || 0) - Number(reservation.settledAmount || 0)); }
+function reservationMessage(reservation) {
+  const lines = [
+    '*RESERVA JERI ROTA*', '',
+    `Cliente: ${reservation.client}`,
+    `Telefone: ${reservation.phone}`,
+    `Serviço: ${reservation.service}`,
+    `Data: ${dateFormat.format(parseLocalDate(reservation.date))}`,
+    `Passageiros: ${reservation.people}`,
+    `Embarque: ${reservation.boarding || 'A definir'}`,
+    `Responsável: ${reservation.responsible || 'A definir'}`,
+    `Valor total: ${currency.format(reservation.amount)}`,
+    `Valor pago: ${currency.format(receivedAmount(reservation))}`,
+    `Saldo: ${currency.format(remainingAmount(reservation))}`
+  ];
+  if (reservation.notes) lines.push(`Observações: ${reservation.notes}`);
+  return lines.join('\n');
+}
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  let copied = false;
+  try { copied = document.execCommand('copy'); } catch {}
+  textarea.remove();
+  return copied;
+}
 function operationLabel(reservation) {
   if (reservation.partnerOperation === 'recebida') return 'Parceira vendeu · Jeri Rota executa';
   if (reservation.partnerOperation === 'enviada') return 'Jeri Rota vendeu · Parceira executa';
@@ -170,7 +203,7 @@ function renderReservations() {
       <td><strong class="balance-value">${currency.format(balance)}</strong><small>${balance ? 'pendente do cliente' : 'quitado'}</small></td>
       <td><span class="status ${payment.className}">${payment.label}</span></td>
       <td><span class="status ${statusClass(r.status)}">${r.status}</span></td>
-      <td class="row-actions"><button class="edit-button" data-edit="${r.id}">Editar</button><button class="delete-button" data-delete="${r.id}" aria-label="Excluir reserva">Excluir</button></td>
+      <td class="row-actions"><button class="share-button" data-copy="${r.id}">Copiar</button><button class="whatsapp-button" data-whatsapp="${r.id}">WhatsApp</button><button class="edit-button" data-edit="${r.id}">Editar</button><button class="delete-button" data-delete="${r.id}" aria-label="Excluir reserva">Excluir</button></td>
     </tr>`;
   }).join('');
 }
@@ -422,6 +455,25 @@ reservationForm.addEventListener('submit', event => {
 });
 
 document.getElementById('reservationsTable').addEventListener('click', event => {
+  const copyId = Number(event.target.dataset.copy);
+  const whatsappId = Number(event.target.dataset.whatsapp);
+  const shareId = copyId || whatsappId;
+  if (shareId) {
+    const reservation = reservations.find(item => item.id === shareId);
+    if (!reservation) return;
+    const message = reservationMessage(reservation);
+    if (copyId) {
+      const originalLabel = event.target.textContent;
+      copyText(message).then(copied => {
+        event.target.textContent = copied ? 'Copiado!' : 'Não foi possível copiar';
+        setTimeout(() => { event.target.textContent = originalLabel; }, 1800);
+      });
+      return;
+    }
+    copyText(message);
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    return;
+  }
   const editId = Number(event.target.dataset.edit);
   if (editId) {
     openModal(editId);

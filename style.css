@@ -92,6 +92,9 @@ h3 { color: var(--navy); font-size: 18px; margin-bottom: 0; }
 .status.sem-pagamento { color: var(--coral); background: var(--coral-soft); }.status.sem-pagamento::before { background: var(--coral); }
 .status.sem-valor { color: #66747b; background: #edf1f2; }.status.sem-valor::before { background: #8d9ba0; }
 .row-actions { white-space: nowrap; }
+.share-button, .whatsapp-button { border: 1px solid #dcdedb; border-radius: 9px; padding: 7px 9px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-right: 6px; }
+.share-button { background: #fff; color: var(--navy-2); }
+.whatsapp-button { background: #eaf8ef; border-color: #9dcfad; color: #176b3d; }
 .edit-button { color: var(--navy-2); background: transparent; border: 0; font-size: 13px; margin-right: 8px; }
 .edit-button:hover, .delete-button:hover { text-decoration: underline; }
 
