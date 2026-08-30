@@ -35,7 +35,7 @@
         if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260830-3';document.head.appendChild(link)}
         if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
       };
-      const loadServicesManager=()=>{if(document.querySelector('script[src^="manager-services-section.js"]'))return;const script=document.createElement('script');script.src='manager-services-section.js?v=20260830-2';document.body.appendChild(script)};
+      const loadServicesManager=()=>{if(document.querySelector('script[src^="manager-services-section.js"]'))return;const script=document.createElement('script');script.src='manager-services-section.js?v=20260830-3';document.body.appendChild(script)};
 
       const initReservationModules=()=>{
         loadUiPolish();loadCloudWriter();loadServicesManager();
@@ -45,7 +45,7 @@
           if(document.querySelector('script[src^="finance-basic.js"]')){openRequestedReservation();return}
           const script=document.createElement('script');script.src='finance-basic.js?v=20260830-1';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
         };
-        const loadCatalog=()=>{if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadCommitments();return}const catalog=document.createElement('script');catalog.src='reservation-service-catalog.js?v=20260830-1';catalog.onload=loadCommitments;catalog.onerror=()=>{console.error('Falha ao carregar catálogo de serviços.');loadCommitments()};document.body.appendChild(catalog)};
+        const loadCatalog=()=>{if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadCommitments();return}const catalog=document.createElement('script');catalog.src='reservation-service-catalog.js?v=20260830-2';catalog.onload=loadCommitments;catalog.onerror=()=>{console.error('Falha ao carregar catálogo de serviços.');loadCommitments()};document.body.appendChild(catalog)};
         const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCatalog();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260830-10';locations.onload=loadCatalog;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260830-1';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
         const releaseCompatibilityRequired=()=>{const form=document.getElementById('reservationForm');['service','date','boarding','amount'].forEach(name=>form?.elements[name]?.removeAttribute('required'))};
