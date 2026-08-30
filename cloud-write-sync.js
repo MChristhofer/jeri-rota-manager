@@ -6,6 +6,13 @@
   const RESERVATIONS_KEY='jeri-rota-manager-reservas-v1';
   const SERVICES_KEY='jeri-rota-manager-reservation-services-v1';
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
+  const normalizeRepasseStatus=value=>{
+    const status=String(value||'').trim().toLowerCase();
+    if(['pago','quitado','realizado'].includes(status))return'Realizado';
+    if(status==='repassado')return'Repassado';
+    if(status==='cancelado')return'Cancelado';
+    return'Aguardando repasse';
+  };
 
   const rowReservation=r=>({
     code:r.reservationCode||null,
@@ -41,7 +48,7 @@
     apartment:s.apartment||null,
     responsible:s.responsible||null,
     repasse_amount:s.repasseAmount??null,
-    repasse_status:s.repasseStatus||'Aguardando repasse',
+    repasse_status:normalizeRepasseStatus(s.repasseStatus),
     service_catalog_id:s.serviceCatalogId||null,
     pricing_basis:s.pricingBasis||null,
     net_unit:s.netUnit??null,
@@ -59,7 +66,7 @@
     return_service:s.returnService||null,
     return_route:s.returnRoute||null,
     return_repasse_amount:s.returnRepasseAmount??null,
-    return_repasse_status:s.returnRepasseStatus||'Aguardando repasse',
+    return_repasse_status:normalizeRepasseStatus(s.returnRepasseStatus),
     execution_mode:s.executionMode||'undecided',
     execution_partner_name:s.executionPartnerName||null,
     execution_partner_phone:s.executionPartnerPhone||null,
@@ -75,15 +82,25 @@
     if(!r)return;
     const row=rowReservation(r);
     let result;
-    if(row.code){result=await client.from('reservations').upsert(row,{onConflict:'code'}).select('id,code').single()}
-    else{delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
+    if(r.cloudId){
+      result=await client.from('reservations').update(row).eq('id',r.cloudId).select('id,code').single();
+    }else if(row.code){
+      const existing=await client.from('reservations').select('id,code').eq('code',row.code).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+      if(existing.error)throw existing.error;
+      result=existing.data
+        ?await client.from('reservations').update(row).eq('id',existing.data.id).select('id,code').single()
+        :await client.from('reservations').insert(row).select('id,code').single();
+    }else{
+      delete row.code;result=await client.from('reservations').insert(row).select('id,code').single();
+    }
     if(result.error)throw result.error;
 
     r.cloudId=result.data.id;
     if(result.data.code)r.reservationCode=result.data.code;
 
-    const allServices=read(SERVICES_KEY);
-    const localServices=allServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    const allServices=read(SERVICES_KEY);const seenServices=new Set();
+    const localServices=allServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).filter(service=>{const key=[service.title,service.date,service.returnDate,service.tour,service.service,service.route,service.boarding,service.dropoff,service.apartment,service.responsible,Number(service.saleTotal)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');if(seenServices.has(key))return false;seenServices.add(key);return true});
+    if(localServices.length){r.amount=localServices.reduce((sum,service)=>sum+(Number(service.saleTotal)||0),0);r.paidAmount=Math.min(Number(r.paidAmount)||0,r.amount);row.amount=r.amount;row.paid_amount=r.paidAmount}
     const sourceKeys=[];
     for(let i=0;i<localServices.length;i++){
       const payload=rowService(localServices[i],result.data.id,i);
@@ -92,6 +109,8 @@
       if(saved.error)throw saved.error;
       localServices[i].cloudId=saved.data.id;
       localServices[i].sourceKey=saved.data.source_key;
+      localServices[i].repasseStatus=payload.repasse_status;
+      if(localServices[i].returnRepasseStatus!==undefined)localServices[i].returnRepasseStatus=payload.return_repasse_status;
     }
 
     const {data:cloudServices,error:cloudServicesError}=await client.from('reservation_services').select('id,source_key').eq('reservation_id',result.data.id);
@@ -115,7 +134,7 @@
     const ri=currentReservations.findIndex(x=>String(x.id)===String(r.id));
     if(ri>=0){currentReservations[ri]={...currentReservations[ri],cloudId:r.cloudId,reservationCode:r.reservationCode};localStorage.setItem(RESERVATIONS_KEY,JSON.stringify(currentReservations))}
     const currentServices=read(SERVICES_KEY);
-    localServices.forEach(local=>{const i=currentServices.findIndex(x=>String(x.id)===String(local.id));if(i>=0)currentServices[i]={...currentServices[i],cloudId:local.cloudId,sourceKey:local.sourceKey}});
+    localServices.forEach(local=>{const i=currentServices.findIndex(x=>String(x.id)===String(local.id));if(i>=0)currentServices[i]={...currentServices[i],cloudId:local.cloudId,sourceKey:local.sourceKey,repasseStatus:local.repasseStatus,returnRepasseStatus:local.returnRepasseStatus}});
     localStorage.setItem(SERVICES_KEY,JSON.stringify(currentServices));
   }
 
@@ -127,20 +146,24 @@
     return list[list.length-1]||null;
   }
 
-  async function reconcileAll(){
-    const list=read(RESERVATIONS_KEY);
-    for(const reservation of list)await syncReservation(reservation);
+  async function restoreOfficialCloudState(){
     if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+    try{if(typeof getReservations==='function')reservations=getReservations();if(typeof renderAll==='function')renderAll()}catch{}
   }
 
   form.addEventListener('submit',()=>{
     setTimeout(async()=>{
       const reservation=findJustSaved();if(!reservation)return;
-      try{await syncReservation(reservation);if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache()}
-      catch(error){console.error('Falha ao salvar reserva no Supabase:',error);alert('A reserva ficou salva neste navegador, mas não foi possível sincronizar com o banco. Verifique a conexão antes de fechar o sistema.')}
+      try{
+        await syncReservation(reservation);
+        if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+      }catch(error){
+        console.error('Falha ao salvar reserva no Supabase:',error);
+        try{await restoreOfficialCloudState()}catch(refreshError){console.error('Falha ao restaurar dados oficiais:',refreshError)}
+        alert('Não foi possível salvar esta alteração no Supabase. Os dados oficiais do banco foram restaurados. Verifique a conexão e tente novamente.');
+      }
     },900);
   });
 
-  setTimeout(()=>reconcileAll().catch(error=>console.error('Falha na reconciliação inicial com o Supabase:',error)),2500);
-  window.JeriCloudWrite={syncReservation,reconcileAll};
+  window.JeriCloudWrite={syncReservation,restoreOfficialCloudState};
 })();

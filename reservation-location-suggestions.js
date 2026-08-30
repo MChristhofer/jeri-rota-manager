@@ -62,8 +62,8 @@
 
   function enhanceAll(){
     renderDatalist();
-    document.querySelectorAll('#reservationServiceDrafts [data-field="boarding"]').forEach(input=>enhanceInput(input,'boarding'));
-    document.querySelectorAll('#reservationServiceDrafts [data-field="dropoff"]').forEach(input=>enhanceInput(input,'dropoff'));
+    document.querySelectorAll('#reservationServiceDrafts [data-point-kind="boarding"] [data-point-field="location"]').forEach(input=>enhanceInput(input,'boarding'));
+    document.querySelectorAll('#reservationServiceDrafts [data-point-kind="dropoff"] [data-point-field="location"]').forEach(input=>enhanceInput(input,'dropoff'));
   }
 
   async function loadCloudLocations(){

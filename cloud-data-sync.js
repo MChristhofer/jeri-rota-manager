@@ -14,6 +14,8 @@
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
   const num=value=>value===null||value===undefined||value===''?null:Number(value);
   const isoDate=value=>value?String(value).slice(0,10):'';
+  const reservationKey=row=>{const code=String(row?.code||row?.reservationCode||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code)return code;if(row?.legacy_id!==null&&row?.legacy_id!==undefined&&row?.legacy_id!=='')return `legacy:${row.legacy_id}`;return `id:${row?.id||''}`};
+  const serviceSignature=row=>[row.title,row.service_date,row.return_date,row.tour,row.service,row.route,row.boarding,row.dropoff,row.apartment,row.responsible,Number(row.sale_total)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');
 
   function isDemoReservation(r){
     const legacy=Number(r?.legacy_id??r?.id);
@@ -21,7 +23,7 @@
     return DEMO_CLIENTS.has(String(r?.client||''))&&legacy>=1&&legacy<=5&&/^JR-0000[1-5]$/.test(code||`JR-0000${legacy}`);
   }
   function stableId(uuid,legacy){
-    const n=Number(legacy);if(Number.isSafeInteger(n)&&n>0&&!([1,2,3,4,5].includes(n)))return n;
+    if(!uuid){const n=Number(legacy);if(Number.isSafeInteger(n)&&n>0)return n}
     let hash=2166136261;for(const ch of String(uuid||'')){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619)}
     return 1000000000+(Math.abs(hash>>>0)%800000000);
   }
@@ -43,6 +45,7 @@
       people:Number(row.people)||1,
       amount:Number(row.amount)||0,
       paidAmount:Number(row.paid_amount)||0,
+      payments:Number(row.paid_amount)>0?[{id:`cloud-legacy-${row.id}`,amount:Number(row.paid_amount),receivedAt:row.updated_at||row.created_at||null,kind:'payment',source:'supabase_paid_amount'}]:[],
       collectedBy:row.collected_by||'Jeri Rota',
       status:row.status||'Pendente',
       responsible:firstService?.responsible||'Responsável a definir',
@@ -174,8 +177,15 @@
 
   async function uploadLocalReservation(r,localServices){
     let result;
-    if(r.reservationCode){result=await client.from('reservations').upsert(reservationRow(r),{onConflict:'code'}).select('id,code').single()}
-    else{const row=reservationRow(r);delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
+    const row=reservationRow(r);
+    if(r.cloudId){result=await client.from('reservations').update(row).eq('id',r.cloudId).select('id,code').single()}
+    else if(r.reservationCode){
+      const existing=await client.from('reservations').select('id,code').eq('code',r.reservationCode).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+      if(existing.error)throw existing.error;
+      result=existing.data
+        ?await client.from('reservations').update(row).eq('id',existing.data.id).select('id,code').single()
+        :await client.from('reservations').insert(row).select('id,code').single();
+    }else{delete row.code;result=await client.from('reservations').insert(row).select('id,code').single()}
     if(result.error)throw result.error;
     r.cloudId=result.data.id;r.reservationCode=result.data.code||r.reservationCode||'';
     const svcs=localServices.filter(s=>String(s.reservationId)===String(r.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
@@ -217,14 +227,26 @@
       client.from('repasses').select('*').order('created_at',{ascending:true})
     ]);
     for(const result of [rRes,sRes,pRes,repRes])if(result.error)throw result.error;
-    const reservationRows=(rRes.data||[]).filter(r=>!isDemoReservation(r));
+    const uniqueRows=new Map();
+    (rRes.data||[]).filter(r=>!isDemoReservation(r)).forEach(row=>{
+      const key=reservationKey(row);const current=uniqueRows.get(key);
+      if(!current||String(row.updated_at||row.created_at||'')>String(current.updated_at||current.created_at||''))uniqueRows.set(key,row);
+    });
+    const reservationRows=[...uniqueRows.values()];
     const validIds=new Set(reservationRows.map(r=>r.id));
-    const serviceRows=(sRes.data||[]).filter(s=>validIds.has(s.reservation_id));
+    const uniqueServices=new Map();
+    (sRes.data||[]).filter(s=>validIds.has(s.reservation_id)).forEach(row=>{
+      const key=`${row.reservation_id}|${serviceSignature(row)}`;const current=uniqueServices.get(key);
+      if(!current||String(row.updated_at||'')>String(current.updated_at||''))uniqueServices.set(key,row);
+    });
+    const serviceRows=[...uniqueServices.values()];
     const phoneRows=(pRes.data||[]).filter(p=>validIds.has(p.reservation_id));
     const servicesByReservation=new Map();serviceRows.forEach(s=>{if(!servicesByReservation.has(s.reservation_id))servicesByReservation.set(s.reservation_id,[]);servicesByReservation.get(s.reservation_id).push(s)});
     const phonesByReservation=new Map();phoneRows.forEach(p=>{if(!phonesByReservation.has(p.reservation_id))phonesByReservation.set(p.reservation_id,[]);phonesByReservation.get(p.reservation_id).push(p)});
     const reservationMap=new Map();
-    const localReservations=reservationRows.map(row=>{const r=localReservation(row,phonesByReservation.get(row.id)||[],(servicesByReservation.get(row.id)||[])[0]);reservationMap.set(row.id,r);return r});
+    const localReservations=reservationRows.map(row=>{const linkedServices=servicesByReservation.get(row.id)||[];const r=localReservation(row,phonesByReservation.get(row.id)||[],linkedServices[0]);if(linkedServices.length)r.amount=linkedServices.reduce((sum,service)=>sum+(Number(service.sale_total)||0),0);r.paidAmount=Math.min(r.paidAmount,r.amount);reservationMap.set(row.id,r);return r});
+    const cachedReservations=read(KEYS.reservations);const cachedByCode=new Map(cachedReservations.filter(r=>r.reservationCode).map(r=>[r.reservationCode,r]));const cachedByCloudId=new Map(cachedReservations.filter(r=>r.cloudId).map(r=>[r.cloudId,r]));
+    localReservations.forEach(reservation=>{const cached=cachedByCloudId.get(reservation.cloudId)||cachedByCode.get(reservation.reservationCode);if(!Array.isArray(cached?.payments)||!cached.payments.length)return;const cachedTotal=cached.payments.reduce((sum,payment)=>sum+(Number(payment.amount)||0),0);if(Math.abs(cachedTotal-reservation.paidAmount)<0.01)reservation.payments=cached.payments});
     const serviceMap=new Map();const localServices=[];
     serviceRows.forEach(row=>{const r=reservationMap.get(row.reservation_id);if(!r)return;const s=localService(row,r.id);serviceMap.set(row.id,s);localServices.push(s)});
     const localRepasses=(repRes.data||[]).filter(x=>!x.reservation_id||validIds.has(x.reservation_id)).map(row=>localRepasse(row,reservationMap,serviceMap));
@@ -251,10 +273,10 @@
 
   document.addEventListener('click',event=>{
     const button=event.target.closest?.('[data-delete]');if(!button)return;
-    const id=Number(button.dataset.delete);let snapshot=null;try{snapshot=reservations.find(r=>Number(r.id)===id)}catch{snapshot=read(KEYS.reservations).find(r=>Number(r.id)===id)}
+    const id=Number(button.dataset.delete),cloudId=button.dataset.deleteCloud||'';let snapshot=null;try{snapshot=reservations.find(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}catch{snapshot=read(KEYS.reservations).find(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}
     if(!snapshot)return;
     setTimeout(()=>{
-      let exists=false;try{exists=reservations.some(r=>Number(r.id)===id)}catch{exists=read(KEYS.reservations).some(r=>Number(r.id)===id)}
+      let exists=false;try{exists=reservations.some(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}catch{exists=read(KEYS.reservations).some(r=>cloudId?String(r.cloudId)===cloudId:Number(r.id)===id)}
       if(!exists)deleteReservation(snapshot).catch(error=>console.error('Falha ao excluir reserva no Supabase:',error));
     },250);
   },true);

@@ -1,0 +1,36 @@
+/* Modo mínimo: o Manager expõe Dashboard, Reservas e Compromissos. */
+.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="financeiro"]),
+.main-nav a.nav-item,
+.content-section#operacao,
+.content-section#prestacao,
+.content-section#servicos,
+[data-go="prestacao"],
+[data-go="operacao"]{
+  display:none!important;
+}
+
+.main-nav{
+  gap:8px;
+}
+
+/* Mantém o foco visual nas três rotinas atuais. */
+.main-nav .nav-item[data-section="dashboard"],
+.main-nav .nav-item[data-section="reservas"],
+.main-nav .nav-item[data-section="financeiro"]{
+  display:flex!important;
+}
+
+/* Evita espaços de áreas removidas do fluxo visual. */
+#dashboard .dashboard-grid{
+  grid-template-columns:1fr;
+}
+#dashboard .pending-payments-panel{
+  display:none;
+}
+#dashboard .reservations-panel{
+  width:100%;
+}
+
+@media(max-width:760px){
+  .main-nav{gap:6px}
+}

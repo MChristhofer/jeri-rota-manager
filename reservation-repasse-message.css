@@ -1,0 +1,73 @@
+.reservation-repasse-message {
+  margin: 14px 0 0;
+  border: 1px solid #e3e0d8;
+  border-radius: 12px;
+  background: #fbfaf7;
+}
+
+.reservation-repasse-message summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reservation-repasse-message summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.reservation-repasse-content { padding: 0 14px 14px; }
+
+.reservation-repasse-content textarea {
+  width: 100%;
+  min-height: 190px;
+  box-sizing: border-box;
+  background: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.reservation-repasse-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.reservation-repasse-actions button { margin: 0; }
+.reservation-repasse-feedback { display: block; min-height: 17px; margin-top: 5px; color: var(--green); }
+
+@media (max-width: 520px) {
+  .reservation-repasse-message summary small { display: none; }
+  .reservation-repasse-actions { grid-template-columns: 1fr; }
+}
+
+.repasse-message-preview-modal textarea {
+  width: 100%;
+  min-height: 285px;
+  box-sizing: border-box;
+  margin-top: 15px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.repasse-preview-actions {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.repasse-preview-actions button { margin: 0; }
+
+@media (max-width: 620px) {
+  .repasse-preview-actions { grid-template-columns: 1fr; }
+}

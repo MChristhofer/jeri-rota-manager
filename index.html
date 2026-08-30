@@ -10,31 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="manager-brand.css" />
-  <style>
-    .dashboard-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
-    .summary-card { background:#fff; border:1px solid var(--line); border-radius:15px; padding:20px; box-shadow:0 5px 18px rgba(17,39,50,.035); }
-    .summary-card p { margin:0 0 7px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.7px; font-weight:700; }
-    .summary-card strong { display:block; color:var(--navy); font:700 25px/1.05 "Playfair Display",serif; }
-    .summary-card small { display:block; margin-top:6px; color:#929b9f; font-size:10px; }
-    .summary-card.payable { border-top:3px solid var(--coral); }
-    .summary-card.free { border-top:3px solid var(--gold); }
-    .dashboard-main-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(300px,.8fr); gap:20px; }
-    .payment-deadlines { display:grid; gap:0; }
-    .payment-deadline-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid #efede9; }
-    .payment-deadline-row:last-child { border-bottom:0; }
-    .payment-deadline-row span { color:var(--muted); font-size:12px; }
-    .payment-deadline-row strong { color:var(--navy); font-size:14px; }
-    .payment-total { margin-top:10px; padding-top:14px; border-top:2px solid var(--line); }
-    .dashboard-foot-summary { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; margin-top:18px; padding:13px 16px; background:rgba(255,255,255,.55); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:11px; }
-    .dashboard-foot-summary strong { color:var(--navy); }
-    .compat-dashboard { display:none !important; }
-    .reservation-heading-actions { display:flex; justify-content:space-between; align-items:end; gap:20px; width:100%; }
-    .required-mark { color:var(--coral); font-weight:700; }
-    .form-helper { margin:12px 0 0; color:var(--muted); font-size:11px; }
-    .form-helper strong { color:var(--navy); }
-    @media (max-width:1000px) { .dashboard-summary-grid{grid-template-columns:repeat(2,1fr)} .dashboard-main-grid{grid-template-columns:1fr} }
-    @media (max-width:620px) { .dashboard-summary-grid{grid-template-columns:1fr 1fr;gap:10px}.summary-card{padding:15px}.summary-card strong{font-size:19px}.reservation-heading-actions{align-items:flex-start;flex-direction:column}.reservation-heading-actions .primary-button{width:100%} }
-  </style>
+  <link rel="stylesheet" href="reservation-list-premium.css?v=20260826-2" />
+  <link rel="stylesheet" href="reservation-operational-form.css?v=20260826-4" />
+  <link rel="stylesheet" href="reservation-repasse-message.css?v=20260826-3" />
+  <link rel="stylesheet" href="dashboard-calendar.css?v=20260826-2" />
 </head>
 <body style="visibility:hidden">
   <div class="app-shell">
@@ -63,46 +42,56 @@
     <main class="main-content">
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
-        <div><p class="eyebrow">JERI ROTA MANAGER</p><h1 id="pageTitle">Olá, Jeri Rota</h1></div>
-        <div class="topbar-actions"><div class="date-badge" id="todayLabel"></div></div>
+        <div>
+          <p class="eyebrow">CENTRAL DE OPERAÇÕES</p>
+          <h1 id="pageTitle">Olá, Jeri Rota</h1>
+          <p class="page-subtitle" id="pageSubtitle" hidden></p>
+        </div>
+        <div class="topbar-actions">
+          <div class="date-badge" id="todayLabel"></div>
+          <button class="primary-button topbar-new-reservation" id="newReservationButton" hidden>+ Nova reserva</button>
+        </div>
       </header>
 
       <section class="content-section active" id="dashboard">
-        <div class="dashboard-summary-grid">
-          <article class="summary-card">
-            <p>Recebido</p><strong id="revenueMetric">R$ 0,00</strong><small>valor recebido diretamente pela Jeri Rota</small>
+        <div class="dashboard-heading">
+          <div><p class="eyebrow">VISÃO GERAL</p><h2>Resumo financeiro</h2><p>Acompanhe as entradas, os compromissos e o caixa disponível da operação.</p></div>
+          <span class="dashboard-period">Posição atual</span>
+        </div>
+
+        <div class="dashboard-finance-grid" aria-label="Resumo financeiro">
+          <article class="dashboard-finance-card received-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">↓</span><p>Recebido</p></div>
+            <strong id="dashboardReceived">R$ 0,00</strong><small>Pagamentos recebidos pela Jeri Rota</small>
           </article>
-          <article class="summary-card">
-            <p>A receber</p><strong id="pendingMetric">R$ 0,00</strong><small>saldo ainda pendente dos clientes</small>
+          <article class="dashboard-finance-card receivable-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">＋</span><p>A receber</p></div>
+            <strong id="dashboardReceivable">R$ 0,00</strong><small>Saldos pendentes de clientes e parceiras</small>
           </article>
-          <article class="summary-card payable">
-            <p>A pagar</p><strong id="dashboardPayable">R$ 0,00</strong><small>compromissos pendentes com parceiros</small>
+          <article class="dashboard-finance-card payable-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">↑</span><p>A pagar</p></div>
+            <strong id="dashboardPayable">R$ 0,00</strong><small>Repasses pendentes para parceiras</small>
           </article>
-          <article class="summary-card free">
-            <p>Saldo livre estimado</p><strong id="dashboardFree">R$ 0,00</strong><small>recebido menos compromissos com parceiros</small>
+          <article class="dashboard-finance-card free-balance-summary">
+            <div class="summary-card-head"><span class="summary-icon" aria-hidden="true">◆</span><p>Saldo livre estimado</p></div>
+            <strong id="dashboardFreeBalance">R$ 0,00</strong><small>Recebido menos compromissos a pagar</small>
           </article>
         </div>
 
-        <div class="dashboard-main-grid">
+        <div class="dashboard-grid">
+          <article class="panel pending-payments-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">PAGAMENTOS PENDENTES</p><h3>Previsão de recebimentos</h3></div>
+              <button class="text-button" data-go="financeiro">Ver financeiro →</button>
+            </div>
+            <div class="pending-periods" id="pendingPaymentPeriods"></div>
+          </article>
           <article class="panel reservations-panel">
             <div class="panel-head">
               <div><p class="eyebrow">PRÓXIMOS AGENDAMENTOS</p><h3>O que vem pela frente</h3></div>
               <button class="text-button" data-go="reservas">Ver reservas →</button>
             </div>
             <div id="upcomingReservations" class="agenda-list"></div>
-          </article>
-
-          <article class="panel payment-panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">FINANCEIRO</p><h3>Pagamentos pendentes</h3></div>
-              <button class="text-button" data-go="financeiro">Ver financeiro →</button>
-            </div>
-            <div class="payment-deadlines">
-              <div class="payment-deadline-row"><span>Próximos 7 dias</span><strong id="payable7Days">R$ 0,00</strong></div>
-              <div class="payment-deadline-row"><span>Próximos 30 dias</span><strong id="payable30Days">R$ 0,00</strong></div>
-              <div class="payment-deadline-row"><span>Após 30 dias</span><strong id="payableLater">R$ 0,00</strong></div>
-              <div class="payment-deadline-row payment-total"><span>Total a pagar</span><strong id="payableTotal">R$ 0,00</strong></div>
-            </div>
           </article>
         </div>
 
@@ -122,18 +111,18 @@
       </section>
 
       <section class="content-section" id="reservas">
-        <div class="section-heading">
-          <div class="reservation-heading-actions">
-            <div><p class="eyebrow">GESTÃO COMERCIAL</p><h2>Reservas</h2><p>Cadastre, consulte e organize cada experiência vendida.</p></div>
-            <button class="primary-button" id="newReservationButton">+ Nova reserva</button>
-          </div>
-        </div>
-        <div class="filters">
-          <input id="searchInput" type="search" placeholder="Buscar por cliente, destino, serviço ou parceira..." />
-          <select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select>
+        <div class="reservation-toolbar" role="search" aria-label="Buscar e filtrar reservas">
+          <label class="reservation-search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" aria-label="Buscar reservas" placeholder="Buscar por cliente, serviço, telefone ou parceira" /></label>
+          <label class="reservation-filter"><span class="sr-only">Filtrar por status</span><select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
+          <button class="reservation-clear-all" id="clearAllReservations" type="button">Apagar todas</button>
         </div>
         <article class="panel table-panel">
-          <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Experiência</th><th>Data</th><th>Pessoas</th><th>Total</th><th>Cliente pagou</th><th>Saldo</th><th>Pagamento</th><th>Reserva</th><th></th></tr></thead><tbody id="reservationsTable"></tbody></table></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Serviço / Data</th><th>Pessoas</th><th>Valor</th><th>Pagamento</th><th>Status</th><th class="actions-heading">Ações</th></tr></thead>
+              <tbody id="reservationsTable"></tbody>
+            </table>
+          </div>
         </article>
       </section>
 
@@ -182,10 +171,18 @@
       <p class="eyebrow">NOVA VENDA</p><h2 id="modalTitle">Cadastrar reserva</h2>
       <p class="modal-subtitle">Dados reais ficam protegidos no ambiente interno do Manager.</p>
       <form id="reservationForm">
-        <div class="form-grid">
-          <label>Nome(s) do cliente / passageiros <span class="required-mark">*</span><input required name="client" autocomplete="name" placeholder="Ex.: Ana Souza / João Souza" /></label>
-          <label>Telefone <span class="required-mark">*</span><input required name="phone" autocomplete="tel" placeholder="Ex.: (85) 99999-9999" /></label>
-          <label>Serviço contratado <span class="required-mark">*</span><input required list="serviceOptions" name="service" placeholder="Escolha ou digite o serviço" /></label>
+        <fieldset class="reservation-client-section">
+          <legend>1. Dados do cliente</legend>
+          <div class="form-grid reservation-client-grid">
+            <label>Passageiro(s) *<input required name="client" placeholder="Ex.: Ana Souza / João Souza" /></label>
+            <label>Telefone *<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
+            <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
+            <label class="reservation-status-field">Status<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
+          </div>
+        </fieldset>
+
+        <div class="reservation-compat-fields" aria-hidden="true">
+          <label>Serviço contratado<input required list="serviceOptions" name="service" tabindex="-1" /></label>
           <datalist id="serviceOptions">
             <option value="Passeio Lado Leste"></option>
             <option value="Passeio Lado Oeste"></option>
@@ -196,14 +193,12 @@
             <option value="Hospedagem"></option>
             <option value="Pacote"></option>
           </datalist>
-          <label>Data do serviço <span class="required-mark">*</span><input required name="date" type="date" /></label>
-          <label>Local de embarque <span class="required-mark">*</span><input required name="boarding" placeholder="Ex.: Aeroporto JJD, hotel ou pousada" /></label>
-          <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
-          <label>Valor da venda (R$) <span class="required-mark">*</span><input required min="0" step="0.01" name="amount" type="number" placeholder="0,00" /></label>
-          <label>Cliente já pagou (R$)<input min="0" step="0.01" value="0" name="paidAmount" type="number" placeholder="0,00" /></label>
-          <label>Quem está com o pagamento?<select name="collectedBy"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
+          <label>Data do serviço<input required name="date" type="date" tabindex="-1" /></label>
+          <label>Local de embarque<input required name="boarding" tabindex="-1" /></label>
+          <label>Valor total<input required min="0" step="0.01" name="amount" type="number" tabindex="-1" /></label>
+          <label>Cliente já pagou<input min="0" step="0.01" value="0" name="paidAmount" type="number" tabindex="-1" /></label>
+          <label>Quem está com o pagamento?<select name="collectedBy" tabindex="-1"><option value="Jeri Rota">Jeri Rota</option><option value="Parceira">Agência parceira</option><option value="Vendedor">Vendedor</option><option value="Não recebido">Ainda não recebido</option></select></label>
           <div class="balance-preview" aria-live="polite"><span>Saldo do cliente</span><strong id="balancePreview">R$ 0,00</strong><small id="paymentPreview">Saldo pendente do cliente.</small></div>
-          <label>Status da reserva<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
           <label>Responsável<input name="responsible" placeholder="Ex.: Motorista a confirmar" /></label>
           <label>Tipo de operação<select name="partnerOperation"><option value="propria">Venda e operação próprias</option><option value="recebida">Parceira vendeu · Jeri Rota executa</option><option value="enviada">Jeri Rota vendeu · Parceira executa</option></select></label>
         </div>
@@ -217,8 +212,9 @@
             <div class="partner-preview" id="partnerPreview" aria-live="polite"><span>Prestação de contas</span><strong>Venda própria</strong><small>Sem lançamento para parceiro.</small></div>
           </div>
         </fieldset>
-        <label>Observações<textarea name="notes" placeholder="Hotel, desembarque, roteiro ou observações importantes."></textarea></label>
-        <p class="form-helper"><strong>* Campos obrigatórios.</strong> O valor da venda pode ser R$ 0,00, mas precisa ser informado.</p>
+
+        <label class="reservation-general-notes"><span>3. Observações gerais</span><textarea name="notes" placeholder="Informações gerais importantes para toda a reserva."></textarea></label>
+        <small class="reservation-required-note">* Campos obrigatórios.</small>
         <button class="primary-button full" id="submitReservation" type="submit">Salvar reserva</button>
       </form>
     </div>
@@ -226,131 +222,79 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="auth-guard.js"></script>
-  <script src="app.js"></script>
+  <script src="auth-guard.js?v=20260826-13"></script>
+  <script src="app.js?v=20260826-6"></script>
+  <script src="dashboard-calendar.js?v=20260826-2"></script>
   <script>
-    function updateSimplifiedDashboard() {
-      const activeRows = reservations.filter(r => r.status !== 'Cancelada');
-      const todayValue = dateOffset(0);
-      const received = activeRows.reduce((sum, r) => sum + cashReceivedByJeri(r), 0);
-      const payableRows = activeRows.filter(r => r.partnerOperation === 'enviada' && settlementRemaining(r) > 0);
-      const payable = payableRows.reduce((sum, r) => sum + settlementRemaining(r), 0);
-      const free = received - payable;
+    // Validação mínima obrigatória da reserva.
+    (() => {
+      const form = document.getElementById('reservationForm');
+      const requiredFields = [
+        ['client', 'Informe o nome do cliente ou passageiro.'],
+        ['phone', 'Informe o telefone.'],
+        ['service', 'Informe o serviço contratado.'],
+        ['date', 'Informe a data do serviço.'],
+        ['boarding', 'Informe o local de embarque.'],
+        ['amount', 'Informe o valor da reserva. O valor pode ser R$ 0,00.']
+      ];
+      let boardingValue = '';
+      let editingIdBeforeSubmit = null;
 
-      document.getElementById('dashboardPayable').textContent = currency.format(payable);
-      document.getElementById('dashboardFree').textContent = currency.format(free);
-      document.getElementById('dashboardTodayCount').textContent = activeRows.filter(r => r.date === todayValue).length;
-
-      const futureRows = activeRows.filter(r => r.date >= todayValue).sort((a,b) => a.date.localeCompare(b.date));
-      document.getElementById('dashboardFutureCount').textContent = futureRows.length;
-      const last = futureRows.length ? futureRows[futureRows.length - 1] : null;
-      document.getElementById('dashboardLastDate').textContent = last ? dateFormat.format(parseLocalDate(last.date)) : '—';
-
-      const agenda = document.getElementById('upcomingReservations');
-      const upcoming = futureRows.slice(0, 5);
-      if (!upcoming.length) {
-        agenda.innerHTML = '<div class="empty-state"><strong>Sem serviços futuros.</strong><p>Os próximos agendamentos aparecerão aqui.</p></div>';
-      } else {
-        agenda.innerHTML = upcoming.map(r => {
-          const d = parseLocalDate(r.date);
-          const partner = r.partnerOperation === 'enviada' ? (r.partner || 'Parceiro a definir') : (r.responsible || 'Responsável a definir');
-          const boarding = r.boarding ? ` · Embarque: ${escapeHtml(r.boarding)}` : '';
-          return `<div class="agenda-row"><div class="agenda-date"><strong>${String(d.getDate()).padStart(2,'0')}</strong><small>${monthFormat.format(d).replace('.','')}</small></div><div><h4>${escapeHtml(r.client)}</h4><p>${escapeHtml(r.service)}${boarding} · ${escapeHtml(partner)}</p></div><div class="agenda-price">${currency.format(r.amount)}</div></div>`;
-        }).join('');
-      }
-
-      let within7 = 0, within30 = 0, later = 0;
-      const todayDate = parseLocalDate(todayValue);
-      payableRows.forEach(r => {
-        const dueValue = r.settlementDate || r.date;
-        const diff = Math.floor((parseLocalDate(dueValue) - todayDate) / 86400000);
-        const value = settlementRemaining(r);
-        if (diff <= 7) within7 += value;
-        else if (diff <= 30) within30 += value;
-        else later += value;
+      requiredFields.forEach(([name]) => {
+        const field = form.elements[name];
+        if (!field) return;
+        const clear = () => field.setCustomValidity('');
+        field.addEventListener('input', clear);
+        field.addEventListener('change', clear);
       });
-      document.getElementById('payable7Days').textContent = currency.format(within7);
-      document.getElementById('payable30Days').textContent = currency.format(within30);
-      document.getElementById('payableLater').textContent = currency.format(later);
-      document.getElementById('payableTotal').textContent = currency.format(payable);
-    }
 
-    const baseRenderAll = renderAll;
-    renderAll = function () { baseRenderAll(); updateSimplifiedDashboard(); };
-    updateSimplifiedDashboard();
-
-    // Regra mínima de cadastro: sem esses dados a reserva não pode ser salva.
-    const requiredReservationFields = [
-      ['client', 'Informe o nome do cliente ou dos passageiros.'],
-      ['phone', 'Informe o telefone do cliente.'],
-      ['service', 'Escolha ou informe o serviço contratado.'],
-      ['date', 'Informe a data do serviço.'],
-      ['boarding', 'Informe o local de embarque.'],
-      ['amount', 'Informe o valor da venda. O valor pode ser R$ 0,00.']
-    ];
-
-    let pendingBoarding = '';
-    let pendingEditId = null;
-
-    requiredReservationFields.forEach(([name]) => {
-      const field = reservationForm.elements[name];
-      if (!field) return;
-      const clearError = () => field.setCustomValidity('');
-      field.addEventListener('input', clearError);
-      field.addEventListener('change', clearError);
-    });
-
-    reservationForm.addEventListener('submit', event => {
-      for (const [name, message] of requiredReservationFields) {
-        const field = reservationForm.elements[name];
-        const rawValue = String(field?.value ?? '');
-        const empty = name === 'amount' ? rawValue === '' : rawValue.trim() === '';
-        const negativeAmount = name === 'amount' && rawValue !== '' && Number(rawValue) < 0;
-        if (empty || negativeAmount) {
-          field.setCustomValidity(message);
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          field.reportValidity();
-          field.focus();
-          return;
+      form.addEventListener('submit', event => {
+        for (const [name, message] of requiredFields) {
+          const field = form.elements[name];
+          const raw = String(field?.value ?? '');
+          const invalid = name === 'amount' ? raw === '' || Number(raw) < 0 : raw.trim() === '';
+          if (invalid) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            field.setCustomValidity(message);
+            field.reportValidity();
+            field.focus();
+            return;
+          }
         }
-      }
+        boardingValue = form.elements.boarding.value.trim();
+        editingIdBeforeSubmit = typeof editingReservationId !== 'undefined' ? editingReservationId : null;
+      }, true);
 
-      pendingBoarding = reservationForm.elements.boarding.value.trim();
-      pendingEditId = editingReservationId;
-    }, true);
+      // Persiste o embarque sem alterar a estrutura atual do app.js.
+      form.addEventListener('submit', () => {
+        const target = editingIdBeforeSubmit
+          ? reservations.find(item => item.id === editingIdBeforeSubmit)
+          : reservations[reservations.length - 1];
+        if (target) {
+          target.boarding = boardingValue;
+          saveReservations();
+          renderAll();
+        }
+        boardingValue = '';
+        editingIdBeforeSubmit = null;
+      });
 
-    // O app legado ainda não conhece o campo "boarding". Persistimos sem quebrar os registros atuais.
-    reservationForm.addEventListener('submit', () => {
-      const target = pendingEditId
-        ? reservations.find(item => item.id === pendingEditId)
-        : reservations[reservations.length - 1];
+      const fillBoarding = id => {
+        const row = reservations.find(item => item.id === id);
+        if (form.elements.boarding) form.elements.boarding.value = row?.boarding || '';
+      };
 
-      if (target) {
-        target.boarding = pendingBoarding;
-        saveReservations();
-        renderAll();
-      }
+      document.getElementById('reservationsTable').addEventListener('click', event => {
+        const id = Number(event.target.dataset.edit);
+        if (id) setTimeout(() => fillBoarding(id), 0);
+      }, true);
 
-      pendingBoarding = '';
-      pendingEditId = null;
-    });
-
-    function fillBoardingOnEdit(id) {
-      const reservation = reservations.find(item => item.id === id);
-      const boardingField = reservationForm.elements.boarding;
-      if (boardingField) boardingField.value = reservation?.boarding || '';
-    }
-
-    document.getElementById('reservationsTable').addEventListener('click', event => {
-      const id = Number(event.target.dataset.edit);
-      if (id) setTimeout(() => fillBoardingOnEdit(id), 0);
-    }, true);
-
-    document.getElementById('settlementTable').addEventListener('click', event => {
-      const id = Number(event.target.dataset.settlementEdit);
-      if (id) setTimeout(() => fillBoardingOnEdit(id), 0);
-    }, true);
+      document.getElementById('settlementTable').addEventListener('click', event => {
+        const id = Number(event.target.dataset.settlementEdit);
+        if (id) setTimeout(() => fillBoarding(id), 0);
+      }, true);
+    })();
   </script>
 </body>
 </html>
