@@ -1,0 +1,299 @@
+/* Reservas: ações, responsividade e prévia de WhatsApp */
+#reservas .table-panel,
+#reservas .table-wrap { overflow: visible; }
+
+#reservas .row-actions {
+  position: relative;
+  min-width: 116px;
+  gap: 8px;
+}
+
+#reservas .row-actions > button,
+#reservas .row-actions > .edit-button,
+#reservas .row-actions > .repasse-button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(198,145,45,.58);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: #9a6813;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(8,35,52,.035);
+}
+
+#reservas .row-actions > button:hover,
+#reservas .row-actions > .edit-button:hover,
+#reservas .row-actions > .repasse-button:hover {
+  border-color: #c9952f;
+  background: #fff8e9;
+  color: #72500f;
+  transform: translateY(-1px);
+}
+
+.reservation-action-menu summary {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2ddd3;
+  border-radius: 10px;
+  background: #fbf9f4;
+  color: #243b48;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.reservation-action-menu summary:hover,
+.reservation-action-menu[open] summary {
+  border-color: #d5bd89;
+  background: #fff8e9;
+  color: #8a6117;
+}
+
+.reservation-action-popover {
+  z-index: 80;
+  top: calc(100% + 8px);
+  width: 218px;
+  padding: 7px;
+  border: 1px solid #e4ded3;
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(8,35,52,.16);
+}
+
+.reservation-action-popover button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.reservation-action-popover button:hover { background: #f8f5ee; }
+.reservation-action-popover button.delete-button {
+  margin-top: 4px;
+  border-top: 1px solid #f0e8e2;
+  border-radius: 0 0 9px 9px;
+  color: #b34d45;
+}
+
+.reservation-action-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #63747d;
+}
+.reservation-action-icon svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.delete-button .reservation-action-icon { color: #c44f47; }
+
+/* Prévia de envio */
+.whatsapp-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(4,25,38,.42);
+  backdrop-filter: blur(3px);
+}
+.whatsapp-preview-backdrop.open { display: flex; }
+.whatsapp-preview-modal {
+  width: min(860px, 100%);
+  max-height: min(760px, calc(100vh - 44px));
+  overflow: auto;
+  border: 1px solid #e6dfd3;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(4,25,38,.25);
+}
+.whatsapp-preview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid #eee8de;
+}
+.whatsapp-preview-title { display: flex; gap: 12px; align-items: flex-start; }
+.whatsapp-preview-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eaf8ef;
+  color: #20985b;
+  font-size: 19px;
+  font-weight: 800;
+}
+.whatsapp-preview-head h3 { margin: 0; color: #082334; font-size: 20px; }
+.whatsapp-preview-head p { margin: 4px 0 0; color: #78868d; font-size: 11px; }
+.whatsapp-preview-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #52656f;
+  font-size: 22px;
+  cursor: pointer;
+}
+.whatsapp-preview-close:hover { background: #f3f0ea; }
+.whatsapp-preview-body {
+  display: grid;
+  grid-template-columns: minmax(230px,.78fr) minmax(0,1.35fr);
+  gap: 16px;
+  padding: 18px 24px 22px;
+}
+.whatsapp-reservation-summary,
+.whatsapp-message-panel {
+  border: 1px solid #e7e0d6;
+  border-radius: 15px;
+  background: #fcfaf6;
+}
+.whatsapp-reservation-summary { padding: 15px; }
+.whatsapp-reservation-summary > strong,
+.whatsapp-message-panel > strong { display: block; margin-bottom: 12px; color: #18394b; font-size: 11px; }
+.whatsapp-summary-list { display: grid; gap: 10px; }
+.whatsapp-summary-item { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.whatsapp-summary-item span:first-child { color: #c48c25; text-align: center; }
+.whatsapp-summary-item small { display: block; margin: 0 0 2px; color: #8a9498; font-size: 9px; }
+.whatsapp-summary-item b { display: block; color: #17384a; font-size: 10px; font-weight: 650; line-height: 1.35; }
+.whatsapp-message-panel { padding: 15px; }
+.whatsapp-chat-stage {
+  min-height: 310px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 24px 18px;
+  border-radius: 12px;
+  background-color: #f4efe6;
+  background-image: radial-gradient(rgba(80,104,82,.07) .7px, transparent .7px);
+  background-size: 13px 13px;
+}
+.whatsapp-message-bubble {
+  width: min(100%, 440px);
+  padding: 15px 16px 11px;
+  border-radius: 13px 5px 13px 13px;
+  background: #dcf8c6;
+  color: #163027;
+  box-shadow: 0 2px 8px rgba(31,70,46,.09);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.whatsapp-preview-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 22px;
+}
+.whatsapp-preview-footer button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.whatsapp-preview-cancel { border: 1px solid #ded9d0; background: #fff; color: #17384a; }
+.whatsapp-preview-send { border: 1px solid #d1a13d; background: #d8a83f; color: #082334; box-shadow: 0 7px 18px rgba(200,148,44,.18); }
+.whatsapp-preview-send:hover { background: #e1b64f; }
+
+/* Layout intermediário: tabela vira cartões antes de começar a estourar horizontalmente. */
+@media (max-width: 1180px) {
+  #reservas .table-wrap { overflow: visible; }
+  #reservas table { min-width: 0; width: 100%; }
+  #reservas thead { display: none; }
+  #reservas tbody { display: grid; gap: 12px; padding: 10px; }
+  #reservas tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 0;
+    border: 1px solid #e4dfd6;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(8,35,52,.035);
+    overflow: visible;
+  }
+  #reservas tbody tr:hover { box-shadow: 0 8px 24px rgba(8,35,52,.06); }
+  #reservas tbody td {
+    display: grid;
+    grid-template-columns: 112px minmax(0,1fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 13px;
+    border: 0;
+    border-bottom: 1px solid #f0ece5;
+  }
+  #reservas tbody td::before {
+    content: attr(data-label);
+    color: #899399;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+  }
+  #reservas tbody td.reservation-client,
+  #reservas tbody td.reservation-service {
+    display: block;
+    padding: 14px;
+  }
+  #reservas tbody td.reservation-client::before,
+  #reservas tbody td.reservation-service::before { display: block; margin-bottom: 6px; }
+  #reservas tbody td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 14px;
+    border-bottom: 0;
+  }
+  #reservas tbody td.row-actions::before { margin-right: auto; align-self: center; }
+  .payment-summary { min-width: 0; }
+}
+
+@media (max-width: 700px) {
+  body[data-section="reservas"] .topbar { gap: 14px; }
+  body[data-section="reservas"] .topbar-actions { width: 100%; justify-content: space-between; }
+  .reservation-toolbar { grid-template-columns: 1fr; gap: 0; }
+  #reservas tbody { padding: 8px; }
+  #reservas tbody tr { grid-template-columns: 1fr; }
+  #reservas tbody td { grid-template-columns: 98px minmax(0,1fr); }
+  #reservas tbody td.row-actions { grid-column: auto; }
+  #reservas .row-actions > button,
+  #reservas .row-actions > .edit-button,
+  #reservas .row-actions > .repasse-button { flex: 1 1 auto; justify-content: center; }
+  .reservation-action-menu { flex: 0 0 auto; }
+  .reservation-action-menu[open] .reservation-action-popover {
+    position: fixed;
+    z-index: 500;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: auto;
+    padding: 10px;
+    border-radius: 17px;
+  }
+  .reservation-action-popover button { min-height: 48px; font-size: 12px; }
+  .whatsapp-preview-backdrop { padding: 10px; align-items: flex-end; }
+  .whatsapp-preview-modal { max-height: calc(100vh - 20px); border-radius: 18px 18px 12px 12px; }
+  .whatsapp-preview-head { padding: 17px 16px 13px; }
+  .whatsapp-preview-body { grid-template-columns: 1fr; padding: 14px 16px 16px; }
+  .whatsapp-reservation-summary { display: none; }
+  .whatsapp-chat-stage { min-height: 280px; padding: 16px 12px; }
+  .whatsapp-preview-footer { padding: 0 16px 16px; }
+  .whatsapp-preview-footer button { flex: 1 1 0; }
+}
