@@ -1,14 +1,17 @@
 (function(){
   const client=window.jeriSupabase;
   const SERVICES_KEY='jeri-rota-manager-reservation-services-v1';
+  const RESERVATIONS_KEY='jeri-rota-manager-reservas-v1';
   const form=document.getElementById('reservationForm');
   if(!form||!client)return;
 
   let catalog=[];
 
   const readServices=()=>{try{const v=JSON.parse(localStorage.getItem(SERVICES_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
+  const readReservations=()=>{try{const v=JSON.parse(localStorage.getItem(RESERVATIONS_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
   const writeServices=v=>localStorage.setItem(SERVICES_KEY,JSON.stringify(v));
   const normalize=v=>String(v||'').trim().toLowerCase();
+  const moneyNumber=value=>{const raw=String(value??'').trim().replace(/\s|R\$/g,'');if(!raw)return 0;return Math.max(0,Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw)||0)};
   const currentPeople=()=>Math.max(1,Number(form.querySelector('[name="people"]')?.value)||1);
   function currentReservationId(){try{return editingReservationId||null}catch{return null}}
   function savedForIndex(index){const id=currentReservationId();if(!id)return null;return readServices().filter(x=>String(x.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))[index]||null}
@@ -90,6 +93,19 @@
     if(modalities.includes(oldModality))modalitySelect.value=oldModality;else if(modalities.length===1)modalitySelect.value=modalities[0];
   }
 
+  function setNetFromVariant(card,variant){
+    if(!variant)return 0;
+    const quantity=variant.pricing_basis==='per_person'?currentPeople():1;
+    const net=calculateNet(variant,quantity);
+    const netInput=card.querySelector('[data-basic-net-input]');
+    if(netInput){
+      netInput.value=Number(net||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      netInput.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    setExisting(card,'repasseAmount',net.toFixed(2));
+    return net;
+  }
+
   function applyVariant(card,variant,{syncDefaults=false}={}){
     const managed=Boolean(activeGroup(card));
     setManualVisibility(card,managed);
@@ -97,8 +113,6 @@
     if(meta)meta.textContent=variant?'NET padrão carregado do catálogo. Você pode editar o Valor NET abaixo.':managed?'Escolha veículo e modalidade para localizar a tarifa NET.':'Selecione um serviço cadastrado.';
     if(!variant)return;
 
-    const quantity=variant.pricing_basis==='per_person'?currentPeople():1;
-    const net=calculateNet(variant,quantity);
     const type=inferCategory(variant)==='Transfer'?'transfer':'passeio';
 
     if(syncDefaults){
@@ -117,13 +131,7 @@
         setExisting(card,'tour',variant.name||'');
         setExisting(card,'service',variant.name||'');
       }
-
-      const netInput=card.querySelector('[data-basic-net-input]');
-      if(netInput){
-        netInput.value=Number(net||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-        netInput.dispatchEvent(new Event('input',{bubbles:true}));
-      }
-      setExisting(card,'repasseAmount',net.toFixed(2));
+      setNetFromVariant(card,variant);
     }
   }
 
@@ -175,7 +183,14 @@
       populateModalityControls(card,false);
       if([...modalitySelect.options].some(o=>o.value===modality))modalitySelect.value=modality;
     }
-    applyVariant(card,resolveVariant(card),{syncDefaults:false});
+
+    const variant=resolveVariant(card);
+    applyVariant(card,variant,{syncDefaults:false});
+    const currentNet=moneyNumber(card.querySelector('[data-basic-net-input]')?.value??saved?.repasseAmount??saved?.netTotal??0);
+    if(variant&&currentNet<=0&&Number(variant.net_value)>0){
+      setNetFromVariant(card,variant);
+      window.dispatchEvent(new Event('reservation-finance-refresh'));
+    }
   }
 
   function decorate(){
@@ -187,8 +202,42 @@
     const item=resolveVariant(card);
     const quantity=item?.pricing_basis==='per_person'?currentPeople():1;
     const raw=String(card.querySelector('[data-basic-net-input]')?.value||card.querySelector('[data-field="repasseAmount"]')?.value||0);
-    const manual=Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw)||0;
-    return{item,quantity,net:manual};
+    return{item,quantity,net:moneyNumber(raw)};
+  }
+
+  function pendingServiceNetTotal(){
+    const activeReservations=new Map(readReservations().filter(r=>r.status!=='Cancelada').map(r=>[String(r.id),r]));
+    return readServices().reduce((sum,service)=>{
+      if(!activeReservations.has(String(service.reservationId)))return sum;
+      const status=normalize(service.repasseStatus);
+      if(/^(pago|quitado|realizado|cancelado)$/i.test(status))return sum;
+      return sum+moneyNumber(service.repasseAmount??service.netTotal);
+    },0);
+  }
+
+  function patchDashboardFinance(){
+    const payable=pendingServiceNetTotal();
+    const payableNode=document.getElementById('dashboardPayable');
+    if(payableNode)payableNode.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(payable);
+
+    const active=readReservations().filter(r=>r.status!=='Cancelada');
+    const received=active.reduce((sum,r)=>sum+(r.collectedBy==='Jeri Rota'?moneyNumber(r.paidAmount):0),0);
+    const free=received-payable;
+    const freeNode=document.getElementById('dashboardFreeBalance');
+    if(freeNode){
+      freeNode.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(free);
+      freeNode.classList.toggle('negative-value',free<0);
+    }
+  }
+
+  function installDashboardPatch(){
+    const base=window.renderDashboard;
+    if(typeof base!=='function'||base.__serviceNetPatched){patchDashboardFinance();return;}
+    const wrapped=function(){const result=base.apply(this,arguments);patchDashboardFinance();return result};
+    wrapped.__serviceNetPatched=true;
+    window.renderDashboard=wrapped;
+    try{renderDashboard=wrapped}catch{}
+    patchDashboardFinance();
   }
 
   async function loadCatalog(){
@@ -197,6 +246,7 @@
     catalog=data||[];
     window.jeriServiceCatalog=catalog;
     decorate();
+    patchDashboardFinance();
   }
 
   async function syncCloud(target,states){
@@ -223,10 +273,12 @@
       const items=readServices();
       const own=items.filter(x=>String(x.reservationId)===String(target.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
       own.forEach((svc,i)=>{
-        const st=states[i];if(!st?.item)return;
-        Object.assign(svc,{serviceCatalogId:st.item.id,pricingBasis:st.item.pricing_basis,receiptRule:st.item.receipt_rule||'net_first',netUnit:Number(st.item.net_value)||0,quantity:Number(st.quantity)||1,netTotal:st.net,repasseAmount:st.net,vehicle:vehicleLabel(st.item)||svc.vehicle,modality:st.item.modality||svc.modality});
+        const st=states[i];
+        if(st?.item)Object.assign(svc,{serviceCatalogId:st.item.id,pricingBasis:st.item.pricing_basis,receiptRule:st.item.receipt_rule||'net_first',netUnit:Number(st.item.net_value)||0,quantity:Number(st.quantity)||1,netTotal:st.net,repasseAmount:st.net,vehicle:vehicleLabel(st.item)||svc.vehicle,modality:st.item.modality||svc.modality});
+        svc.saleTotal=i===0?moneyNumber(target.amount):0;
       });
       writeServices(items);
+      patchDashboardFinance();
       syncCloud(target,states);
     },220);
   });
@@ -238,7 +290,10 @@
     else loadCatalog();
     decorate();
   });
+  window.addEventListener('storage',event=>{if(event.key===SERVICES_KEY||event.key===RESERVATIONS_KEY)patchDashboardFinance()});
+  window.addEventListener('reservation-finance-refresh',patchDashboardFinance);
 
+  installDashboardPatch();
   const wait=setInterval(()=>{
     const host=document.getElementById('reservationServiceDrafts');if(!host)return;
     clearInterval(wait);
