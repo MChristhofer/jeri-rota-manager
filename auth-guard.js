@@ -35,9 +35,10 @@
         if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260827-2';document.head.appendChild(link)}
         if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
       };
+      const loadServicesManager=()=>{if(document.querySelector('script[src^="manager-services-section.js"]'))return;const script=document.createElement('script');script.src='manager-services-section.js?v=20260830-2';document.body.appendChild(script)};
 
       const initReservationModules=()=>{
-        loadUiPolish();loadCloudWriter();
+        loadUiPolish();loadCloudWriter();loadServicesManager();
         ['reservation-flow.css','reservation-enhancements.css'].forEach(href=>{if(!document.querySelector(`link[href^="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=20260827-6`;document.head.appendChild(link)}});
         const loadCommitments=()=>{
           if(!document.querySelector('link[href^="finance-basic.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='finance-basic.css?v=20260827-4';document.head.appendChild(link)}

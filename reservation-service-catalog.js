@@ -22,9 +22,9 @@
   function setExisting(card,field,value){const input=card.querySelector(`[data-field="${field}"]`);if(!input)return;input.value=value??'';input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}))}
   function unique(values){return [...new Set(values.filter(Boolean))]}
 
-  function groups(){
+  function groups(includeIds=[]){
     const map=new Map();
-    catalog.filter(x=>x.active!==false).forEach(item=>{const key=baseKey(item);if(!map.has(key))map.set(key,{key,label:groupLabel(item),category:inferCategory(item),items:[]});map.get(key).items.push(item)});
+    catalog.filter(x=>x.active!==false||includeIds.some(id=>String(id)===String(x.id))).forEach(item=>{const key=baseKey(item);if(!map.has(key))map.set(key,{key,label:groupLabel(item),category:inferCategory(item),items:[]});map.get(key).items.push(item)});
     return [...map.values()].sort((a,b)=>a.category.localeCompare(b.category,'pt-BR')||a.label.localeCompare(b.label,'pt-BR'));
   }
 
@@ -42,13 +42,16 @@
     return found?baseKey(found):'';
   }
 
-  function activeGroup(card){const key=card.querySelector('[data-catalog-base]')?.value||'';return groups().find(g=>g.key===key)||null}
+  function activeGroup(card){const key=card.querySelector('[data-catalog-base]')?.value||'';return groups([card.dataset.savedCatalogId]).find(g=>g.key===key)||null}
   function variants(card){return activeGroup(card)?.items||[]}
   function resolveVariant(card){
     const list=variants(card);if(!list.length)return null;
     const vehicle=card.querySelector('[data-catalog-vehicle]')?.value||'';
     const modality=card.querySelector('[data-catalog-modality]')?.value||'';
-    return list.find(x=>(!vehicle||vehicleLabel(x)===vehicle)&&(!modality||String(x.modality||'')===modality))||list.find(x=>!vehicle||vehicleLabel(x)===vehicle)||list.find(x=>!modality||String(x.modality||'')===modality)||list[0];
+    const hasVehicles=list.some(x=>vehicleLabel(x));const matching=list.filter(x=>!hasVehicles||vehicleLabel(x)===vehicle);
+    if(hasVehicles&&!vehicle)return null;
+    if(matching.some(x=>x.modality)&&!modality)return null;
+    return matching.find(x=>String(x.modality||'')===modality)||matching.find(x=>!x.modality)||null;
   }
   function direction(card,item){
     const value=card.querySelector('[data-catalog-direction]')?.value||'forward';
@@ -71,13 +74,11 @@
     const directionSelect=card.querySelector('[data-catalog-direction]');
     if(!vehicleSelect||!modalitySelect||!directionSelect)return;
     const oldVehicle=preserve?vehicleSelect.value:'';
-    const oldModality=preserve?modalitySelect.value:'';
     const vehicles=unique(list.map(vehicleLabel));
-    const modalities=unique(list.map(x=>x.modality));
     vehicleSelect.innerHTML=`<option value="">${vehicles.length?'Escolha o veículo':'Não definido'}</option>${vehicles.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')}`;
-    modalitySelect.innerHTML=`<option value="">${modalities.length?'Escolha a modalidade':'Não definida'}</option>${modalities.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')}`;
+    vehicleSelect.required=vehicles.length>0;
     if(vehicles.includes(oldVehicle))vehicleSelect.value=oldVehicle;else if(vehicles.length===1)vehicleSelect.value=vehicles[0];
-    if(modalities.includes(oldModality))modalitySelect.value=oldModality;else if(modalities.length===1)modalitySelect.value=modalities[0];
+    populateModalityControls(card,preserve);
     const item=list[0];
     const hasDirection=Boolean(item?.origin&&item?.destination);
     directionSelect.closest('label').hidden=!hasDirection;
@@ -87,6 +88,15 @@
       const currentDestination=normalize(card.querySelector('[data-field="destination"]')?.value);
       if(item.bidirectional&&normalize(item.destination)===currentOrigin&&normalize(item.origin)===currentDestination)directionSelect.value='reverse';
     }
+  }
+
+  function populateModalityControls(card,preserve=true){
+    const modalitySelect=card.querySelector('[data-catalog-modality]');if(!modalitySelect)return;
+    const oldModality=preserve?modalitySelect.value:'';const list=variants(card);const vehicle=card.querySelector('[data-catalog-vehicle]')?.value||'';const hasVehicles=list.some(x=>vehicleLabel(x));
+    const available=list.filter(x=>!hasVehicles||vehicleLabel(x)===vehicle);const modalities=unique(available.map(x=>x.modality));
+    modalitySelect.innerHTML=`<option value="">${modalities.length?'Escolha a modalidade':'Não definida'}</option>${modalities.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')}`;
+    modalitySelect.required=modalities.length>0;
+    if(modalities.includes(oldModality))modalitySelect.value=oldModality;else if(modalities.length===1)modalitySelect.value=modalities[0];
   }
 
   function updateCard(card,{syncDefaults=false}={}){
@@ -133,7 +143,8 @@
     card.dataset.catalogV2Ready='1';
     const grid=card.querySelector('.service-draft-grid');if(!grid)return;
     const saved=savedForIndex(index);
-    const allGroups=groups();
+    card.dataset.savedCatalogId=saved?.serviceCatalogId||'';
+    const allGroups=groups([saved?.serviceCatalogId]);
     const matchedKey=findMatchingGroup(saved,card);
     const chooser=document.createElement('section');
     chooser.className='reservation-catalog-chooser';
@@ -156,11 +167,12 @@
       const modality=item?.modality||saved.modality||'';
       const vehicleSelect=card.querySelector('[data-catalog-vehicle]');const modalitySelect=card.querySelector('[data-catalog-modality]');
       if([...vehicleSelect.options].some(o=>o.value===vehicle))vehicleSelect.value=vehicle;
+      populateModalityControls(card,false);
       if([...modalitySelect.options].some(o=>o.value===modality))modalitySelect.value=modality;
     }
     base.addEventListener('change',()=>{populateVariantControls(card,false);updateCard(card,{syncDefaults:true});window.dispatchEvent(new Event('reservation-finance-refresh'))});
     chooser.querySelector('[data-catalog-direction]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
-    chooser.querySelector('[data-catalog-vehicle]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
+    chooser.querySelector('[data-catalog-vehicle]')?.addEventListener('change',()=>{populateModalityControls(card,false);updateCard(card,{syncDefaults:true})});
     chooser.querySelector('[data-catalog-modality]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
     updateCard(card,{syncDefaults:Boolean(matchedKey&&!saved?.serviceCatalogId)});
   }
@@ -173,7 +185,7 @@
   }
 
   async function loadCatalog(){
-    const {data,error}=await client.from('service_catalog').select('*').eq('active',true).order('category').order('name').order('vehicle_type').order('modality');
+    const {data,error}=await client.from('service_catalog').select('*').order('category').order('name').order('vehicle_type').order('modality');
     if(error){console.error('Falha ao carregar catálogo NET:',error);return}
     catalog=data||[];window.jeriServiceCatalog=catalog;window.dispatchEvent(new Event('jeri-service-catalog-ready'));decorate();
   }
