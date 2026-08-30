@@ -20,7 +20,7 @@
     document.body.style.visibility='visible';
     const button=document.getElementById('logoutSystemButton');const profile=document.querySelector('.profile-mini');
     if(button&&profile){profile.appendChild(button);button.style.margin='0 0 0 auto';button.style.padding='7px 9px';button.style.width='auto';button.style.flex='0 0 auto';button.style.border='1px solid rgba(255,255,255,.18)';button.style.background='rgba(255,255,255,.08)';button.style.borderRadius='8px';button.style.fontSize='12px';button.innerHTML='<span style="width:auto">↪</span> Sair'}
-    if(button){button.addEventListener('click',async()=>{button.disabled=true;const original=button.innerHTML;button.innerHTML='<span style="width:auto">↪</span> Saindo...';const {error:logoutError}=await client.auth.signOut();if(logoutError){console.error('Erro ao sair:',logoutError);button.disabled=false;button.innerHTML=original;alert('Não foi possível encerrar a sessão. Tente novamente.');return}location.replace('login.html')})}
+    if(button){button.addEventListener('click',async()=>{button.disabled=true;const original=button.innerHTML;button.innerHTML='<span style="width:auto">↪</span> Saindo...';const {error:logoutError}=await client.auth.signOut();if(logoutError){console.error('Erro ao sair:',logoutError);button.disabled=false;button.innerHTML=original;alert('Não foi possível encerrar a sessão. Tente novamente.');return}location.replace(loginUrl)})}
 
     const profileInfo=document.querySelector('.profile-mini > div:not(.avatar)');
     if(profileInfo&&user.email&&!profileInfo.querySelector('[data-user-email]')){const email=document.createElement('small');email.dataset.userEmail='true';email.textContent=user.email;email.style.marginTop='3px';email.style.maxWidth='105px';email.style.overflow='hidden';email.style.textOverflow='ellipsis';email.style.whiteSpace='nowrap';email.title=user.email;profileInfo.appendChild(email)}
@@ -33,7 +33,9 @@
         if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="sidebar-motion.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='sidebar-motion.css?v=20260826-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260830-3';document.head.appendChild(link)}
+        if(!document.querySelector('link[href^="reservation-list-actions.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='reservation-list-actions.css?v=20260830-1';document.head.appendChild(link)}
         if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
+        if(!document.querySelector('script[src^="reservation-list-actions.js"]')){const script=document.createElement('script');script.src='reservation-list-actions.js?v=20260830-1';document.body.appendChild(script)}
       };
       const loadServicesManager=()=>{if(document.querySelector('script[src^="manager-services-section.js"]'))return;const script=document.createElement('script');script.src='manager-services-section.js?v=20260830-3';document.body.appendChild(script)};
 
