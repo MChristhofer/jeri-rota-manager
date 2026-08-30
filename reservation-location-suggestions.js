@@ -1,92 +1,121 @@
 (function(){
-  const client=window.jeriSupabase;
-  const LOCATION_KEY='jeri-rota-manager-locais-v1';
   const byId=id=>document.getElementById(id);
-  let cloudLocations=[];
+  const STYLE_ID='reservationLocationToolsStyle';
 
-  function localLocations(){
-    try{
-      const items=JSON.parse(localStorage.getItem(LOCATION_KEY)||'[]');
-      return Array.isArray(items)?items:[];
-    }catch{return[]}
+  function ensureStyles(){
+    if(byId(STYLE_ID))return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+      .reservation-location-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+      .reservation-map-button{display:inline-flex;align-items:center;gap:6px;width:max-content;min-height:30px;padding:6px 9px;border:1px solid #d8c08c;border-radius:8px;background:#fffaf0;color:#74551b;font:700 10px 'DM Sans',sans-serif;cursor:pointer}
+      .reservation-map-button:hover:not(:disabled){border-color:#c99a3b;background:#fff6df}
+      .reservation-map-button:disabled{opacity:.45;cursor:not-allowed}
+      .reservation-location-help{color:#7a8388;font-size:9px;font-weight:500;line-height:1.35}
+    `;
+    document.head.appendChild(style);
   }
 
-  function normalize(item){
-    if(!item)return null;
-    if(typeof item==='string')return{name:item,type:'',address:''};
-    const name=String(item.name||'').trim();
-    if(!name)return null;
-    return{name,type:String(item.type||'').trim(),address:String(item.address||'').trim()};
+  function mapsUrl(value){
+    const query=String(value||'').trim();
+    return query?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`:'';
   }
 
-  function allLocations(){
-    const map=new Map();
-    [...localLocations(),...cloudLocations].map(normalize).filter(Boolean).forEach(item=>{
-      const key=item.name.toLocaleLowerCase('pt-BR');
-      const current=map.get(key);
-      if(!current||(!current.address&&item.address))map.set(key,item);
-    });
-    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  function removeGlobalLocationManager(){
+    const form=byId('managerLocationForm');
+    const panel=form?.closest('.manager-services-panel');
+    if(panel)panel.remove();
   }
 
-  function renderDatalist(){
-    let list=byId('reservationLocationSuggestions');
-    if(!list){
-      list=document.createElement('datalist');
-      list.id='reservationLocationSuggestions';
-      document.body.appendChild(list);
-    }
-    list.innerHTML='';
-    allLocations().forEach(item=>{
-      const option=document.createElement('option');
-      option.value=item.name;
-      option.textContent=[item.type,item.address].filter(Boolean).join(' · ');
-      list.appendChild(option);
-    });
+  function removeLegacySuggestions(){
+    const datalist=byId('reservationLocationSuggestions');
+    if(datalist)datalist.remove();
+    document.querySelectorAll('#reservationServiceDrafts [data-point-field="location"][list]').forEach(input=>input.removeAttribute('list'));
   }
 
   function enhanceInput(input,kind){
     if(!input)return;
-    input.setAttribute('list','reservationLocationSuggestions');
+    input.removeAttribute('list');
     input.setAttribute('autocomplete','off');
     input.placeholder=kind==='boarding'?'Digite hotel, aeroporto ou ponto de embarque':'Digite hotel, aeroporto ou ponto de desembarque';
+
     const label=input.closest('label');
-    if(label&&!label.querySelector(`.reservation-location-help[data-kind="${kind}"]`)){
-      const help=document.createElement('small');
-      help.className='reservation-form-help reservation-location-help';
-      help.dataset.kind=kind;
-      help.textContent='Digite livremente. Os locais cadastrados aparecem apenas como sugestões.';
-      label.appendChild(help);
+    if(!label)return;
+
+    let tools=label.querySelector('.reservation-location-tools');
+    if(!tools){
+      tools=document.createElement('div');
+      tools.className='reservation-location-tools';
+      label.appendChild(tools);
     }
+
+    let button=tools.querySelector('.reservation-map-button');
+    if(!button){
+      button=document.createElement('button');
+      button.type='button';
+      button.className='reservation-map-button';
+      button.innerHTML='<span aria-hidden="true">⌖</span> Ver no Google Maps';
+      tools.appendChild(button);
+      button.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopPropagation();
+        const url=mapsUrl(input.value);
+        if(url)window.open(url,'_blank','noopener,noreferrer');
+      });
+    }
+
+    let help=tools.querySelector('.reservation-location-help');
+    if(!help){
+      help=document.createElement('small');
+      help.className='reservation-location-help';
+      help.textContent='Este local será salvo somente nesta reserva.';
+      tools.appendChild(help);
+    }
+
+    const updateState=()=>{
+      const hasLocation=Boolean(String(input.value||'').trim());
+      button.disabled=!hasLocation;
+      button.setAttribute('aria-disabled',String(!hasLocation));
+      button.title=hasLocation?'Abrir este local em uma nova aba do Google Maps':'Preencha o local primeiro';
+    };
+
+    if(input.dataset.mapsListener!=='true'){
+      input.dataset.mapsListener='true';
+      input.addEventListener('input',updateState);
+      input.addEventListener('change',updateState);
+    }
+    updateState();
   }
 
   function enhanceAll(){
-    renderDatalist();
+    ensureStyles();
+    removeGlobalLocationManager();
+    removeLegacySuggestions();
     document.querySelectorAll('#reservationServiceDrafts [data-point-kind="boarding"] [data-point-field="location"]').forEach(input=>enhanceInput(input,'boarding'));
     document.querySelectorAll('#reservationServiceDrafts [data-point-kind="dropoff"] [data-point-field="location"]').forEach(input=>enhanceInput(input,'dropoff'));
   }
 
-  async function loadCloudLocations(){
-    if(!client){enhanceAll();return}
-    try{
-      const {data,error}=await client.from('locations').select('name,type,address').order('name');
-      if(error)throw error;
-      cloudLocations=data||[];
-    }catch(error){
-      console.warn('Não foi possível carregar sugestões de locais do Supabase:',error);
-    }
-    enhanceAll();
-  }
+  let scheduled=false;
+  const scheduleEnhance=()=>{
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{
+      scheduled=false;
+      enhanceAll();
+    });
+  };
 
-  const wait=setInterval(()=>{
-    const host=byId('reservationServiceDrafts');
-    if(!host)return;
-    clearInterval(wait);
-    new MutationObserver(enhanceAll).observe(host,{childList:true,subtree:true});
-    loadCloudLocations();
-  },80);
-
-  window.addEventListener('storage',event=>{
-    if(event.key===LOCATION_KEY)enhanceAll();
+  const observer=new MutationObserver(mutations=>{
+    const relevant=mutations.some(mutation=>[...mutation.addedNodes].some(node=>{
+      if(node.nodeType!==Node.ELEMENT_NODE)return false;
+      const el=node;
+      return el.matches?.('#reservationServiceDrafts,.reservation-service-draft,[data-point-kind],[data-point-field="location"],#managerLocationForm')||
+        el.querySelector?.('#reservationServiceDrafts,.reservation-service-draft,[data-point-kind],[data-point-field="location"],#managerLocationForm');
+    }));
+    if(relevant)scheduleEnhance();
   });
+  observer.observe(document.body,{childList:true,subtree:true});
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enhanceAll,{once:true});
+  else enhanceAll();
 })();
