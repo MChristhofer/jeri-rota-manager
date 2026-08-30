@@ -69,9 +69,7 @@
   }
 
   function injectFinanceSummary(){
-    let box=byId('reservationFinanceSummary');
-    if(!box){const services=byId('reservationServicesEditor');if(!services)return;box=document.createElement('fieldset');box.id='reservationFinanceSummary';box.className='reservation-finance-summary';services.insertAdjacentElement('afterend',box)}
-    box.innerHTML='<legend>Resumo da reserva</legend><div class="reservation-finance-grid"><div class="reservation-finance-item"><span>Total</span><strong id="resFinSale">R$ 0,00</strong></div><div class="reservation-finance-item"><span>Recebido</span><strong id="resFinPaid">R$ 0,00</strong></div><div class="reservation-finance-item"><span>Falta receber</span><strong id="resFinBalance">R$ 0,00</strong></div><div class="reservation-finance-item net"><span>NET dos serviços</span><strong id="resFinCosts">R$ 0,00</strong></div></div><small class="reservation-form-help">O detalhamento de saldos, margens, repasses e prestação de contas fica na aba Financeiro.</small>';
+    return byId('reservationServicesEditor');
   }
   function updateFinanceSummary(){if(!byId('reservationFinanceSummary'))injectFinanceSummary();const sale=Math.max(0,Number(amountInput?.value)||0),paid=Math.min(Math.max(0,Number(paidInput?.value)||0),sale||Infinity),balance=Math.max(0,sale-paid),net=serviceCosts();if(byId('resFinSale'))byId('resFinSale').textContent=money(sale);if(byId('resFinPaid'))byId('resFinPaid').textContent=money(paid);if(byId('resFinBalance'))byId('resFinBalance').textContent=money(balance);if(byId('resFinCosts'))byId('resFinCosts').textContent=money(net)}
 

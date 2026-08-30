@@ -94,17 +94,13 @@
     const managed=Boolean(group);
     setManualVisibility(card,managed);
     const variant=resolveVariant(card);
-    const quantityInput=card.querySelector('[data-net-quantity]');
-    if(variant&&quantityInput&&syncDefaults)quantityInput.value=variant.pricing_basis==='per_person'?currentPeople():1;
-    const quantity=quantityInput?.value||1;
+    const quantity=variant?.pricing_basis==='per_person'?currentPeople():1;
     const net=calculateNet(variant,quantity);
     const meta=card.querySelector('[data-catalog-meta]');
     if(meta){
       if(!variant)meta.textContent=managed?'Escolha veículo e modalidade para localizar a tarifa NET.':'Selecione um serviço cadastrado ou use o preenchimento manual.';
       else meta.innerHTML=`<span>${escapeHtml(inferCategory(variant))}</span>${vehicleLabel(variant)?`<span>${escapeHtml(vehicleLabel(variant))}</span>`:''}${variant.modality?`<span>${escapeHtml(variant.modality)}</span>`:''}<span>${escapeHtml(basisLabel(variant.pricing_basis))}</span>`;
     }
-    const kpi=card.querySelector('[data-kpi="netTotal"]');if(kpi)kpi.textContent=variant?(Number(variant.net_value)>0?money(net):'A definir'):'R$ 0,00';
-    const note=card.querySelector('[data-net-note]');if(note)note.textContent=variant?(Number(variant.net_value)>0?`NET padrão ${money(variant.net_value)} ${basisLabel(variant.pricing_basis)}. Pode ser ajustado no campo NET do serviço.`:'Este serviço está cadastrado, mas o NET ainda precisa ser definido.'):'O preenchimento manual continua disponível para serviços fora do catálogo.';
     if(!variant)return;
 
     const dir=direction(card,variant);
@@ -144,15 +140,13 @@
     chooser.innerHTML=`
       <div class="reservation-catalog-title"><div><strong>Serviço cadastrado</strong><small>Selecione rota/passeio, veículo e modalidade. O NET padrão será carregado automaticamente.</small></div><span>CATÁLOGO</span></div>
       <div class="reservation-catalog-grid">
-        <label>Serviço / rota<select data-catalog-base><option value="">Preenchimento manual</option>${allGroups.map(group=>`<option value="${escapeHtml(group.key)}">${escapeHtml(group.category)} · ${escapeHtml(group.label)}</option>`).join('')}</select></label>
+        <label>Serviço / rota *<select data-catalog-base required><option value="">Selecione um serviço cadastrado</option>${allGroups.map(group=>`<option value="${escapeHtml(group.key)}">${escapeHtml(group.category)} · ${escapeHtml(group.label)}</option>`).join('')}</select></label>
         <label data-direction-label>Trecho<select data-catalog-direction></select></label>
         <label>Veículo<select data-catalog-vehicle></select></label>
         <label>Modalidade<select data-catalog-modality></select></label>
       </div>
       <div class="reservation-catalog-meta" data-catalog-meta></div>`;
     grid.prepend(chooser);
-
-    const finance=document.createElement('div');finance.className='reservation-service-finance simplified catalog-finance';finance.innerHTML=`<label>Quantidade para NET<input data-net-quantity type="number" min="1" step="1" value="${saved?.quantity??1}"></label><div class="reservation-service-kpi"><span>NET padrão calculado</span><strong data-kpi="netTotal">R$ 0,00</strong></div><div class="reservation-net-note" data-net-note></div>`;grid.appendChild(finance);
 
     const base=chooser.querySelector('[data-catalog-base]');if(matchedKey)base.value=matchedKey;
     populateVariantControls(card,false);
@@ -168,15 +162,14 @@
     chooser.querySelector('[data-catalog-direction]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
     chooser.querySelector('[data-catalog-vehicle]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
     chooser.querySelector('[data-catalog-modality]')?.addEventListener('change',()=>updateCard(card,{syncDefaults:true}));
-    finance.querySelector('input')?.addEventListener('input',()=>{updateCard(card);window.dispatchEvent(new Event('reservation-finance-refresh'))});
     updateCard(card,{syncDefaults:Boolean(matchedKey&&!saved?.serviceCatalogId)});
   }
 
   function decorate(){document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft').forEach((card,index)=>decorateCard(card,index));window.dispatchEvent(new Event('reservation-finance-refresh'))}
 
   function state(card){
-    const item=resolveVariant(card);const quantity=card.querySelector('[data-net-quantity]')?.value||1;const dir=direction(card,item);
-    return{item,quantity,net:calculateNet(item,quantity),direction:card.querySelector('[data-catalog-direction]')?.value||'forward',origin:dir.origin,destination:dir.destination};
+    const item=resolveVariant(card);const quantity=item?.pricing_basis==='per_person'?currentPeople():1;const dir=direction(card,item);const raw=String(card.querySelector('[data-basic-net-input]')?.value||card.querySelector('[data-field="repasseAmount"]')?.value||0);const manual=Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw)||0;
+    return{item,quantity,net:manual,direction:card.querySelector('[data-catalog-direction]')?.value||'forward',origin:dir.origin,destination:dir.destination};
   }
 
   async function loadCatalog(){
@@ -215,7 +208,7 @@
 
   form.querySelector('[name="people"]')?.addEventListener('input',()=>{
     document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft').forEach(card=>{
-      const st=state(card);if(st.item?.pricing_basis==='per_person'){const q=card.querySelector('[data-net-quantity]');if(q)q.value=currentPeople()}updateCard(card);
+      updateCard(card);
     });window.dispatchEvent(new Event('reservation-finance-refresh'));
   });
 

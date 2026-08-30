@@ -280,3 +280,5 @@
 @media (prefers-reduced-motion: reduce) {
   #reservationServicesEditor * { scroll-behavior: auto !important; }
 }
+.catalog-compat-field{display:none!important}
+.service-draft-actions{display:flex;align-items:center;gap:10px}

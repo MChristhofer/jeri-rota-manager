@@ -23,7 +23,7 @@ function normalizeReservation(reservation) {
   const hasPaidAmount = Object.prototype.hasOwnProperty.call(reservation, 'paidAmount');
   // Migração dos registros iniciais: o status Confirmada era usado como pagamento integral.
   const legacyPaidAmount = reservation.status === 'Confirmada' ? amount : 0;
-  const requestedPaidAmount = clamp(Number(hasPaidAmount ? reservation.paidAmount : legacyPaidAmount) || 0, 0, amount);
+  const requestedPaidAmount = Math.max(0, Number(hasPaidAmount ? reservation.paidAmount : legacyPaidAmount) || 0);
   let payments = Array.isArray(reservation.payments)
     ? reservation.payments.map((payment, index) => ({ id: payment.id || `payment-${reservation.id || 'new'}-${index}`, amount: Number(payment.amount) || 0, receivedAt: payment.receivedAt || null, kind: payment.kind || 'payment', source: payment.source || 'reservation' })).filter(payment => payment.amount !== 0)
     : [];
@@ -31,7 +31,7 @@ function normalizeReservation(reservation) {
   const paymentsTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const adjustment = Number((requestedPaidAmount - paymentsTotal).toFixed(2));
   if (adjustment !== 0) payments.push({ id: `adjustment-${Date.now()}`, amount: adjustment, receivedAt: new Date().toISOString(), kind: 'adjustment', source: 'reservation_summary' });
-  const paidAmount = clamp(payments.reduce((sum, payment) => sum + payment.amount, 0), 0, amount);
+  const paidAmount = Math.max(0, payments.reduce((sum, payment) => sum + payment.amount, 0));
   const allowedOperations = ['propria', 'recebida', 'enviada'];
   const partnerOperation = allowedOperations.includes(reservation.partnerOperation) ? reservation.partnerOperation : 'propria';
   const netAmount = number(reservation.netAmount);
@@ -84,7 +84,7 @@ function parseLocalDate(value) {
 }
 function saveReservations() { localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations)); }
 function statusClass(status) { return String(status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-function receivedAmount(reservation) { return clamp(Number(reservation.paidAmount) || 0, 0, Number(reservation.amount) || 0); }
+function receivedAmount(reservation) { return Math.max(0, Number(reservation.paidAmount) || 0); }
 function cashReceivedByJeri(reservation) { return reservation.collectedBy === 'Jeri Rota' ? receivedAmount(reservation) : 0; }
 function remainingAmount(reservation) { return Math.max(0, Number(reservation.amount || 0) - receivedAmount(reservation)); }
 function isPartnerReservation(reservation) { return reservation.partnerOperation !== 'propria' && Boolean(reservation.partner) && Number(reservation.netAmount) > 0; }
@@ -224,7 +224,7 @@ function renderReservations() {
       <td class="reservation-total"><strong>${currency.format(r.amount)}</strong></td>
       <td class="payment-summary"><strong>${currency.format(receivedAmount(r))} <span>de ${currency.format(r.amount)}</span></strong><small>Saldo ${currency.format(balance)} · ${payment.label}</small></td>
       <td><span class="status ${statusClass(r.status)}">${r.status}</span></td>
-      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}" data-delete-cloud="${escapeHtml(r.cloudId || '')}">Excluir</button></div></details></td>
+      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-copy="${r.id}">Copiar reserva</button><button type="button" data-whatsapp="${r.id}">Enviar por WhatsApp</button><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}" data-delete-cloud="${escapeHtml(r.cloudId || '')}">Excluir</button></div></details></td>
     </tr>`;
   }).join('');
 }
@@ -345,8 +345,7 @@ const partnerFields = document.getElementById('partnerFields');
 
 function updatePaymentPreview() {
   const total = Math.max(0, Number(amountInput.value) || 0);
-  const received = clamp(Number(paidAmountInput.value) || 0, 0, total);
-  if (Number(paidAmountInput.value) > total && total > 0) paidAmountInput.value = total;
+  const received = Math.max(0, Number(paidAmountInput.value) || 0);
   const balance = Math.max(0, total - received);
   balancePreview.textContent = currency.format(balance);
   paymentPreview.textContent = balance ? 'Saldo pendente do cliente.' : 'Cliente quitou a reserva.';
@@ -398,6 +397,7 @@ function openModal(id = null) {
     reservationForm.dataset.editingReservationId = String(id);
     reservationForm.querySelector('[name="client"]').value = reservation.client;
     reservationForm.querySelector('[name="phone"]').value = reservation.phone;
+    reservationForm.querySelector('[name="email"]').value = reservation.email || '';
     reservationForm.querySelector('[name="service"]').value = reservation.service;
     reservationForm.querySelector('[name="date"]').value = reservation.date;
     reservationForm.querySelector('[name="people"]').value = reservation.people;
@@ -449,7 +449,7 @@ reservationForm.addEventListener('submit', event => {
   const formEditingId = event.target.dataset.editingReservationId;
   const activeEditingId = formEditingId ? Number(formEditingId) : editingReservationId;
   const amount = Math.max(0, Number(data.amount));
-  const paidAmount = clamp(Number(data.paidAmount) || 0, 0, amount);
+  const paidAmount = Math.max(0, Number(data.paidAmount) || 0);
   const partnerOperation = data.partnerOperation || 'propria';
   const netAmount = partnerOperation === 'propria' ? 0 : Math.max(0, Number(data.netAmount) || 0);
   const settledAmount = partnerOperation === 'propria' ? 0 : clamp(Number(data.settledAmount) || 0, 0, netAmount);
@@ -459,6 +459,7 @@ reservationForm.addEventListener('submit', event => {
     id: activeEditingId || Date.now(),
     client: data.client.trim(),
     phone: data.phone.trim(),
+    email: data.email?.trim() || '',
     service: data.service.trim(),
     date: data.date || dateOffset(0),
     people: Math.max(1, Number(data.people)),
@@ -489,6 +490,17 @@ reservationForm.addEventListener('submit', event => {
 
 document.getElementById('reservationsTable').addEventListener('click', event => {
   const actionButton = event.target.closest?.('button');
+  const copyId = Number(actionButton?.dataset.copy);
+  const whatsappId = Number(actionButton?.dataset.whatsapp);
+  const shareId = copyId || whatsappId;
+  if (shareId) {
+    const reservation = reservations.find(item => String(item.id) === String(shareId));
+    if (!reservation) return;
+    const message = reservationMessage(reservation);
+    if (copyId) copyText(message).then(copied => showReservationToast(copied ? 'Reserva copiada.' : 'Não foi possível copiar.', copied ? 'success' : 'error'));
+    else { copyText(message); window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener'); }
+    return;
+  }
   const editId = Number(actionButton?.dataset.edit);
   if (editId) {
     openModal(editId);

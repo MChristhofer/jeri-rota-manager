@@ -16,7 +16,7 @@
 
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
-  const number=value=>Math.max(0,Number(String(value??0).replace(',','.'))||0);
+  const number=value=>{const raw=String(value??0).trim();const normalized=raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw;return Math.max(0,Number(normalized)||0)};
   const escape=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const monthOf=value=>String(value||'').slice(0,7);
   const isPaid=status=>/^(pago|quitado|repassado|realizado)$/i.test(String(status||'').trim());
@@ -70,18 +70,21 @@
     document.querySelectorAll('.operational-service-card[data-service-index]').forEach(card=>{
       if(card.querySelector('[data-basic-net]'))return;
       const index=Number(card.dataset.serviceIndex)||0;
-      const saleLabel=card.querySelector('[data-field="saleTotal"]')?.closest('label');
-      if(!saleLabel)return;
+      const anchor=card.querySelector('[data-field="returnDate"]')?.closest('label')||card.querySelector('[data-field="date"]')?.closest('label');
+      if(!anchor)return;
       const label=document.createElement('label');
       label.className='service-basic-net-field';
       label.dataset.basicNet='1';
       const value=netDrafts.has(index)?netDrafts.get(index):'';
-      label.innerHTML=`Valor a pagar / NET (R$)<input data-basic-net-input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" value="${escape(value)}"><small>Custo previsto deste serviço.</small>`;
-      saleLabel.insertAdjacentElement('afterend',label);
-      label.querySelector('[data-basic-net-input]')?.addEventListener('input',event=>{
+      label.innerHTML=`Valor NET<input data-basic-net-input type="text" inputmode="decimal" placeholder="0,00" value="${escape(value)}"><small>Carregado do catálogo e sempre editável nesta reserva.</small>`;
+      anchor.insertAdjacentElement('afterend',label);
+      const netInput=label.querySelector('[data-basic-net-input]');
+      netInput?.addEventListener('focus',()=>netInput.select());
+      netInput?.addEventListener('input',event=>{
         netDrafts.set(index,number(event.currentTarget.value));
         updateNetSummary();
       });
+      netInput?.addEventListener('blur',()=>{netInput.value=number(netInput.value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})});
     });
   }
 
@@ -101,10 +104,19 @@
     netDrafts=next;
   }
 
+  function duplicateNetDraft(index){
+    const next=new Map();
+    [...netDrafts.entries()].forEach(([key,value])=>next.set(key>index?key+1:key,value));
+    next.set(index+1,number(netDrafts.get(index)||0));
+    netDrafts=next;
+  }
+
   document.addEventListener('click',event=>{
     const removeService=event.target.closest?.('.remove-service-draft');
     if(removeService)shiftNetDraftsAfterRemoval(Number(removeService.dataset.index)||0);
-    if(event.target.closest?.('#addReservationService,.remove-service-draft,.add-location-point,.remove-location-point'))setTimeout(injectNetFields,0);
+    const duplicateService=event.target.closest?.('.duplicate-service-draft');
+    if(duplicateService)duplicateNetDraft(Number(duplicateService.dataset.index)||0);
+    if(event.target.closest?.('#addReservationService,.remove-service-draft,.duplicate-service-draft,.add-location-point,.remove-location-point'))setTimeout(injectNetFields,0);
   },true);
 
   function wrapReservationModal(){

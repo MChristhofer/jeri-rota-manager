@@ -19,6 +19,7 @@
     legacy_id:Number.isSafeInteger(Number(r.id))?Number(r.id):null,
     client:r.client||null,
     phone:r.phone||null,
+    email:r.email||null,
     people:Number(r.people)||1,
     amount:Number(r.amount)||0,
     paid_amount:Number(r.paidAmount)||0,
