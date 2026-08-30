@@ -28,8 +28,9 @@
   }
 
   function removeLegacySuggestions(){
-    byId('reservationLocationSuggestions')?.remove();
-    document.querySelectorAll('#reservationServiceDrafts [data-point-field="location"]').forEach(input=>input.removeAttribute('list'));
+    const datalist=byId('reservationLocationSuggestions');
+    if(datalist)datalist.remove();
+    document.querySelectorAll('#reservationServiceDrafts [data-point-field="location"][list]').forEach(input=>input.removeAttribute('list'));
   }
 
   function enhanceInput(input,kind){
@@ -40,8 +41,6 @@
 
     const label=input.closest('label');
     if(!label)return;
-
-    label.querySelectorAll('.reservation-location-help').forEach(item=>item.remove());
 
     let tools=label.querySelector('.reservation-location-tools');
     if(!tools){
@@ -61,8 +60,7 @@
         event.preventDefault();
         event.stopPropagation();
         const url=mapsUrl(input.value);
-        if(!url)return;
-        window.open(url,'_blank','noopener,noreferrer');
+        if(url)window.open(url,'_blank','noopener,noreferrer');
       });
     }
 
@@ -97,7 +95,25 @@
     document.querySelectorAll('#reservationServiceDrafts [data-point-kind="dropoff"] [data-point-field="location"]').forEach(input=>enhanceInput(input,'dropoff'));
   }
 
-  const observer=new MutationObserver(()=>enhanceAll());
+  let scheduled=false;
+  const scheduleEnhance=()=>{
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{
+      scheduled=false;
+      enhanceAll();
+    });
+  };
+
+  const observer=new MutationObserver(mutations=>{
+    const relevant=mutations.some(mutation=>[...mutation.addedNodes].some(node=>{
+      if(node.nodeType!==Node.ELEMENT_NODE)return false;
+      const el=node;
+      return el.matches?.('#reservationServiceDrafts,.reservation-service-draft,[data-point-kind],[data-point-field="location"],#managerLocationForm')||
+        el.querySelector?.('#reservationServiceDrafts,.reservation-service-draft,[data-point-kind],[data-point-field="location"],#managerLocationForm');
+    }));
+    if(relevant)scheduleEnhance();
+  });
   observer.observe(document.body,{childList:true,subtree:true});
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enhanceAll,{once:true});
