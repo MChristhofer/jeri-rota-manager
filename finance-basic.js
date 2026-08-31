@@ -20,8 +20,21 @@
   const escape=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const monthOf=value=>String(value||'').slice(0,7);
   const isPaid=status=>/^(pago|quitado|repassado|realizado)$/i.test(String(status||'').trim());
+  const isNoCost=status=>/^sem custo$/i.test(String(status||'').trim());
   const serviceName=service=>service.title||service.service||service.tour||'Serviço';
   const serviceOperationalDate=service=>service?.date||service?.returnDate||'';
+  const storedNet=service=>{
+    if(!service)return 0;
+    const repasse=number(service.repasseAmount);
+    const total=number(service.netTotal);
+    const unit=number(service.netUnit);
+    const quantity=Math.max(1,number(service.quantity)||1);
+    if(isNoCost(service.repasseStatus)&&repasse===0)return 0;
+    if(repasse>0)return repasse;
+    if(total>0)return total;
+    if(unit>0)return unit*quantity;
+    return 0;
+  };
   const formatDate=value=>{if(!value)return'—';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):dateFmt.format(date)};
   const formatMonth=value=>{
     const [year,month]=String(value||'').split('-').map(Number);
@@ -41,7 +54,8 @@
     if(session===draftSession)return;
     draftSession=session;
     netDrafts=new Map();
-    if(id){reservationServices(id).forEach((service,index)=>netDrafts.set(index,number(service.repasseAmount??service.netTotal)))}
+    if(id){reservationServices(id).forEach((service,index)=>netDrafts.set(index,storedNet(service)))}
+    updateNetSummary();
   }
 
   function updateNetSummary(){
@@ -50,6 +64,57 @@
     const total=[...netDrafts.values()].reduce((sum,value)=>sum+number(value),0);
     const formatted=money.format(total);
     if(output.textContent!==formatted)output.textContent=formatted;
+  }
+
+  function hydrateExistingNetField(card,index){
+    const label=card.querySelector('[data-basic-net]');
+    const netInput=label?.querySelector('[data-basic-net-input]')||card.querySelector('[data-basic-net-input]');
+    if(!netInput)return false;
+    const hydrationKey=`${draftSession}:${index}`;
+    if(netInput.dataset.netHydrationKey!==hydrationKey&&netDrafts.has(index)&&netInput.dataset.netUserChanged!=='true'){
+      const value=number(netDrafts.get(index));
+      netInput.value=value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      netInput.dataset.netHydrationKey=hydrationKey;
+      netInput.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    return true;
+  }
+
+  function bindNetInput(netInput,index){
+    if(!netInput||netInput.dataset.netDraftBound==='true')return;
+    netInput.dataset.netDraftBound='true';
+    netInput.addEventListener('focus',()=>netInput.select());
+    netInput.addEventListener('input',event=>{
+      if(event.isTrusted)event.currentTarget.dataset.netUserChanged='true';
+      netDrafts.set(index,number(event.currentTarget.value));
+      updateNetSummary();
+    });
+    netInput.addEventListener('blur',()=>{netInput.value=number(netInput.value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})});
+  }
+
+  function injectNetFields(){
+    ensureNetSummary();
+    document.querySelectorAll('.operational-service-card[data-service-index]').forEach(card=>{
+      const index=Number(card.dataset.serviceIndex)||0;
+      const existing=card.querySelector('[data-basic-net-input]');
+      if(existing){
+        bindNetInput(existing,index);
+        hydrateExistingNetField(card,index);
+        return;
+      }
+      const anchor=card.querySelector('[data-field="returnDate"]')?.closest('label')||card.querySelector('[data-field="date"]')?.closest('label');
+      if(!anchor)return;
+      const label=document.createElement('label');
+      label.className='service-basic-net-field';
+      label.dataset.basicNet='1';
+      const value=netDrafts.has(index)?number(netDrafts.get(index)):0;
+      label.innerHTML=`Valor NET<input data-basic-net-input type="text" inputmode="decimal" placeholder="0,00" value="${escape(value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))}"><small>Carregado do catálogo e sempre editável nesta reserva.</small>`;
+      anchor.insertAdjacentElement('afterend',label);
+      const netInput=label.querySelector('[data-basic-net-input]');
+      bindNetInput(netInput,index);
+      if(netInput)netInput.dataset.netHydrationKey=`${draftSession}:${index}`;
+    });
+    updateNetSummary();
   }
 
   function ensureNetSummary(){
@@ -66,29 +131,6 @@
     updateNetSummary();
   }
 
-  function injectNetFields(){
-    ensureNetSummary();
-    document.querySelectorAll('.operational-service-card[data-service-index]').forEach(card=>{
-      if(card.querySelector('[data-basic-net]'))return;
-      const index=Number(card.dataset.serviceIndex)||0;
-      const anchor=card.querySelector('[data-field="returnDate"]')?.closest('label')||card.querySelector('[data-field="date"]')?.closest('label');
-      if(!anchor)return;
-      const label=document.createElement('label');
-      label.className='service-basic-net-field';
-      label.dataset.basicNet='1';
-      const value=netDrafts.has(index)?netDrafts.get(index):'';
-      label.innerHTML=`Valor NET<input data-basic-net-input type="text" inputmode="decimal" placeholder="0,00" value="${escape(value)}"><small>Carregado do catálogo e sempre editável nesta reserva.</small>`;
-      anchor.insertAdjacentElement('afterend',label);
-      const netInput=label.querySelector('[data-basic-net-input]');
-      netInput?.addEventListener('focus',()=>netInput.select());
-      netInput?.addEventListener('input',event=>{
-        netDrafts.set(index,number(event.currentTarget.value));
-        updateNetSummary();
-      });
-      netInput?.addEventListener('blur',()=>{netInput.value=number(netInput.value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})});
-    });
-  }
-
   function installServiceObserver(){
     const draftsHost=document.getElementById('reservationServiceDrafts');
     if(!draftsHost||serviceObserver)return;
@@ -103,6 +145,7 @@
       if(key>index)next.set(key-1,value);
     });
     netDrafts=next;
+    updateNetSummary();
   }
 
   function duplicateNetDraft(index){
@@ -110,6 +153,7 @@
     [...netDrafts.entries()].forEach(([key,value])=>next.set(key>index?key+1:key,value));
     next.set(index+1,number(netDrafts.get(index)||0));
     netDrafts=next;
+    updateNetSummary();
   }
 
   document.addEventListener('click',event=>{
@@ -127,12 +171,37 @@
       draftSession='';
       netDrafts=new Map();
       const result=base(id);
-      setTimeout(()=>{loadNetDrafts(id);installServiceObserver();injectNetFields()},25);
+      setTimeout(()=>{
+        loadNetDrafts(id);
+        installServiceObserver();
+        injectNetFields();
+        setTimeout(injectNetFields,80);
+      },25);
       return result;
     };
     wrapped.__commitmentsWrapped=true;
     window.openModal=wrapped;
     try{openModal=wrapped}catch{}
+  }
+
+  function protectNetDraftsBeforeSubmit(){
+    const editingId=form.dataset.editingReservationId||'';
+    if(!editingId)return;
+    const saved=reservationServices(editingId);
+    saved.forEach((service,index)=>{
+      const input=document.querySelector(`.operational-service-card[data-service-index="${index}"] [data-basic-net-input]`);
+      const userChanged=input?.dataset.netUserChanged==='true';
+      const persisted=storedNet(service);
+      const current=netDrafts.has(index)?number(netDrafts.get(index)):number(input?.value);
+      if(!userChanged&&persisted>0&&current<=0){
+        netDrafts.set(index,persisted);
+        if(input){
+          input.value=persisted.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+          input.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+      }
+    });
+    updateNetSummary();
   }
 
   function patchSavedNetValues(){
@@ -150,8 +219,9 @@
 
     indexes.forEach((arrayIndex,index)=>{
       const service=services[arrayIndex];
-      const net=number(netDrafts.has(index)?netDrafts.get(index):(service.repasseAmount??service.netTotal));
+      const net=netDrafts.has(index)?number(netDrafts.get(index)):storedNet(service);
       service.repasseAmount=net;
+      service.netTotal=net;
       if(net<=0&&!isPaid(service.repasseStatus))service.repasseStatus='Sem custo';
       if(net>0&&!isPaid(service.repasseStatus))service.repasseStatus='A pagar';
     });
@@ -164,9 +234,10 @@
   }
 
   form.addEventListener('submit',()=>{
+    protectNetDraftsBeforeSubmit();
     pendingSubmitId=form.dataset.editingReservationId||'';
     setTimeout(patchSavedNetValues,80);
-  });
+  },true);
 
   function setupFinanceMarkup(){
     financeSection.innerHTML=`
@@ -174,7 +245,7 @@
         <div>
           <p class="eyebrow">CONTROLE MENSAL</p>
           <h2>Compromissos</h2>
-          <p>Veja rapidamente quanto a empresa precisa cobrir em cada mês. Clique em um mês para abrir os detalhes.</p>
+          <p>Veja quanto de NET ainda precisa ser pago e quanto realmente precisa sair do caixa da Jeri Rota em cada mês.</p>
         </div>
       </div>
 
@@ -184,7 +255,7 @@
             <p class="eyebrow">VISÃO RÁPIDA</p>
             <h3 id="commitmentMonthOverviewTitle">Quanto precisa sair do caixa</h3>
           </div>
-          <small>Somente meses com NET pendente</small>
+          <small>NET pendente menos o saldo que os clientes ainda vão pagar</small>
         </div>
         <div id="commitmentMonthCards" class="commitment-month-grid"></div>
       </section>
@@ -194,7 +265,7 @@
           <div>
             <p class="eyebrow">DETALHAMENTO</p>
             <h3 id="commitmentDetailTitle">Compromissos do mês</h3>
-            <p>Os valores abaixo formam o total que você viu no card do mês.</p>
+            <p>O NET mostra tudo que ainda será pago. O valor a cobrir considera apenas o que não será coberto pelo saldo futuro dos clientes.</p>
           </div>
           <div class="commitment-detail-actions">
             <label><span>Buscar neste mês</span><input id="commitmentSearch" type="search" placeholder="Cliente, reserva ou serviço"></label>
@@ -205,18 +276,18 @@
         <input id="commitmentMonth" type="hidden" value="">
 
         <div class="commitment-detail-summary">
-          <div><span>NET pendente</span><strong id="commitmentNetTotal">R$ 0,00</strong></div>
-          <div><span>Clientes ainda pagam</span><strong id="commitmentClientTotal">R$ 0,00</strong></div>
-          <div class="company"><span>Empresa cobre</span><strong id="commitmentCompanyTotal">R$ 0,00</strong></div>
+          <div><span>NET total pendente</span><strong id="commitmentNetTotal">R$ 0,00</strong></div>
+          <div><span>Saldo futuro dos clientes</span><strong id="commitmentClientTotal">R$ 0,00</strong></div>
+          <div class="company"><span>Empresa precisa cobrir</span><strong id="commitmentCompanyTotal">R$ 0,00</strong></div>
         </div>
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Data</th><th>Reserva / Cliente</th><th>Serviço</th><th>NET a pagar</th><th>Cliente ainda paga</th><th>Empresa cobre</th><th></th></tr></thead>
+            <thead><tr><th>Data</th><th>Reserva / Cliente</th><th>Serviço</th><th>NET a pagar</th><th>Saldo do cliente usado</th><th>Empresa cobre</th><th></th></tr></thead>
             <tbody id="commitmentTable"></tbody>
           </table>
         </div>
-        <div class="commitments-note">Cálculo: o saldo do cliente é usado uma única vez, seguindo a ordem das datas dos serviços. A empresa cobre somente o que restar do NET.</div>
+        <div class="commitments-note"><strong>Regra:</strong> empresa cobre = NET pendente − saldo que o cliente ainda vai pagar. O saldo do cliente é utilizado uma única vez, seguindo a ordem das datas dos serviços. Se a reserva já estiver totalmente recebida, o NET pendente fica integralmente como valor a cobrir.</div>
       </article>
 
       <div class="finance-legacy-hooks" aria-hidden="true"><strong id="financeReceived"></strong><strong id="financePending"></strong><strong id="financeTotal"></strong><table><tbody id="financeTable"></tbody></table></div>`;
@@ -246,7 +317,7 @@
 
     services.forEach(service=>{
       const reservation=reservationsById.get(String(service.reservationId));
-      const net=number(service.repasseAmount??service.netTotal);
+      const net=storedNet(service);
       if(!reservation||net<=0||isPaid(service.repasseStatus))return;
       const key=String(reservation.id);
       if(!servicesByReservation.has(key))servicesByReservation.set(key,[]);
@@ -259,9 +330,10 @@
         .sort((a,b)=>String(serviceOperationalDate(a)||'9999-12-31').localeCompare(String(serviceOperationalDate(b)||'9999-12-31'))||(Number(a.sortOrder)||0)-(Number(b.sortOrder)||0));
       if(!linked.length)return;
 
+      /* Regra financeira: apenas o saldo ainda a receber do cliente reduz o que a empresa precisa cobrir. */
       let customerBalance=Math.max(0,number(reservation.amount)-number(reservation.paidAmount));
       linked.forEach(service=>{
-        const net=number(service.repasseAmount??service.netTotal);
+        const net=storedNet(service);
         const clientContribution=Math.min(customerBalance,net);
         const companyCover=Math.max(0,net-clientContribution);
         customerBalance=Math.max(0,customerBalance-clientContribution);
@@ -298,7 +370,7 @@
         <span class="commitment-month-name">${escape(formatMonth(group.month))}</span>
         <small>Empresa precisa cobrir</small>
         <strong>${money.format(group.company)}</strong>
-        <span class="commitment-month-count">${group.rows.length} compromisso${group.rows.length===1?'':'s'} pendente${group.rows.length===1?'':'s'}</span>
+        <span class="commitment-month-count">NET pendente ${money.format(group.net)} · ${group.rows.length} compromisso${group.rows.length===1?'':'s'}</span>
       </button>`).join('');
   }
 
