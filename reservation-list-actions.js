@@ -1,6 +1,7 @@
 (function(){
   const RESERVATIONS_KEY='jeri-rota-manager-reservas-v1';
   const SERVICES_KEY='jeri-rota-manager-reservation-services-v1';
+  const OP_META_PREFIX='JR_OP_V1:';
   const table=document.getElementById('reservationsTable');
   if(!table)return;
 
@@ -11,21 +12,52 @@
   }
 
   const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+  const listDate=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
+  const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+  const clone=value=>JSON.parse(JSON.stringify(value));
   const escapeHtml=(value='')=>String(value).replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
   const brDate=value=>{if(!value)return'';const [y,m,d]=String(value).slice(0,10).split('-');return y&&m&&d?`${d}/${m}/${y}`:String(value)};
   const phoneDigits=value=>{let digits=String(value||'').replace(/\D/g,'');if((digits.length===10||digits.length===11)&&!digits.startsWith('55'))digits=`55${digits}`;return digits};
   const number=value=>Math.max(0,Number(value)||0);
+  const norm=value=>String(value??'').trim().toLowerCase();
+
+  function decodeMeta(value){
+    if(!String(value||'').startsWith(OP_META_PREFIX))return{};
+    try{return JSON.parse(decodeURIComponent(String(value).slice(OP_META_PREFIX.length)))}catch{return{}}
+  }
 
   function reservationById(id){return read(RESERVATIONS_KEY).find(item=>String(item.id)===String(id))||null}
   function servicesFor(id){return read(SERVICES_KEY).filter(item=>String(item.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
+  function serviceType(service){
+    if(!service)return'';
+    const meta=decodeMeta(service.responsible);
+    const explicit=norm(service.serviceType||meta.serviceType);
+    if(explicit)return explicit;
+    const text=norm([service.title,service.service,service.tour,service.route].filter(Boolean).join(' '));
+    if(/transfer|aeroporto|fortaleza|jericoacoara|\bjeri\b/.test(text))return'transfer';
+    if(/passeio|leste|oeste|praia|lagoa/.test(text))return'passeio';
+    if(/hosped|hotel|pousada/.test(text))return'hospedagem';
+    return'';
+  }
   function serviceTitle(service,reservation){return service?.title||service?.service||service?.tour||reservation?.service||'Serviço'}
-  function serviceTime(service,returning=false){return returning?(service?.returnTime||service?.return_time||''):(service?.departureTime||service?.startTime||service?.time||'')}
+  function serviceTime(service,returning=false){return returning?(service?.returnTime||service?.return_time||service?.endTime||''):(service?.departureTime||service?.startTime||service?.time||'')}
   function dateAndTime(date,time){return [brDate(date),time?`às ${time}`:''].filter(Boolean).join(' ')}
 
+  function primaryService(reservation){
+    const services=servicesFor(reservation?.id);
+    if(!services.length)return null;
+    const transfers=services.filter(item=>serviceType(item)==='transfer');
+    if(!transfers.length)return services[0];
+    return [...transfers].sort((a,b)=>{
+      const aLeg=a.date?0:1;
+      const bLeg=b.date?0:1;
+      return aLeg-bLeg||(a.sortOrder||0)-(b.sortOrder||0);
+    })[0];
+  }
+
   function details(reservation){
-    const services=servicesFor(reservation.id);
-    const first=services[0]||null;
+    const first=primaryService(reservation)||servicesFor(reservation.id)[0]||null;
     const outboundDate=first?.date||reservation.date||'';
     const returnDate=first?.returnDate||'';
     return{
@@ -68,12 +100,36 @@
     return `<span class="reservation-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${paths[name]||''}</svg></span>`;
   }
 
+  function decoratePrimaryService(row){
+    const action=row.querySelector('[data-edit],[data-copy],[data-whatsapp],[data-delete]');
+    const id=action?.dataset.edit||action?.dataset.copy||action?.dataset.whatsapp||action?.dataset.delete;
+    if(!id)return;
+    const reservation=reservationById(id);if(!reservation)return;
+    const service=primaryService(reservation);if(!service)return;
+    const cell=row.querySelector('.reservation-service');if(!cell)return;
+    const strong=cell.querySelector('strong');
+    const small=cell.querySelector('small');
+    if(strong)strong.textContent=serviceTitle(service,reservation);
+    if(small){
+      const rawDate=service.date||service.returnDate||reservation.date||'';
+      let dateText='';
+      if(rawDate){
+        const [y,m,d]=String(rawDate).slice(0,10).split('-').map(Number);
+        if(y&&m&&d)dateText=listDate.format(new Date(y,m-1,d,12));
+      }
+      const partner=reservation.partnerOperation!=='propria'&&reservation.partner?` · ${reservation.partner}`:'';
+      small.textContent=`${dateText}${partner}`;
+    }
+    cell.dataset.primaryService='transfer';
+  }
+
   function decorateRows(){
     table.querySelectorAll('tr').forEach(row=>{
       const cells=row.querySelectorAll('td');
       if(cells.length>=7){
         ['Cliente','Serviço / data','Pessoas','Valor total','Pagamento','Status','Ações'].forEach((label,index)=>cells[index]?.setAttribute('data-label',label));
       }
+      decoratePrimaryService(row);
       row.querySelectorAll('.reservation-action-popover button').forEach(button=>{
         if(button.dataset.actionDecorated==='true')return;
         let type='';
@@ -89,6 +145,111 @@
       });
     });
   }
+
+  /* Proteção de edição: abrir e salvar não pode remover dados que o usuário não excluiu. */
+  let editSnapshot=null;
+  const removedOriginalKeys=new Set();
+  const serviceKey=(service,index=0)=>String(service?.sourceKey||service?.cloudId||service?.id||`sort:${service?.sortOrder??index}`);
+
+  function captureEdit(id){
+    const reservation=reservationById(id);
+    if(!reservation){editSnapshot=null;removedOriginalKeys.clear();return}
+    editSnapshot={
+      id:String(reservation.id),
+      reservation:clone(reservation),
+      services:clone(servicesFor(reservation.id))
+    };
+    removedOriginalKeys.clear();
+  }
+
+  function mergePreservingUnknown(original,current){
+    if(!original)return current;
+    return{...original,...current};
+  }
+
+  function reconcileEdit(snapshot){
+    if(!snapshot)return;
+    const reservations=read(RESERVATIONS_KEY);
+    const currentReservation=reservations.find(item=>String(item.id)===snapshot.id);
+    if(currentReservation){
+      const index=reservations.indexOf(currentReservation);
+      reservations[index]=mergePreservingUnknown(snapshot.reservation,currentReservation);
+      write(RESERVATIONS_KEY,reservations);
+    }
+
+    const all=read(SERVICES_KEY);
+    const current=all.filter(item=>String(item.reservationId)===snapshot.id).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    const others=all.filter(item=>String(item.reservationId)!==snapshot.id);
+    const originalByKey=new Map(snapshot.services.map((service,index)=>[serviceKey(service,index),service]));
+    const used=new Set();
+    const merged=current.map((service,index)=>{
+      const key=serviceKey(service,index);
+      let original=originalByKey.get(key);
+      if(!original){
+        original=snapshot.services.find(candidate=>
+          (candidate.sourceKey&&service.sourceKey&&String(candidate.sourceKey)===String(service.sourceKey))||
+          (candidate.cloudId&&service.cloudId&&String(candidate.cloudId)===String(service.cloudId))||
+          (candidate.id&&service.id&&String(candidate.id)===String(service.id))
+        );
+      }
+      if(original)used.add(serviceKey(original,snapshot.services.indexOf(original)));
+      return mergePreservingUnknown(original,service);
+    });
+
+    snapshot.services.forEach((original,index)=>{
+      const key=serviceKey(original,index);
+      if(used.has(key)||removedOriginalKeys.has(key))return;
+      merged.push({...original,sortOrder:merged.length});
+    });
+
+    merged.sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    merged.forEach((service,index)=>service.sortOrder=index);
+    write(SERVICES_KEY,[...others,...merged]);
+
+    try{
+      if(typeof getReservations==='function')reservations=getReservations();
+      if(typeof renderAll==='function')renderAll();
+    }catch(error){console.warn('Não foi possível redesenhar a reserva protegida:',error)}
+    requestAnimationFrame(decorateRows);
+  }
+
+  function installEditProtection(){
+    const form=document.getElementById('reservationForm');
+    if(form&&form.dataset.preserveEditProtection!=='true'){
+      form.dataset.preserveEditProtection='true';
+      form.addEventListener('submit',()=>{
+        if(!editSnapshot)return;
+        const snapshot=clone(editSnapshot);
+        setTimeout(()=>reconcileEdit(snapshot),360);
+      },true);
+    }
+
+    const currentOpen=window.openModal;
+    if(document.getElementById('reservationServicesEditor')&&typeof currentOpen==='function'&&!currentOpen.__preserveEditProtection){
+      const wrapped=function(id=null){
+        if(id!==null&&id!==undefined)captureEdit(id);
+        else{editSnapshot=null;removedOriginalKeys.clear()}
+        return currentOpen.apply(this,arguments);
+      };
+      wrapped.__preserveEditProtection=true;
+      window.openModal=wrapped;
+      try{openModal=wrapped}catch{}
+    }
+  }
+
+  document.addEventListener('click',event=>{
+    const edit=event.target.closest?.('[data-edit],[data-settlement-edit]');
+    const editId=edit?.dataset.edit||edit?.dataset.settlementEdit;
+    if(editId)captureEdit(editId);
+
+    const remove=event.target.closest?.('.remove-service-draft');
+    if(remove&&editSnapshot){
+      const card=remove.closest('[data-service-index]');
+      const index=Number(card?.dataset.serviceIndex);
+      const original=Number.isInteger(index)?editSnapshot.services[index]:null;
+      if(original)removedOriginalKeys.add(serviceKey(original,index));
+    }
+  },true);
 
   function ensureModal(){
     let backdrop=document.getElementById('reservationWhatsappPreview');
@@ -165,6 +326,11 @@
   },true);
 
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('reservationWhatsappPreview')?.classList.contains('open'))closePreview()});
-  new MutationObserver(()=>requestAnimationFrame(decorateRows)).observe(table,{childList:true,subtree:true});
+  new MutationObserver(()=>requestAnimationFrame(()=>{decorateRows();installEditProtection()})).observe(table,{childList:true,subtree:true});
+  const protectionTimer=setInterval(()=>{
+    installEditProtection();
+    if(document.getElementById('reservationServicesEditor')&&window.openModal?.__preserveEditProtection)clearInterval(protectionTimer);
+  },120);
   decorateRows();
+  installEditProtection();
 })();
