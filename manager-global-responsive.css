@@ -18,6 +18,11 @@ img,svg,canvas,video,iframe{max-width:100%}
 input,select,textarea,button{max-width:100%;box-sizing:border-box}
 input,select,textarea{min-width:0}
 
+/* Dashboard: resumo financeiro temporariamente oculto até a regra ser revisada. */
+#dashboard>.dashboard-heading,
+#dashboard>.dashboard-finance-grid{display:none!important}
+#dashboard>.dashboard-grid{margin-top:0}
+
 /* Nenhum componente pode aumentar a largura da página. */
 .main-content>*{min-width:0;max-width:100%}
 .content-section>*{min-width:0;max-width:100%}
