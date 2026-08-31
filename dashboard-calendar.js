@@ -10,19 +10,63 @@
   const monthLabel=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'});
   const fullDate=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const shortTime=value=>String(value||'').slice(0,5);
+  const norm=value=>String(value??'').trim().toLowerCase();
   let visibleMonth=null;
 
+  function serviceScore(service){
+    let score=0;
+    if(service.cloudId)score+=100;
+    if(service.serviceCatalogId)score+=40;
+    if(Number(service.netTotal)>0||Number(service.repasseAmount)>0)score+=20;
+    if(service.returnServiceCatalogId)score+=10;
+    if(service.updatedAt||service.updated_at)score+=5;
+    return score;
+  }
+
+  function dedupeLinkedServices(linked){
+    const kept=[];
+    for(const service of linked){
+      const same=kept.find(existing=>
+        norm(existing.date)===norm(service.date)&&
+        norm(existing.returnDate)===norm(service.returnDate)&&
+        norm(existing.startTime||existing.time)===norm(service.startTime||service.time)&&
+        norm(existing.endTime)===norm(service.endTime)&&
+        norm(existing.boarding)===norm(service.boarding)&&
+        norm(existing.dropoff)===norm(service.dropoff)
+      );
+      if(!same){kept.push(service);continue}
+      const index=kept.indexOf(same);
+      const newer=(Date.parse(service.updatedAt||service.updated_at||'')||0)>(Date.parse(same.updatedAt||same.updated_at||'')||0);
+      if(newer||serviceScore(service)>serviceScore(same))kept[index]=service;
+    }
+    return kept;
+  }
+
   function serviceEvents(){
-    const services=readServices();const list=[];
+    const services=readServices();const list=[];const seenEvents=new Set();
     for(const reservation of reservations){
-      const linked=services.filter(service=>String(service.reservationId)===String(reservation.id));
+      const linked=dedupeLinkedServices(services.filter(service=>String(service.reservationId)===String(reservation.id)));
       const operational=linked.length?linked:[{id:`fallback-${reservation.id}`,date:reservation.date,title:reservation.service,service:reservation.service,boarding:reservation.boarding||'',responsible:reservation.responsible||''}];
       operational.forEach((service,index)=>{
         const meta=decodeMeta(service.responsible);const title=service.title||service.service||service.tour||reservation.service||'Serviço';
         const outbound=parseDate(service.date||reservation.date);
-        if(outbound)list.push({date:outbound,leg:'IDA',time:shortTime(service.startTime||service.time||meta.startTime),endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title,place:service.boarding||meta.boardingPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+        if(outbound){
+          const time=shortTime(service.startTime||service.time||meta.startTime);
+          const key=[reservation.id,'IDA',dateKey(outbound),time,norm(service.boarding||meta.boardingPoints?.[0]?.location||'')].join('|');
+          if(!seenEvents.has(key)){
+            seenEvents.add(key);
+            list.push({date:outbound,leg:'IDA',time,endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title,place:service.boarding||meta.boardingPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+          }
+        }
         const returning=parseDate(service.returnDate);
-        if(returning)list.push({date:returning,leg:'VOLTA',time:shortTime(service.endTime||meta.endTime||service.startTime||meta.startTime),client:reservation.client,title,place:service.dropoff||meta.dropoffPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+        if(returning){
+          const time=shortTime(service.endTime||meta.endTime||service.startTime||meta.startTime);
+          const key=[reservation.id,'VOLTA',dateKey(returning),time,norm(service.dropoff||meta.dropoffPoints?.[0]?.location||'')].join('|');
+          if(!seenEvents.has(key)){
+            seenEvents.add(key);
+            list.push({date:returning,leg:'VOLTA',time,client:reservation.client,title:service.returnService||title,place:service.dropoff||meta.dropoffPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+          }
+        }
       });
     }
     return list.sort((a,b)=>a.date-b.date||a.time.localeCompare(b.time));
@@ -44,7 +88,7 @@
   function detail(label,value){return value?`<div class="calendar-detail"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`:''}
   function openReservationPreview(id,serviceIndex,leg){
     const reservation=reservations.find(item=>String(item.id)===String(id));if(!reservation)return;
-    const linked=readServices().filter(service=>String(service.reservationId)===String(reservation.id));
+    const linked=dedupeLinkedServices(readServices().filter(service=>String(service.reservationId)===String(reservation.id)));
     const service=linked[serviceIndex]||{date:reservation.date,title:reservation.service,service:reservation.service,boarding:reservation.boarding||'',responsible:reservation.responsible||''};
     const meta=decodeMeta(service.responsible);const isReturn=leg==='VOLTA';
     const serviceDate=parseDate(isReturn?service.returnDate:(service.date||reservation.date));
@@ -53,7 +97,7 @@
     const dropoffPoints=(meta.dropoffPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean);
     const boarding=boardingPoints.join(' / ')||service.boarding||reservation.boarding||'';
     const dropoff=dropoffPoints.join(' / ')||service.dropoff||'';
-    const title=service.title||service.service||service.tour||reservation.service||'Serviço';
+    const title=(isReturn&&service.returnService)||service.title||service.service||service.tour||reservation.service||'Serviço';
     let modal=byId('calendarReservationPreview');if(!modal){modal=document.createElement('div');modal.id='calendarReservationPreview';modal.className='modal-backdrop calendar-preview-backdrop';document.body.appendChild(modal)}
     modal.innerHTML=`<article class="modal calendar-preview-modal" role="dialog" aria-modal="true" aria-labelledby="calendarPreviewTitle"><button type="button" class="close-button" data-close-calendar-preview aria-label="Fechar">×</button><p class="eyebrow">${escape(reservation.reservationCode||'RESERVA')}</p><div class="calendar-preview-heading"><div><h2 id="calendarPreviewTitle">${escape(reservation.client)}</h2><p>Visualização da reserva · sem edição</p></div><span class="calendar-preview-leg ${leg.toLowerCase()}">${leg}</span></div><div class="calendar-preview-grid">${detail('Serviço',title)}${detail('Data',serviceDate?fullDate.format(serviceDate):'')}${detail('Horário',time||'Não informado')}${detail('Passageiros',`${reservation.people||1} pessoa${Number(reservation.people)===1?'':'s'}`)}${detail('Telefone',reservation.phone)}${detail('Status',reservation.status)}${detail('Embarque',boarding)}${detail('Desembarque',dropoff)}</div>${reservation.notes?`<div class="calendar-preview-notes"><span>Observações gerais</span><p>${escape(reservation.notes)}</p></div>`:''}<div class="calendar-preview-actions"><button type="button" class="outline-button" data-close-calendar-preview>Fechar visualização</button></div></article>`;
     const close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')};
