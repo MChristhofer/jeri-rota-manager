@@ -41,6 +41,7 @@
         if(!document.querySelector('script[src^="reservation-leg-mode.js"]')){const script=document.createElement('script');script.src='reservation-leg-mode.js?v=20260831-1';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-draft-preserver.js"]')){const script=document.createElement('script');script.src='reservation-draft-preserver.js?v=20260831-2';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-company-cover.js"]')){const script=document.createElement('script');script.src='reservation-company-cover.js?v=20260831-2';document.body.appendChild(script)}
+        if(!document.querySelector('script[src^="reservation-net-total-live.js"]')){const script=document.createElement('script');script.src='reservation-net-total-live.js?v=20260831-1';document.body.appendChild(script)}
       };
       const loadServicesManager=()=>{if(document.querySelector('script[src^="manager-services-section.js"]'))return;const script=document.createElement('script');script.src='manager-services-section.js?v=20260831-5';document.body.appendChild(script)};
 
