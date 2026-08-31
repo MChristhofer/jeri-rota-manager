@@ -13,6 +13,16 @@
   const norm=value=>String(value??'').trim().toLowerCase();
   let visibleMonth=null;
 
+  function hideDashboardFinance(){
+    const dashboard=byId('dashboard');if(!dashboard)return;
+    const heading=dashboard.querySelector(':scope > .dashboard-heading');
+    const finance=dashboard.querySelector(':scope > .dashboard-finance-grid');
+    if(heading){heading.hidden=true;heading.style.setProperty('display','none','important')}
+    if(finance){finance.hidden=true;finance.style.setProperty('display','none','important')}
+    const grid=dashboard.querySelector(':scope > .dashboard-grid');
+    if(grid)grid.style.marginTop='0';
+  }
+
   function serviceScore(service){
     let score=0;
     if(service.cloudId)score+=100;
@@ -42,29 +52,70 @@
     return kept;
   }
 
+  function points(service,meta){
+    const boarding=(meta.boardingPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean).join(' / ')||service.boarding||'';
+    const dropoff=(meta.dropoffPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean).join(' / ')||service.dropoff||'';
+    return{boarding,dropoff};
+  }
+
+  function returnOnly(service){return !String(service.date||'').trim()&&Boolean(String(service.returnDate||'').trim())}
+
+  function invertArrowLabel(value){
+    const text=String(value||'');
+    const parts=text.split(/\s*(?:→|->)\s*/);
+    if(parts.length!==2)return text;
+    const left=parts[0],right=parts[1];
+    const prefix=left.match(/^(.*?·\s*)?([^·]+)$/);
+    const suffix=right.match(/^([^·]+?)(\s*·.*)?$/);
+    if(!prefix||!suffix)return `${right.trim()} → ${left.trim()}`;
+    return `${prefix[1]||''}${suffix[1].trim()} → ${prefix[2].trim()}${suffix[2]||''}`;
+  }
+
+  function returnTitle(service,meta,title){
+    if(service.returnService)return service.returnService;
+    if(returnOnly(service))return title;
+    const origin=service.origin||meta.origin||'';
+    const destination=service.destination||meta.destination||'';
+    const modality=service.modality||meta.modality||'';
+    if(origin&&destination){
+      const looksTransfer=/transfer/i.test(title)||norm(meta.serviceType)==='transfer';
+      return looksTransfer?['Transfer',`${destination} → ${origin}`,modality].filter(Boolean).join(' · '):`${destination} → ${origin}`;
+    }
+    return invertArrowLabel(title);
+  }
+
+  function displayLegData(service,meta,leg,reservation){
+    const p=points(service,meta);
+    if(leg!=='VOLTA')return{boarding:p.boarding||reservation.boarding||'',dropoff:p.dropoff,title:service.title||service.service||service.tour||reservation.service||'Serviço'};
+    const title=service.title||service.service||service.tour||reservation.service||'Serviço';
+    if(returnOnly(service))return{boarding:p.boarding||reservation.boarding||'',dropoff:p.dropoff,title:returnTitle(service,meta,title)};
+    return{boarding:p.dropoff||service.destination||meta.destination||'',dropoff:p.boarding||service.origin||meta.origin||reservation.boarding||'',title:returnTitle(service,meta,title)};
+  }
+
   function serviceEvents(){
     const services=readServices();const list=[];const seenEvents=new Set();
     for(const reservation of reservations){
       const linked=dedupeLinkedServices(services.filter(service=>String(service.reservationId)===String(reservation.id)));
       const operational=linked.length?linked:[{id:`fallback-${reservation.id}`,date:reservation.date,title:reservation.service,service:reservation.service,boarding:reservation.boarding||'',responsible:reservation.responsible||''}];
       operational.forEach((service,index)=>{
-        const meta=decodeMeta(service.responsible);const title=service.title||service.service||service.tour||reservation.service||'Serviço';
-        const outbound=parseDate(service.date||reservation.date);
+        const meta=decodeMeta(service.responsible);const outboundData=displayLegData(service,meta,'IDA',reservation);
+        const outbound=parseDate(service.date||(!service.returnDate?reservation.date:''));
         if(outbound){
           const time=shortTime(service.startTime||service.time||meta.startTime);
-          const key=[reservation.id,'IDA',dateKey(outbound),time,norm(service.boarding||meta.boardingPoints?.[0]?.location||'')].join('|');
+          const key=[reservation.id,'IDA',dateKey(outbound),time,norm(outboundData.boarding)].join('|');
           if(!seenEvents.has(key)){
             seenEvents.add(key);
-            list.push({date:outbound,leg:'IDA',time,endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title,place:service.boarding||meta.boardingPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+            list.push({date:outbound,leg:'IDA',time,endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title:outboundData.title,place:outboundData.boarding,reservationId:reservation.id,serviceIndex:index});
           }
         }
         const returning=parseDate(service.returnDate);
         if(returning){
+          const returnData=displayLegData(service,meta,'VOLTA',reservation);
           const time=shortTime(service.endTime||meta.endTime||service.startTime||meta.startTime);
-          const key=[reservation.id,'VOLTA',dateKey(returning),time,norm(service.dropoff||meta.dropoffPoints?.[0]?.location||'')].join('|');
+          const key=[reservation.id,'VOLTA',dateKey(returning),time,norm(returnData.boarding)].join('|');
           if(!seenEvents.has(key)){
             seenEvents.add(key);
-            list.push({date:returning,leg:'VOLTA',time,client:reservation.client,title:service.returnService||title,place:service.dropoff||meta.dropoffPoints?.[0]?.location||'',reservationId:reservation.id,serviceIndex:index});
+            list.push({date:returning,leg:'VOLTA',time,client:reservation.client,title:returnData.title,place:returnData.boarding,reservationId:reservation.id,serviceIndex:index});
           }
         }
       });
@@ -93,13 +144,9 @@
     const meta=decodeMeta(service.responsible);const isReturn=leg==='VOLTA';
     const serviceDate=parseDate(isReturn?service.returnDate:(service.date||reservation.date));
     const time=shortTime(isReturn?(service.endTime||meta.endTime||service.startTime||meta.startTime):(service.startTime||service.time||meta.startTime));
-    const boardingPoints=(meta.boardingPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean);
-    const dropoffPoints=(meta.dropoffPoints||[]).map(point=>[point.location,point.apartment?`AP ${point.apartment}`:'',point.passengers].filter(Boolean).join(' · ')).filter(Boolean);
-    const boarding=boardingPoints.join(' / ')||service.boarding||reservation.boarding||'';
-    const dropoff=dropoffPoints.join(' / ')||service.dropoff||'';
-    const title=(isReturn&&service.returnService)||service.title||service.service||service.tour||reservation.service||'Serviço';
+    const legData=displayLegData(service,meta,leg,reservation);
     let modal=byId('calendarReservationPreview');if(!modal){modal=document.createElement('div');modal.id='calendarReservationPreview';modal.className='modal-backdrop calendar-preview-backdrop';document.body.appendChild(modal)}
-    modal.innerHTML=`<article class="modal calendar-preview-modal" role="dialog" aria-modal="true" aria-labelledby="calendarPreviewTitle"><button type="button" class="close-button" data-close-calendar-preview aria-label="Fechar">×</button><p class="eyebrow">${escape(reservation.reservationCode||'RESERVA')}</p><div class="calendar-preview-heading"><div><h2 id="calendarPreviewTitle">${escape(reservation.client)}</h2><p>Visualização da reserva · sem edição</p></div><span class="calendar-preview-leg ${leg.toLowerCase()}">${leg}</span></div><div class="calendar-preview-grid">${detail('Serviço',title)}${detail('Data',serviceDate?fullDate.format(serviceDate):'')}${detail('Horário',time||'Não informado')}${detail('Passageiros',`${reservation.people||1} pessoa${Number(reservation.people)===1?'':'s'}`)}${detail('Telefone',reservation.phone)}${detail('Status',reservation.status)}${detail('Embarque',boarding)}${detail('Desembarque',dropoff)}</div>${reservation.notes?`<div class="calendar-preview-notes"><span>Observações gerais</span><p>${escape(reservation.notes)}</p></div>`:''}<div class="calendar-preview-actions"><button type="button" class="outline-button" data-close-calendar-preview>Fechar visualização</button></div></article>`;
+    modal.innerHTML=`<article class="modal calendar-preview-modal" role="dialog" aria-modal="true" aria-labelledby="calendarPreviewTitle"><button type="button" class="close-button" data-close-calendar-preview aria-label="Fechar">×</button><p class="eyebrow">${escape(reservation.reservationCode||'RESERVA')}</p><div class="calendar-preview-heading"><div><h2 id="calendarPreviewTitle">${escape(reservation.client)}</h2><p>Visualização da reserva · sem edição</p></div><span class="calendar-preview-leg ${leg.toLowerCase()}">${leg}</span></div><div class="calendar-preview-grid">${detail('Serviço',legData.title)}${detail('Data',serviceDate?fullDate.format(serviceDate):'')}${detail('Horário',time||'Não informado')}${detail('Passageiros',`${reservation.people||1} pessoa${Number(reservation.people)===1?'':'s'}`)}${detail('Telefone',reservation.phone)}${detail('Status',reservation.status)}${detail('Embarque',legData.boarding)}${detail('Desembarque',legData.dropoff)}</div>${reservation.notes?`<div class="calendar-preview-notes"><span>Observações gerais</span><p>${escape(reservation.notes)}</p></div>`:''}<div class="calendar-preview-actions"><button type="button" class="outline-button" data-close-calendar-preview>Fechar visualização</button></div></article>`;
     const close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')};
     modal.querySelectorAll('[data-close-calendar-preview]').forEach(button=>button.addEventListener('click',close));
     modal.addEventListener('click',event=>{if(event.target===modal)close()},{once:true});
@@ -107,6 +154,7 @@
   }
 
   function renderCalendar(){
+    hideDashboardFinance();
     const host=byId('upcomingReservations');const panel=host?.closest('.reservations-panel');if(!host||!panel)return;
     const events=serviceEvents();const month=initialMonth(events);const year=month.getFullYear(),monthIndex=month.getMonth();
     const first=new Date(year,monthIndex,1),lastDay=new Date(year,monthIndex+1,0).getDate();const offset=(first.getDay()+6)%7;
@@ -128,9 +176,10 @@
   }
 
   const baseRender=window.renderDashboard||renderDashboard;
-  window.renderDashboard=function(){baseRender();renderCalendar()};
+  window.renderDashboard=function(){baseRender();hideDashboardFinance();renderCalendar()};
   try{renderDashboard=window.renderDashboard}catch{}
-  window.addEventListener('jeri:cloud-ready',renderCalendar);
-  window.addEventListener('storage',event=>{if(!event.key||event.key===SERVICES_KEY||event.key==='jeri-rota-manager-reservas-v1')renderCalendar()});
+  window.addEventListener('jeri:cloud-ready',()=>{hideDashboardFinance();renderCalendar()});
+  window.addEventListener('storage',event=>{if(!event.key||event.key===SERVICES_KEY||event.key==='jeri-rota-manager-reservas-v1'){hideDashboardFinance();renderCalendar()}});
+  hideDashboardFinance();
   renderCalendar();
 })();
