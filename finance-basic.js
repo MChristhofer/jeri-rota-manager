@@ -21,6 +21,7 @@
   const monthOf=value=>String(value||'').slice(0,7);
   const isPaid=status=>/^(pago|quitado|repassado|realizado)$/i.test(String(status||'').trim());
   const serviceName=service=>service.title||service.service||service.tour||'Serviço';
+  const serviceOperationalDate=service=>service?.date||service?.returnDate||'';
   const formatDate=value=>{if(!value)return'—';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):dateFmt.format(date)};
   const formatMonth=value=>{
     const [year,month]=String(value||'').split('-').map(Number);
@@ -255,7 +256,7 @@
     const rows=[];
     reservations.forEach(reservation=>{
       const linked=(servicesByReservation.get(String(reservation.id))||[])
-        .sort((a,b)=>String(a.date||'9999-12-31').localeCompare(String(b.date||'9999-12-31'))||(Number(a.sortOrder)||0)-(Number(b.sortOrder)||0));
+        .sort((a,b)=>String(serviceOperationalDate(a)||'9999-12-31').localeCompare(String(serviceOperationalDate(b)||'9999-12-31'))||(Number(a.sortOrder)||0)-(Number(b.sortOrder)||0));
       if(!linked.length)return;
 
       let customerBalance=Math.max(0,number(reservation.amount)-number(reservation.paidAmount));
@@ -264,7 +265,7 @@
         const clientContribution=Math.min(customerBalance,net);
         const companyCover=Math.max(0,net-clientContribution);
         customerBalance=Math.max(0,customerBalance-clientContribution);
-        rows.push({reservation,service,net,clientContribution,companyCover});
+        rows.push({reservation,service,operationalDate:serviceOperationalDate(service),net,clientContribution,companyCover});
       });
     });
     return rows;
@@ -273,7 +274,7 @@
   function groupByMonth(rows){
     const groups=new Map();
     rows.forEach(row=>{
-      const month=monthOf(row.service.date);
+      const month=monthOf(row.operationalDate);
       if(!/^\d{4}-\d{2}$/.test(month))return;
       if(!groups.has(month))groups.set(month,{month,rows:[],net:0,client:0,company:0});
       const group=groups.get(month);
@@ -319,7 +320,7 @@
     const title=document.getElementById('commitmentDetailTitle');
     if(title)title.textContent=`Compromissos de ${formatMonth(selectedMonth)}`;
 
-    const monthRows=allRows.filter(row=>monthOf(row.service.date)===selectedMonth);
+    const monthRows=allRows.filter(row=>monthOf(row.operationalDate)===selectedMonth);
     const query=(document.getElementById('commitmentSearch')?.value||'').trim().toLowerCase();
     const visibleRows=monthRows.filter(row=>{
       if(!query)return true;
@@ -337,7 +338,7 @@
     tbody.innerHTML=visibleRows.length?visibleRows.map(row=>{
       const serviceKey=String(row.service.id||row.service.sourceKey||'');
       return `<tr>
-        <td>${formatDate(row.service.date)}</td>
+        <td>${formatDate(row.operationalDate)}</td>
         <td><strong>${escape(row.reservation.reservationCode||'Reserva')}</strong><small>${escape(row.reservation.client||'Cliente')}</small></td>
         <td><strong>${escape(serviceName(row.service))}</strong></td>
         <td><strong>${money.format(row.net)}</strong></td>
