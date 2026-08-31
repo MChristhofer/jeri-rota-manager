@@ -1,5 +1,13 @@
 (function(){
   function cleanup(){document.getElementById('reservationCompanyCoverLive')?.remove()}
+  function loadScript(src){
+    if(document.querySelector(`script[src^="${src}"]`))return;
+    const script=document.createElement('script');
+    script.src=`${src}?v=20260831-3`;
+    document.body.appendChild(script);
+  }
+  loadScript('reservation-summary-order.js');
+  loadScript('finance-binary-cover.js');
   document.addEventListener('input',cleanup,true);
   document.addEventListener('change',cleanup,true);
   window.addEventListener('reservation-finance-refresh',cleanup);
