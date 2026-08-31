@@ -4,6 +4,12 @@
   const table=document.getElementById('reservationsTable');
   if(!table)return;
 
+  if(!document.querySelector('script[src^="reservation-service-dedupe.js"]')){
+    const dedupe=document.createElement('script');
+    dedupe.src='reservation-service-dedupe.js?v=20260830-1';
+    document.body.appendChild(dedupe);
+  }
+
   const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
   const read=key=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[]}catch{return[]}};
   const escapeHtml=(value='')=>String(value).replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
