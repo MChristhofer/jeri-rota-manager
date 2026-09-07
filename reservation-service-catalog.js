@@ -9,21 +9,19 @@
 
   const readServices=()=>{try{const v=JSON.parse(localStorage.getItem(SERVICES_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
   const readReservations=()=>{try{const v=JSON.parse(localStorage.getItem(RESERVATIONS_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
-  const writeServices=v=>localStorage.setItem(SERVICES_KEY,JSON.stringify(v));
   const normalize=v=>String(v||'').trim().toLowerCase();
   const moneyNumber=value=>{const raw=String(value??'').trim().replace(/\s|R\$/g,'');if(!raw)return 0;return Math.max(0,Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw)||0)};
   const currentPeople=()=>Math.max(1,Number(form.querySelector('[name="people"]')?.value)||1);
-  function currentReservationId(){try{return editingReservationId||null}catch{return null}}
-  function savedForIndex(index){const id=currentReservationId();if(!id)return null;return readServices().filter(x=>String(x.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))[index]||null}
   const inferCategory=item=>item?.category||(/transfer/i.test(item?.name||'')?'Transfer':'Passeio');
   const vehicleLabel=item=>item?.vehicle_type||'';
   const baseKey=item=>[inferCategory(item),item.route_code||'',item.name||''].join('|');
   const groupLabel=item=>item.name||'Serviço';
-  const calculateNet=(item,quantity)=>{if(!item)return 0;const qty=item.pricing_basis==='fixed'?1:Math.max(1,Number(quantity)||1);return (Number(item.net_value)||0)*qty};
+  const calculateNet=(item,quantity)=>window.JeriFinance.serviceNet(item?.net_value,item?.modality,quantity);
   const unique=values=>[...new Set(values.filter(Boolean))];
   const escapeHtml=(value='')=>String(value).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 
   function setExisting(card,field,value){
+    window.JeriReservationDrafts?.update(card,{[field]:value??''});
     const input=card.querySelector(`[data-field="${field}"]`);if(!input)return;
     input.value=value??'';
     input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -95,14 +93,14 @@
 
   function setNetFromVariant(card,variant){
     if(!variant)return 0;
-    const quantity=variant.pricing_basis==='per_person'?currentPeople():1;
+    const quantity=window.JeriFinance.shared(variant.modality)?currentPeople():1;
     const net=calculateNet(variant,quantity);
     const netInput=card.querySelector('[data-basic-net-input]');
     if(netInput){
       netInput.value=Number(net||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       netInput.dispatchEvent(new Event('input',{bubbles:true}));
     }
-    setExisting(card,'repasseAmount',net.toFixed(2));
+
     return net;
   }
 
@@ -111,11 +109,24 @@
     setManualVisibility(card,managed);
     const meta=card.querySelector('[data-catalog-meta]');
     if(meta)meta.textContent=variant?'NET padrão carregado do catálogo. Você pode editar o Valor NET abaixo.':managed?'Escolha veículo e modalidade para localizar a tarifa NET.':'Selecione um serviço cadastrado.';
-    if(!variant)return;
+    if(syncDefaults)window.JeriReservationDrafts?.update(card,{
+      catalogBase:card.querySelector('[data-catalog-base]')?.value||'',
+      catalogVehicle:card.querySelector('[data-catalog-vehicle]')?.value||'',
+      catalogModality:card.querySelector('[data-catalog-modality]')?.value||''
+    });
+    if(!variant){
+      if(syncDefaults){
+        window.JeriReservationDrafts?.update(card,{serviceCatalogId:null,netUnit:null});
+        setExisting(card,'repasseAmount','0,00');
+      }
+      return;
+    }
+    if(syncDefaults)window.JeriReservationDrafts?.update(card,{serviceCatalogId:variant.id,pricingBasis:window.JeriFinance.basis(variant.modality),netUnit:moneyNumber(variant.net_value),quantity:window.JeriFinance.shared(variant.modality)?currentPeople():1});
 
     const type=inferCategory(variant)==='Transfer'?'transfer':'passeio';
 
     if(syncDefaults){
+      window.JeriReservationDrafts?.update(card,{title:variant.name||'',service:variant.name||'',modality:variant.modality||'',vehicle:vehicleLabel(variant)});
       setExisting(card,'serviceType',type);
       setExisting(card,'modality',variant.modality||'');
       setExisting(card,'vehicle',vehicleLabel(variant));
@@ -136,10 +147,12 @@
   }
 
   function decorateCard(card,index){
-    const saved=savedForIndex(index);
+    const saved=window.JeriReservationDrafts?.get(card);
+    if(card.dataset.catalogDecorated==='true')return;
+    card.dataset.catalogDecorated='true';
     card.dataset.savedCatalogId=saved?.serviceCatalogId||'';
     let chooser=card.querySelector('.reservation-catalog-chooser');
-    const matchedKey=findMatchingGroup(saved,card);
+    const matchedKey=saved?.catalogBase??findMatchingGroup(saved,card);
     const allGroups=groups([saved?.serviceCatalogId]);
 
     if(!chooser){
@@ -168,6 +181,7 @@
     }
 
     const base=chooser.querySelector('[data-catalog-base]');
+    base.required=!saved?.service&&!saved?.title||Boolean(saved?.serviceCatalogId);
     const previousBase=base.value;
     base.innerHTML=`<option value="">Selecione um serviço cadastrado</option>${allGroups.map(group=>`<option value="${escapeHtml(group.key)}">${escapeHtml(group.category)} · ${escapeHtml(group.label)}</option>`).join('')}`;
     if(allGroups.some(g=>g.key===previousBase))base.value=previousBase;else if(matchedKey)base.value=matchedKey;
@@ -175,34 +189,27 @@
     populateVariantControls(card,true);
     if(saved?.serviceCatalogId){
       const item=catalog.find(x=>String(x.id)===String(saved.serviceCatalogId));
-      const vehicle=vehicleLabel(item)||saved.vehicle||'';
-      const modality=item?.modality||saved.modality||'';
+      const vehicle=saved.vehicle||vehicleLabel(item)||'';
+      const modality=saved.modality||item?.modality||'';
       const vehicleSelect=card.querySelector('[data-catalog-vehicle]');
       const modalitySelect=card.querySelector('[data-catalog-modality]');
       if([...vehicleSelect.options].some(o=>o.value===vehicle))vehicleSelect.value=vehicle;
       populateModalityControls(card,false);
       if([...modalitySelect.options].some(o=>o.value===modality))modalitySelect.value=modality;
     }
+    if(saved?.catalogVehicle!==undefined){
+      chooser.querySelector('[data-catalog-vehicle]').value=saved.catalogVehicle;
+      populateModalityControls(card,false);
+      chooser.querySelector('[data-catalog-modality]').value=saved.catalogModality||'';
+    }
 
     const variant=resolveVariant(card);
     applyVariant(card,variant,{syncDefaults:false});
-    const currentNet=moneyNumber(card.querySelector('[data-basic-net-input]')?.value??saved?.repasseAmount??saved?.netTotal??0);
-    if(variant&&currentNet<=0&&Number(variant.net_value)>0){
-      setNetFromVariant(card,variant);
-      window.dispatchEvent(new Event('reservation-finance-refresh'));
-    }
   }
 
   function decorate(){
     document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft').forEach((card,index)=>decorateCard(card,index));
     window.dispatchEvent(new Event('reservation-finance-refresh'));
-  }
-
-  function state(card){
-    const item=resolveVariant(card);
-    const quantity=item?.pricing_basis==='per_person'?currentPeople():1;
-    const raw=String(card.querySelector('[data-basic-net-input]')?.value||card.querySelector('[data-field="repasseAmount"]')?.value||0);
-    return{item,quantity,net:moneyNumber(raw)};
   }
 
   function pendingServiceNetTotal(){
@@ -211,7 +218,7 @@
       if(!activeReservations.has(String(service.reservationId)))return sum;
       const status=normalize(service.repasseStatus);
       if(/^(pago|quitado|realizado|cancelado)$/i.test(status))return sum;
-      return sum+moneyNumber(service.repasseAmount??service.netTotal);
+      return sum+window.JeriFinance.storedNet(service);
     },0);
   }
 
@@ -244,46 +251,30 @@
     const {data,error}=await client.from('service_catalog').select('*').order('category').order('name').order('vehicle_type').order('modality');
     if(error){console.error('Falha ao carregar catálogo NET:',error);return;}
     catalog=data||[];
+    document.querySelectorAll('[data-catalog-decorated]').forEach(card=>delete card.dataset.catalogDecorated);
     window.jeriServiceCatalog=catalog;
     decorate();
     patchDashboardFinance();
   }
 
-  async function syncCloud(target,states){
-    if(!target?.reservationCode)return;
-    try{
-      const {data:reservation,error:reservationError}=await client.from('reservations').select('id').eq('code',target.reservationCode).maybeSingle();
-      if(reservationError||!reservation)return;
-      const {data:rows,error:rowsError}=await client.from('reservation_services').select('id,sort_order').eq('reservation_id',reservation.id).order('sort_order');
-      if(rowsError)return;
-      for(let i=0;i<states.length;i++){
-        const row=rows?.[i],st=states[i];if(!row||!st.item)continue;
-        const update={service_catalog_id:st.item.id,pricing_basis:st.item.pricing_basis,receipt_rule:st.item.receipt_rule||'net_first',net_unit:Number(st.item.net_value)||0,quantity:Number(st.quantity)||1,net_total:st.net,repasse_amount:st.net,updated_at:new Date().toISOString()};
-        const {error}=await client.from('reservation_services').update(update).eq('id',row.id);if(error)throw error;
+  let previousPeople=currentPeople();
+  function peopleChanged(){
+    const people=currentPeople();if(people===previousPeople)return;
+    previousPeople=people;
+    document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft').forEach(card=>{
+      const variant=resolveVariant(card),draft=window.JeriReservationDrafts?.get(card);
+      if(!window.JeriFinance.shared(variant?.modality||draft?.modality))return;
+      if(variant)setNetFromVariant(card,variant);
+      else if(draft?.netUnit!=null){
+        const input=card.querySelector('[data-basic-net-input]');
+        input.value=window.JeriFinance.serviceNet(draft.netUnit,draft.modality,people).toFixed(2);
+        input.dispatchEvent(new Event('input',{bubbles:true}));
       }
-    }catch(e){console.error('Falha ao sincronizar catálogo/NET da reserva:',e)}
+      window.JeriReservationDrafts?.update(card,{quantity:people});
+    });
   }
-
-  form.addEventListener('submit',()=>{
-    const previousId=currentReservationId();
-    const states=[...document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft')].map(card=>state(card));
-    setTimeout(()=>{
-      let target=null;try{target=previousId?reservations.find(x=>String(x.id)===String(previousId)):reservations[reservations.length-1]}catch{}
-      if(!target)return;
-      const items=readServices();
-      const own=items.filter(x=>String(x.reservationId)===String(target.id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-      own.forEach((svc,i)=>{
-        const st=states[i];
-        if(st?.item)Object.assign(svc,{serviceCatalogId:st.item.id,pricingBasis:st.item.pricing_basis,receiptRule:st.item.receipt_rule||'net_first',netUnit:Number(st.item.net_value)||0,quantity:Number(st.quantity)||1,netTotal:st.net,repasseAmount:st.net,vehicle:vehicleLabel(st.item)||svc.vehicle,modality:st.item.modality||svc.modality});
-        svc.saleTotal=i===0?moneyNumber(target.amount):0;
-      });
-      writeServices(items);
-      patchDashboardFinance();
-      syncCloud(target,states);
-    },220);
-  });
-
-  form.querySelector('[name="people"]')?.addEventListener('input',()=>document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft').forEach(card=>applyVariant(card,resolveVariant(card),{syncDefaults:true})));
+  form.querySelector('[name="people"]')?.addEventListener('input',peopleChanged);
+  window.addEventListener('reservation-drafts-rendered',()=>{previousPeople=currentPeople();decorate()});
 
   window.addEventListener('jeri-service-catalog-changed',event=>{
     if(Array.isArray(event.detail?.services))catalog=event.detail.services;

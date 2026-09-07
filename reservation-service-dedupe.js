@@ -17,21 +17,8 @@
   const num=value=>Number(value)||0;
 
   function operationalSignature(service){
-    return [
-      service.reservationId,
-      service.sortOrder??0,
-      service.serviceCatalogId||'',
-      service.date||'',
-      service.returnDate||'',
-      service.title||service.service||service.tour||'',
-      service.route||'',
-      service.boarding||'',
-      service.dropoff||'',
-      service.startTime||service.time||'',
-      service.endTime||'',
-      service.vehicle||'',
-      service.modality||''
-    ].map(norm).join('|');
+    const identity=service.sourceKey||service.id||service.cloudId;
+    return identity?String(service.reservationId)+'|'+String(identity):'';
   }
 
   function score(service){

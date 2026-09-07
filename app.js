@@ -86,7 +86,7 @@ function saveReservations() { localStorage.setItem(STORAGE_KEY, JSON.stringify(r
 function statusClass(status) { return String(status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 function receivedAmount(reservation) { return Math.max(0, Number(reservation.paidAmount) || 0); }
 function cashReceivedByJeri(reservation) { return reservation.collectedBy === 'Jeri Rota' ? receivedAmount(reservation) : 0; }
-function remainingAmount(reservation) { return Math.max(0, Number(reservation.amount || 0) - receivedAmount(reservation)); }
+function remainingAmount(reservation) { return window.JeriFinance.balance(reservation.amount,receivedAmount(reservation)); }
 function isPartnerReservation(reservation) { return reservation.partnerOperation !== 'propria' && Boolean(reservation.partner) && Number(reservation.netAmount) > 0; }
 function settlementRemaining(reservation) { return Math.max(0, Number(reservation.netAmount || 0) - Number(reservation.settledAmount || 0)); }
 function reservationMessage(reservation) {
@@ -346,7 +346,7 @@ const partnerFields = document.getElementById('partnerFields');
 function updatePaymentPreview() {
   const total = Math.max(0, Number(amountInput.value) || 0);
   const received = Math.max(0, Number(paidAmountInput.value) || 0);
-  const balance = Math.max(0, total - received);
+  const balance = window.JeriFinance.balance(total,received);
   balancePreview.textContent = currency.format(balance);
   paymentPreview.textContent = balance ? 'Saldo pendente do cliente.' : 'Cliente quitou a reserva.';
 }

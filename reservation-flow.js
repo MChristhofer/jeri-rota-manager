@@ -12,12 +12,9 @@
   function nextReservationNumber(){const current=Number(localStorage.getItem(RESERVATION_CODE_KEY)||0)+1;localStorage.setItem(RESERVATION_CODE_KEY,String(current));return current}
   function ensureReservationCode(r){if(r.reservationCode)return r.reservationCode;const n=nextReservationNumber();r.reservationCode=`JR-${String(n).padStart(5,'0')}`;return r.reservationCode}
   function reservationServices(id){
-    const seen=new Set();
-    return readServices().filter(s=>String(s.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).filter(service=>{
-      const key=[service.title,service.date,service.returnDate,service.tour,service.service,service.route,service.boarding,service.dropoff,service.apartment,service.responsible,Number(service.saleTotal)||0].map(value=>String(value??'').trim().toLowerCase()).join('|');
-      if(seen.has(key))return false;seen.add(key);return true;
-    });
+    return readServices().filter(s=>String(s.reservationId)===String(id)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
   }
+
   function escape(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   const OP_META_PREFIX='JR_OP_V1:';
   function decodeOperationalMeta(value){if(!String(value||'').startsWith(OP_META_PREFIX))return{};try{return JSON.parse(decodeURIComponent(String(value).slice(OP_META_PREFIX.length)))}catch{return{}}}
@@ -28,10 +25,10 @@
   function inferServiceType(service){const text=[service.serviceType,service.title,service.service,service.tour].filter(Boolean).join(' ').toLowerCase();if(/hosped|hotel|pousada/.test(text))return'hospedagem';if(/passeio|leste|oeste|lagoa|praia/.test(text))return'passeio';if(/transfer|aeroporto|jeri|fortaleza/.test(text))return'transfer';return service.serviceType||'transfer'}
   function normalizeServiceDraft(service={},fallbackSale=null){
     const meta=decodeOperationalMeta(service.responsible);const originalType=meta.serviceType||inferServiceType(service);const serviceType=originalType==='hospedagem'?'hospedagem':originalType==='transfer'?'transfer':'passeio';const route=String(service.route||'').split(/\s*(?:→|->)\s*/);
-    const boardingPoints=Array.isArray(meta.boardingPoints)&&meta.boardingPoints.length?meta.boardingPoints:[{location:service.boarding||'',apartment:service.apartment||'',passengers:''}];
-    const dropoffPoints=Array.isArray(meta.dropoffPoints)&&meta.dropoffPoints.length?meta.dropoffPoints:[{location:service.dropoff||'',apartment:'',passengers:''}];
+    const boardingPoints=Array.isArray(service.boardingPoints)?service.boardingPoints:Array.isArray(meta.boardingPoints)&&meta.boardingPoints.length?meta.boardingPoints:[{location:service.boarding||'',apartment:service.apartment||'',passengers:''}];
+    const dropoffPoints=Array.isArray(service.dropoffPoints)?service.dropoffPoints:Array.isArray(meta.dropoffPoints)&&meta.dropoffPoints.length?meta.dropoffPoints:[{location:service.dropoff||'',apartment:'',passengers:''}];
     const legacyTour=['bate_volta','outro'].includes(originalType)?(service.serviceName||meta.serviceName||service.service||service.title||''):'';
-    return{...service,serviceType,modality:service.modality||meta.modality||(/compartilh/i.test(service.service||'')?'Compartilhado':'Privativo'),origin:service.origin||meta.origin||route[0]||'',destination:service.destination||meta.destination||route[1]||service.dropoff||'',startTime:service.startTime||service.time||meta.startTime||'',endTime:service.endTime||meta.endTime||'',serviceNotes:service.serviceNotes||meta.serviceNotes||'',hotel:service.hotel||meta.hotel||(serviceType==='hospedagem'?(service.service||service.title||''):''),locator:service.locator||meta.locator||'',vehicle:service.vehicle||meta.vehicle||(!String(service.responsible||'').startsWith(OP_META_PREFIX)?service.responsible||'':''),serviceName:service.serviceName||meta.serviceName||'',tour:service.tour||legacyTour,boardingPoints,dropoffPoints,legacyResponsible:meta.legacyResponsible||(!String(service.responsible||'').startsWith(OP_META_PREFIX)?service.responsible||'':''),saleTotal:service.saleTotal??fallbackSale??0};
+    return{...service,repasseAmount:window.JeriFinance.storedNet(service),serviceType,modality:service.modality||meta.modality||(/compartilh/i.test(service.service||'')?'Compartilhado':'Privativo'),origin:service.origin||meta.origin||route[0]||'',destination:service.destination||meta.destination||route[1]||service.dropoff||'',startTime:service.startTime||service.time||meta.startTime||'',endTime:service.endTime||meta.endTime||'',serviceNotes:service.serviceNotes||meta.serviceNotes||'',hotel:service.hotel||meta.hotel||(serviceType==='hospedagem'?(service.service||service.title||''):''),locator:service.locator||meta.locator||'',vehicle:service.vehicle||meta.vehicle||(!String(service.responsible||'').startsWith(OP_META_PREFIX)?service.responsible||'':''),serviceName:service.serviceName||meta.serviceName||'',tour:service.tour||legacyTour,boardingPoints,dropoffPoints,legacyResponsible:meta.legacyResponsible||(!String(service.responsible||'').startsWith(OP_META_PREFIX)?service.responsible||'':''),saleTotal:service.saleTotal??fallbackSale??0};
   }
 
   function migrate(){
@@ -49,7 +46,7 @@
     const form=byId('reservationForm');if(!form||byId('reservationServicesEditor'))return;
     const partner=byId('partnerFields');
     const box=document.createElement('fieldset');box.id='reservationServicesEditor';box.className='reservation-services-editor';
-    box.innerHTML=`<legend>2. Serviços da reserva</legend><div class="service-editor-head"><p>Selecione o serviço cadastrado e ajuste somente os dados desta reserva.</p><button type="button" class="outline-button" id="addReservationService">+ Adicionar serviço</button></div><div id="reservationServiceDrafts"></div><div class="reservation-sale-total" aria-label="Resumo financeiro"><label class="reservation-payment-item"><span>Valor total da reserva</span><span class="reservation-money-input"><b>R$</b><input id="reservationTotalAmount" type="text" inputmode="decimal" value="0,00"></span></label><label class="reservation-payment-item received"><span>Valor recebido</span><span class="reservation-money-input"><b>R$</b><input id="reservationReceivedAmount" type="text" inputmode="decimal" value="0,00" aria-describedby="reservationPaymentFeedback"></span></label><div class="reservation-payment-item balance"><span>Saldo a receber</span><strong id="reservationServicesBalance">R$ 0,00</strong></div><div class="reservation-payment-item net"><span>NET total</span><strong id="reservationServicesNetTotal">R$ 0,00</strong></div><small id="reservationPaymentFeedback">Saldo e NET total são calculados automaticamente.</small></div>`;
+    box.innerHTML=`<legend>2. Serviços da reserva</legend><div class="service-editor-head"><p>Selecione o serviço cadastrado e ajuste somente os dados desta reserva.</p><button type="button" class="outline-button" id="addReservationService">+ Adicionar serviço</button></div><div id="reservationServiceDrafts"></div><div class="reservation-sale-total" aria-label="Resumo financeiro"><div class="reservation-payment-item net"><span>NET total</span><strong id="reservationServicesNetTotal">R$ 0,00</strong></div><label class="reservation-payment-item received"><span>Valor recebido</span><span class="reservation-money-input"><b>R$</b><input id="reservationReceivedAmount" type="text" inputmode="decimal" value="0,00" aria-describedby="reservationPaymentFeedback"></span></label><div class="reservation-payment-item balance"><span>Saldo a receber</span><strong id="reservationServicesBalance">R$ 0,00</strong></div><small id="reservationPaymentFeedback">Saldo e NET total são calculados automaticamente.</small></div><label class="reservation-payment-item"><span>Valor total da reserva</span><span class="reservation-money-input"><b>R$</b><input id="reservationTotalAmount" type="text" inputmode="decimal" value="0,00"></span></label>`;
     partner?.insertAdjacentElement('beforebegin',box);
     const legacyService=form.querySelector('[name="service"]')?.closest('label');
     const legacyDate=form.querySelector('[name="date"]')?.closest('label');
@@ -66,24 +63,25 @@
     const title=card.querySelector('[data-service-title]');if(title)title.textContent=`${serviceTypeLabel(type)} ${Number(card.dataset.serviceIndex)+1}`;
   }
   const parseMoney=value=>{const raw=String(value??'').trim().replace(/\s|R\$/g,'');if(!raw)return 0;return Math.max(0,Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw)||0)};
-  const formatMoneyInput=value=>Number(value||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const formatMoneyInput=value=>parseMoney(value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   function syncReservationTotal(){
     const total=parseMoney(byId('reservationTotalAmount')?.value);const amount=byId('reservationForm')?.elements.amount;if(amount){amount.value=total.toFixed(2);amount.dispatchEvent(new Event('input',{bubbles:true}))}
     const first=serviceDrafts[0]||{};const form=byId('reservationForm');if(form){form.elements.service.value=serviceDisplay(first)||'Serviço da reserva';form.elements.date.value=first.date||new Date().toISOString().slice(0,10);form.elements.boarding.value=first.boardingPoints?.[0]?.location||first.boarding||first.hotel||'Não se aplica'}
     syncPaymentSummary();
   }
   function syncPaymentSummary(){
-    const form=byId('reservationForm'),totalInput=byId('reservationTotalAmount'),input=byId('reservationReceivedAmount');if(!form||!input||!totalInput)return;const total=parseMoney(totalInput.value),received=parseMoney(input.value),balance=Math.max(0,total-received);form.elements.amount.value=total.toFixed(2);form.elements.paidAmount.value=received.toFixed(2);form.elements.paidAmount.dispatchEvent(new Event('input',{bubbles:true}));const output=byId('reservationServicesBalance');if(output)output.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(balance);const net=serviceDrafts.reduce((sum,s)=>sum+parseMoney(s.repasseAmount),0);if(byId('reservationServicesNetTotal'))byId('reservationServicesNetTotal').textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(net);
+    const form=byId('reservationForm'),totalInput=byId('reservationTotalAmount'),input=byId('reservationReceivedAmount');if(!form||!input||!totalInput)return;const total=parseMoney(totalInput.value),received=parseMoney(input.value),balance=window.JeriFinance.balance(total,received);form.elements.amount.value=total.toFixed(2);form.elements.paidAmount.value=received.toFixed(2);form.elements.paidAmount.dispatchEvent(new Event('input',{bubbles:true}));const output=byId('reservationServicesBalance');if(output)output.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(balance);const net=window.JeriFinance.total([...document.querySelectorAll('#reservationServiceDrafts [data-basic-net-input]')].map(input=>input.value));if(byId('reservationServicesNetTotal'))byId('reservationServicesNetTotal').textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(net);
   }
   function serviceDisplay(s){if(s.serviceType==='transfer')return['Transfer',s.origin&&s.destination?`${s.origin} → ${s.destination}`:'',s.modality].filter(Boolean).join(' · ');if(s.serviceType==='passeio')return s.tour||'Passeio';if(s.serviceType==='hospedagem')return s.hotel||'Hospedagem';return s.service||s.title||'Serviço'}
   function locationPointsMarkup(points,kind){const label=kind==='boarding'?'Embarque':'Desembarque';return`<section class="service-location-points" data-point-kind="${kind}"><div class="location-points-head"><strong>${label}</strong><button type="button" class="text-button add-location-point" data-kind="${kind}">+ Adicionar ponto</button></div><div class="location-points-list">${points.map((point,index)=>`<div class="service-location-row" data-point-index="${index}"><label>Local ${index===0?'*':''}<input data-point-field="location" ${index===0?'required':''} value="${escape(point.location||'')}" placeholder="Hotel, pousada, aeroporto ou endereço"></label><label>AP / quarto <span class="optional-label">opcional</span><input data-point-field="apartment" value="${escape(point.apartment||'')}" placeholder="Ex.: 205"></label><label>Passageiros deste local <span class="optional-label">opcional</span><input data-point-field="passengers" value="${escape(point.passengers||'')}" placeholder="Ex.: João + Maria"></label>${points.length>1?`<button type="button" class="remove-location-point" data-kind="${kind}" data-index="${index}" aria-label="Remover ponto de ${label.toLowerCase()}">×</button>`:''}</div>`).join('')}</div></section>`}
   function renderDrafts(){
     const host=byId('reservationServiceDrafts');if(!host)return;
     if(!serviceDrafts.length)serviceDrafts=[blankService()];
-    host.innerHTML=serviceDrafts.map((s,i)=>`<article class="reservation-service-draft operational-service-card" data-service-index="${i}"><div class="service-draft-top"><div><span class="service-number">${i+1}</span><strong data-service-title>Serviço ${i+1}</strong></div><div class="service-draft-actions"><button type="button" class="text-button duplicate-service-draft" data-index="${i}">Duplicar</button>${serviceDrafts.length>1?`<button type="button" class="text-button remove-service-draft" data-index="${i}">Excluir</button>`:''}</div></div><div class="service-draft-grid operational-service-grid">
+    host.innerHTML=serviceDrafts.map((s,i)=>`<article class="reservation-service-draft operational-service-card" data-service-index="${i}" data-service-id="${escape(s.id)}" data-leg-mode="${escape(s.legMode||'')}"><div class="service-draft-top"><div><span class="service-number">${i+1}</span><strong data-service-title>Serviço ${i+1}</strong></div><div class="service-draft-actions"><button type="button" class="text-button duplicate-service-draft" data-index="${i}">Duplicar</button>${serviceDrafts.length>1?`<button type="button" class="text-button remove-service-draft" data-index="${i}">Excluir</button>`:''}</div></div><div class="service-draft-grid operational-service-grid">
       <label class="catalog-compat-field">Tipo de serviço<select data-field="serviceType">${s.serviceType==='hospedagem'?'<option value="hospedagem" selected>Hospedagem</option>':''}<option value="transfer" ${s.serviceType==='transfer'?'selected':''}>Transfer</option><option value="passeio" ${s.serviceType==='passeio'?'selected':''}>Passeio</option></select></label>
       <label>Data de ida *<input data-field="date" type="date" required value="${escape(s.date||'')}"></label>
       <label>Data de volta <span class="optional-label">opcional</span><input data-field="returnDate" type="date" value="${escape(s.returnDate||'')}"></label>
+      <label class="service-basic-net-field" data-basic-net="1">Valor NET<input data-basic-net-input data-field="repasseAmount" type="text" inputmode="decimal" value="${escape(formatMoneyInput(s.repasseAmount))}"></label>
       <label class="catalog-compat-field" data-types="transfer">Modalidade<select data-field="modality"><option value="Privativo" ${s.modality==='Privativo'?'selected':''}>Privativo</option><option value="Compartilhado" ${s.modality==='Compartilhado'?'selected':''}>Compartilhado</option></select></label>
       <label class="catalog-compat-field" data-types="transfer">Origem<input data-field="origin" value="${escape(s.origin||'')}"></label>
       <label class="catalog-compat-field" data-types="transfer">Destino<input data-field="destination" value="${escape(s.destination||'')}"></label>
@@ -99,18 +97,19 @@
       <label class="service-notes-field">Observação do serviço<textarea data-field="serviceNotes" placeholder="Orientações específicas deste serviço">${escape(s.serviceNotes||'')}</textarea></label>
     </div></article>`).join('');
     host.querySelectorAll('.operational-service-card').forEach(updateConditionalFields);
-    host.querySelectorAll('[data-field]').forEach(input=>{const update=()=>{const card=input.closest('[data-service-index]');const i=Number(card.dataset.serviceIndex);serviceDrafts[i][input.dataset.field]=input.value;if(input.dataset.field==='serviceType')updateConditionalFields(card);syncReservationTotal()};input.addEventListener('input',update);input.addEventListener('change',update)});
+    host.querySelectorAll('[data-field]').forEach(input=>{const update=()=>{const card=input.closest('[data-service-index]');const i=Number(card.dataset.serviceIndex);serviceDrafts[i][input.dataset.field]=input.value;if(input.dataset.field==='repasseAmount')serviceDrafts[i].netTotal=parseMoney(input.value);if(input.dataset.field==='modality'&&!card.querySelector('[data-catalog-base]')&&serviceDrafts[i].netUnit!=null){const netInput=card.querySelector('[data-basic-net-input]');netInput.value=formatMoneyInput(window.JeriFinance.serviceNet(serviceDrafts[i].netUnit,input.value,byId('reservationForm').elements.people.value));netInput.dispatchEvent(new Event('input',{bubbles:true}))}if(input.dataset.field==='serviceType')updateConditionalFields(card);syncReservationTotal()};input.addEventListener('input',update);input.addEventListener('change',update)});
     host.querySelectorAll('[data-point-field]').forEach(input=>{input.addEventListener('input',()=>{const card=input.closest('[data-service-index]');const kind=input.closest('[data-point-kind]').dataset.pointKind;const pointIndex=Number(input.closest('[data-point-index]').dataset.pointIndex);serviceDrafts[Number(card.dataset.serviceIndex)][`${kind}Points`][pointIndex][input.dataset.pointField]=input.value;syncReservationTotal()})});
     host.querySelectorAll('.add-location-point').forEach(button=>button.addEventListener('click',()=>{const card=button.closest('[data-service-index]');serviceDrafts[Number(card.dataset.serviceIndex)][`${button.dataset.kind}Points`].push({location:'',apartment:'',passengers:''});renderDrafts()}));
     host.querySelectorAll('.remove-location-point').forEach(button=>button.addEventListener('click',()=>{const card=button.closest('[data-service-index]');serviceDrafts[Number(card.dataset.serviceIndex)][`${button.dataset.kind}Points`].splice(Number(button.dataset.index),1);renderDrafts()}));
     host.querySelectorAll('.remove-service-draft').forEach(b=>b.addEventListener('click',()=>{serviceDrafts.splice(Number(b.dataset.index),1);renderDrafts()}));
     host.querySelectorAll('.duplicate-service-draft').forEach(b=>b.addEventListener('click',()=>{const source=serviceDrafts[Number(b.dataset.index)];const copy=JSON.parse(JSON.stringify(source));copy.id=`draft-${Date.now()}-${Math.random()}`;delete copy.cloudId;delete copy.sourceKey;serviceDrafts.splice(Number(b.dataset.index)+1,0,copy);renderDrafts()}));
+    window.dispatchEvent(new Event('reservation-drafts-rendered'));
     syncReservationTotal();
   }
   function loadDrafts(id){const reservation=id?reservations.find(r=>String(r.id)===String(id)):null;const list=reservationServices(id);serviceDrafts=list.length?list.map(x=>normalizeServiceDraft(x)):[blankService()];if(byId('reservationTotalAmount'))byId('reservationTotalAmount').value=formatMoneyInput(reservation?.amount||0);if(byId('reservationReceivedAmount'))byId('reservationReceivedAmount').value=formatMoneyInput(reservation?.paidAmount||0);renderDrafts();syncPaymentSummary()}
 
   const baseOpenModal=window.openModal||openModal;
-  window.openModal=function(id=null){baseOpenModal(id);setTimeout(()=>{loadDrafts(id)},0)};
+  window.openModal=function(id=null){const form=byId('reservationForm');if(id!=null)form.dataset.editingReservationId=String(id);else delete form.dataset.editingReservationId;baseOpenModal(id);setTimeout(()=>{loadDrafts(id)},0)};
   openModal=window.openModal;
 
   function persistDrafts(reservation){
@@ -118,18 +117,33 @@
     const clean=serviceDrafts.map((draft,i)=>{
       const s={...draft};const display=serviceDisplay(s);const route=s.serviceType==='transfer'?[s.origin,s.destination].filter(Boolean).join(' → '):s.route||'';
       const boarding=s.boardingPoints?.[0]||{};const dropoff=s.dropoffPoints?.[0]||{};
-      return{...s,id:String(s.id||'').startsWith('draft-')?`svc-${reservation.id}-${Date.now()}-${i}`:s.id,reservationId:reservation.id,sortOrder:i,title:display,service:display,tour:s.serviceType==='passeio'?s.tour:(s.tour||''),route,boarding:boarding.location||s.boarding||'',dropoff:dropoff.location||s.dropoff||(s.serviceType==='transfer'?s.destination||'':''),apartment:boarding.apartment||s.apartment||'',returnDate:s.returnDate||'',saleTotal:Number(String(s.saleTotal??0).replace(',','.'))||0,startTime:s.startTime||'',endTime:s.endTime||'',time:s.startTime||'',responsible:encodeOperationalMeta(s),repasseAmount:s.repasseAmount,repasseStatus:s.repasseStatus||'Aguardando repasse'};
+      return{...s,id:String(s.id||'').startsWith('draft-')?`svc-${reservation.id}-${Date.now()}-${i}`:s.id,reservationId:reservation.id,sortOrder:i,title:s.title||s.service||display,service:s.service||display,tour:s.serviceType==='passeio'?s.tour:(s.tour||''),route,boarding:boarding.location||s.boarding||'',dropoff:dropoff.location||s.dropoff||(s.serviceType==='transfer'?s.destination||'':''),apartment:boarding.apartment||s.apartment||'',returnDate:s.returnDate||'',saleTotal:i===0?parseMoney(byId('reservationTotalAmount')?.value):0,startTime:s.startTime||'',endTime:s.endTime||'',time:s.startTime||'',responsible:encodeOperationalMeta(s),repasseAmount:parseMoney(s.repasseAmount),netTotal:parseMoney(s.repasseAmount),repasseStatus:s.repasseStatus||'Aguardando repasse'};
     });
     writeServices([...old,...clean]);
     const first=clean[0];if(first){reservation.service=first.title||first.service||first.tour||reservation.service;reservation.date=first.date||reservation.date;reservation.amount=parseMoney(byId('reservationTotalAmount')?.value);reservation.paidAmount=parseMoney(byId('reservationReceivedAmount')?.value);saveReservations()}
   }
 
   byId('reservationForm')?.addEventListener('submit',()=>{
+    const submittedId=byId('reservationForm').dataset.editingReservationId;
     setTimeout(()=>{
-      const target=editingReservationId?reservations.find(r=>r.id===editingReservationId):reservations[reservations.length-1];
+      const target=submittedId?reservations.find(r=>String(r.id)===submittedId):reservations[reservations.length-1];
       if(target){ensureReservationCode(target);persistDrafts(target);renderAll()}
     },0);
   });
+
+  window.JeriReservationDrafts={
+    get:card=>serviceDrafts.find(s=>String(s.id)===card.dataset.serviceId),
+    update(card,values){const draft=this.get(card);if(draft)Object.assign(draft,values)},
+    refresh:syncPaymentSummary
+  };
+  document.addEventListener('click',event=>{
+    if(!event.target.closest?.('#addReservationService,.add-location-point,.remove-location-point,.duplicate-service-draft,.remove-service-draft'))return;
+    document.querySelectorAll('#reservationServiceDrafts [data-service-id]').forEach(card=>{
+      const draft=window.JeriReservationDrafts.get(card);if(!draft)return;
+      card.querySelectorAll('[data-field]').forEach(input=>{draft[input.dataset.field]=input.value});
+      draft.legMode=card.querySelector('[data-leg-mode]')?.value||draft.legMode;
+    });
+  },true);
 
   async function syncReservationCloud(r,services){
     if(!client)return;
