@@ -106,7 +106,7 @@
       origin:byId('managerServiceOrigin').value.trim()||null,
       destination:byId('managerServiceDestination').value.trim()||null,
       route_code:byId('managerServiceRoute').value.trim()||null,
-      pricing_basis:'fixed',
+      pricing_basis:window.JeriFinance.basis(byId('managerServiceModality').value),
       net_value:parseMoney(byId('managerServiceNet').value),
       default_sale_value:byId('managerServiceSale').value===''?null:Number(byId('managerServiceSale').value)||0,
       receipt_rule:byId('managerServiceReceipt').value,

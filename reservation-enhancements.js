@@ -17,7 +17,7 @@
   const countPassengers=value=>String(value||'').split('/').map(x=>x.trim()).filter(Boolean).length||1;
   const capitalizePassengerNames=value=>String(value||'').replace(/(^|[\s/,-])(\p{L})/gu,(match,boundary,letter)=>boundary+letter.toLocaleUpperCase('pt-BR'));
   function normalizePassengerNames(){if(!passengerInput)return;const normalized=capitalizePassengerNames(passengerInput.value);if(normalized!==passengerInput.value){const start=passengerInput.selectionStart,end=passengerInput.selectionEnd;passengerInput.value=normalized;try{passengerInput.setSelectionRange(start,end)}catch{}}}
-  function syncPeople(){if(!passengerInput||!peopleInput)return;peopleInput.value=countPassengers(passengerInput.value);peopleInput.readOnly=true}
+  function syncPeople(){if(!passengerInput||!peopleInput)return;const count=String(countPassengers(passengerInput.value));if(peopleInput.value!==count){peopleInput.value=count;peopleInput.dispatchEvent(new Event('input',{bubbles:true}))}}
   function setLabelText(input,text){const label=input?.closest('label');if(!label)return;const node=[...label.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);if(node)node.textContent=text}
 
   function simplifyBaseForm(){
@@ -33,7 +33,7 @@
     const paymentPreview=byId('paymentPreview');if(paymentPreview)paymentPreview.textContent='Atualizado automaticamente pelo total e pelo valor recebido.';
 
     const peopleLabel=peopleInput?.closest('label');
-    if(peopleLabel&&!peopleLabel.querySelector('.reservation-form-help'))peopleLabel.insertAdjacentHTML('beforeend','<small class="reservation-form-help">Calculado automaticamente pelos nomes separados por “/”.</small>');
+    peopleLabel?.querySelector('.reservation-form-help')?.remove();
     const phoneLabel=primaryPhone?.closest('label');
     if(phoneLabel&&!phoneLabel.querySelector('.reservation-form-help'))phoneLabel.insertAdjacentHTML('beforeend','<small class="reservation-form-help">Brasil por padrão. Troque o país pela bandeira quando necessário.</small>');
 
@@ -55,25 +55,14 @@
   async function setupPhoneEditor(){if(!primaryPhone||byId('reservationPhoneTools'))return;try{await ensureIntlAssets()}catch(e){console.warn('Intl phone indisponível:',e)}primaryIti=window.intlTelInput?window.intlTelInput(primaryPhone,itiOptions()):null;const tools=document.createElement('div');tools.id='reservationPhoneTools';tools.className='reservation-phone-tools';tools.innerHTML='<div class="reservation-phone-head"><span>Adicione contatos extras somente quando necessário.</span><button type="button" class="outline-button" id="addReservationPhone">+ Adicionar telefone</button></div><div class="reservation-phone-list" id="reservationExtraPhoneList"></div>';primaryPhone.closest('label')?.insertAdjacentElement('afterend',tools);byId('addReservationPhone')?.addEventListener('click',()=>addExtraPhone())}
   function loadPhoneState(reservation){clearExtraPhones();const phones=Array.isArray(reservation?.phones)&&reservation.phones.length?reservation.phones:[reservation?.phone?{phone:reservation.phone,phoneCountry:'br'}:null].filter(Boolean);setPhone(primaryPhone,primaryIti,phones[0]||{});phones.slice(1).forEach(addExtraPhone)}
 
-  function catalogItem(card){const id=card.querySelector('[data-service-catalog-select]')?.value;return (window.jeriServiceCatalog||[]).find(x=>String(x.id)===String(id))||null}
-  function reverseItem(item){if(!item)return null;return (window.jeriServiceCatalog||[]).find(x=>x.active!==false&&x.id!==item.id&&x.modality===item.modality&&x.origin&&x.destination&&item.origin&&item.destination&&x.origin.trim().toLowerCase()===item.destination.trim().toLowerCase()&&x.destination.trim().toLowerCase()===item.origin.trim().toLowerCase())||null}
-  function itemNet(item,card){if(!item)return 0;const qty=item.pricing_basis==='fixed'?1:Math.max(1,Number(card.querySelector('[data-net-quantity]')?.value)||1);return (Number(item.net_value)||0)*qty}
-  function serviceCosts(){
-    return [...document.querySelectorAll('#reservationServiceDrafts .reservation-service-draft')].reduce((sum,card)=>{
-      const manual=Number(String(card.querySelector('[data-field="repasseAmount"]')?.value||'').replace(',','.'))||0;
-      const item=catalogItem(card);const outbound=item?itemNet(item,card):manual;
-      const hasReturn=Boolean(card.querySelector('[data-roundtrip-toggle]')?.checked&&card.querySelector('[data-roundtrip-date]')?.value&&item);
-      const returnNet=hasReturn?itemNet(reverseItem(item)||item,card):0;
-      return sum+outbound+returnNet;
-    },0)
-  }
+  function serviceCosts(){return window.JeriFinance.total([...document.querySelectorAll('#reservationServiceDrafts [data-basic-net-input]')].map(input=>input.value))}
 
   function injectFinanceSummary(){
     return byId('reservationServicesEditor');
   }
-  function updateFinanceSummary(){if(!byId('reservationFinanceSummary'))injectFinanceSummary();const sale=Math.max(0,Number(amountInput?.value)||0),paid=Math.min(Math.max(0,Number(paidInput?.value)||0),sale||Infinity),balance=Math.max(0,sale-paid),net=serviceCosts();if(byId('resFinSale'))byId('resFinSale').textContent=money(sale);if(byId('resFinPaid'))byId('resFinPaid').textContent=money(paid);if(byId('resFinBalance'))byId('resFinBalance').textContent=money(balance);if(byId('resFinCosts'))byId('resFinCosts').textContent=money(net)}
+  function updateFinanceSummary(){if(!byId('reservationFinanceSummary'))injectFinanceSummary();const sale=Math.max(0,Number(amountInput?.value)||0),paid=Math.min(Math.max(0,Number(paidInput?.value)||0),sale||Infinity),balance=window.JeriFinance.balance(sale,paid),net=serviceCosts();if(byId('resFinSale'))byId('resFinSale').textContent=money(sale);if(byId('resFinPaid'))byId('resFinPaid').textContent=money(paid);if(byId('resFinBalance'))byId('resFinBalance').textContent=money(balance);if(byId('resFinCosts'))byId('resFinCosts').textContent=money(net)}
 
-  simplifyBaseForm();normalizePassengerNames();syncPeople();passengerInput?.addEventListener('input',()=>{normalizePassengerNames();syncPeople()});passengerInput?.addEventListener('blur',normalizePassengerNames);setupPhoneEditor().then(()=>loadPhoneState(null));
+  simplifyBaseForm();normalizePassengerNames();passengerInput?.addEventListener('input',()=>{normalizePassengerNames();syncPeople()});passengerInput?.addEventListener('blur',normalizePassengerNames);setupPhoneEditor().then(()=>loadPhoneState(null));
 
   const waitForServices=setInterval(()=>{const host=byId('reservationServiceDrafts');if(!host)return;clearInterval(waitForServices);injectFinanceSummary();new MutationObserver(()=>setTimeout(updateFinanceSummary,0)).observe(host,{childList:true,subtree:true});updateFinanceSummary()},80);
   form.addEventListener('input',e=>{if(e.target===amountInput||e.target===paidInput||e.target.matches?.('[data-field="repasseAmount"],[data-net-quantity],[data-roundtrip-toggle],[data-roundtrip-date],[data-service-catalog-select]'))setTimeout(updateFinanceSummary,0)});
@@ -82,10 +71,10 @@
 
   const baseOpen=window.openModal;
   if(typeof baseOpen==='function'){
-    window.openModal=function(id=null){baseOpen(id);setTimeout(()=>{const r=id?reservations.find(x=>String(x.id)===String(id)):null;simplifyBaseForm();loadPhoneState(r);syncPeople();injectFinanceSummary();updateFinanceSummary()},140)};
+    window.openModal=function(id=null){baseOpen(id);setTimeout(()=>{const r=id?reservations.find(x=>String(x.id)===String(id)):null;simplifyBaseForm();loadPhoneState(r);injectFinanceSummary();updateFinanceSummary()},140)};
     try{openModal=window.openModal}catch{}
   }
 
   form.addEventListener('submit',normalizePassengerNames,true);
-  form.addEventListener('submit',()=>{const capturedPhones=collectPhones();setTimeout(()=>{const target=editingReservationId?reservations.find(r=>String(r.id)===String(editingReservationId)):reservations[reservations.length-1];if(!target)return;target.phones=capturedPhones;target.phone=capturedPhones[0]?.phone||target.phone||'';target.people=countPassengers(target.client);saveReservations();renderAll()},40)});
+  form.addEventListener('submit',()=>{const capturedPhones=collectPhones();const submittedId=form.dataset.editingReservationId;setTimeout(()=>{const target=submittedId?reservations.find(r=>String(r.id)===submittedId):reservations[reservations.length-1];if(!target)return;target.phones=capturedPhones;target.phone=capturedPhones[0]?.phone||target.phone||'';saveReservations();renderAll()},40)});
 })();

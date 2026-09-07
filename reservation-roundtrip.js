@@ -23,7 +23,7 @@
   function roundTripCalc(item,card){
     if(!item)return 0;
     const qty=Math.max(1,Number(card.querySelector('[data-net-quantity]')?.value)||1);
-    return item.pricing_basis==='fixed'?Number(item.net_value)||0:(Number(item.net_value)||0)*qty;
+    return window.JeriFinance.serviceNet(item.net_value,item.modality,qty);
   }
 
   function refreshRoundTrip(card,index){

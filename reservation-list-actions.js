@@ -7,7 +7,7 @@
 
   if(!document.querySelector('script[src^="reservation-service-dedupe.js"]')){
     const dedupe=document.createElement('script');
-    dedupe.src='reservation-service-dedupe.js?v=20260830-1';
+    dedupe.src='reservation-service-dedupe.js?v=20260907-1';
     document.body.appendChild(dedupe);
   }
 
@@ -68,7 +68,7 @@
       dropoff:first?.dropoff||'',
       total:number(reservation.amount),
       received:number(reservation.paidAmount),
-      balance:Math.max(0,number(reservation.amount)-number(reservation.paidAmount)),
+      balance:window.JeriFinance.balance(reservation.amount,reservation.paidAmount),
       people:Math.max(1,Number(reservation.people)||1),
       notes:reservation.notes||''
     };
