@@ -53,7 +53,7 @@
           </div>
           <form id="managerServiceForm" class="manager-service-form">
             <label class="full">Serviço / rota *<input id="managerServiceName" placeholder="Ex.: Fortaleza → Jericoacoara" required></label>
-            <label class="manager-service-compat-field">Categoria<select id="managerServiceCategory"><option>Transfer</option><option>Passeio</option><option>Hospedagem</option><option>Outro</option></select></label>
+            <label>Categoria<select id="managerServiceCategory"><option>Transfer</option><option>Passeio</option><option>Hospedagem</option><option>Outro</option></select></label>
             <label>Veículo <span class="optional-label">opcional</span><input id="managerServiceVehicle" placeholder="Ex.: Hilux, van ou ônibus"></label>
             <label>Modalidade<select id="managerServiceModality"><option>Compartilhado</option><option>Privativo</option><option>Regular</option><option>Outro</option></select></label>
             <label class="manager-service-compat-field">Origem<input id="managerServiceOrigin"></label>
@@ -159,7 +159,7 @@
     if(!services.length){host.innerHTML='<div class="manager-services-empty">Nenhum serviço cadastrado.</div>';return;}
     host.innerHTML=`<div class="manager-service-table-head"><span>Serviço / rota</span><span>Veículo</span><span>Modalidade</span><span>NET padrão</span><span>Status</span><span>Ações</span></div>`+
       services.map(x=>`<div class="manager-service-card">
-        <div class="manager-service-main"><strong>${esc(x.name||'Serviço')}</strong></div>
+        <div class="manager-service-main"><strong>${esc(x.name||'Serviço')}</strong><small>${esc(x.category||'Serviço')}</small></div>
         <span>${esc(x.vehicle_type||'—')}</span>
         <span>${esc(x.modality||'—')}</span>
         <strong>${money(x.net_value)}</strong>
