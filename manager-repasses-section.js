@@ -6,7 +6,7 @@
   function loadManagerServices(){
     if(document.querySelector('script[src^="manager-services-section.js"]'))return;
     const script=document.createElement('script');
-    script.src='manager-services-section.js?v=20260825-2';
+    script.src='manager-services-section.js?v=20260909-1';
     document.body.appendChild(script);
   }
   loadManagerServices();

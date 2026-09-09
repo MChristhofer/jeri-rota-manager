@@ -105,7 +105,7 @@
           const key=[reservation.id,'IDA',dateKey(outbound),time,norm(outboundData.boarding)].join('|');
           if(!seenEvents.has(key)){
             seenEvents.add(key);
-            list.push({date:outbound,leg:'IDA',time,endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title:outboundData.title,place:outboundData.boarding,reservationId:reservation.id,serviceIndex:index});
+            list.push({date:outbound,leg:(service.legMode||meta.legMode)==='daytrip'?'BATE E VOLTA':'IDA',time,endTime:shortTime(service.endTime||meta.endTime),client:reservation.client,title:outboundData.title,place:outboundData.boarding,reservationId:reservation.id,serviceIndex:index});
           }
         }
         const returning=parseDate(service.returnDate);
@@ -132,7 +132,7 @@
 
   function eventCard(event){
     const time=event.time?`<span class="calendar-event-time">${escape(event.time)}</span>`:'';
-    const returnTime=event.leg==='IDA'&&event.endTime?`<small>Retorno previsto ${escape(event.endTime)}</small>`:'';
+    const returnTime=event.leg!=='VOLTA'&&event.endTime?`<small>Retorno previsto ${escape(event.endTime)}</small>`:'';
     return `<button type="button" class="calendar-event ${event.leg.toLowerCase()}" data-calendar-reservation="${event.reservationId}" data-calendar-service="${event.serviceIndex}" data-calendar-leg="${event.leg}" aria-label="Visualizar reserva de ${escape(event.client)}"><span class="calendar-event-top"><b>${event.leg}</b>${time}</span><strong>${escape(event.client)}</strong><small>${escape(event.title)}</small>${event.place?`<small class="calendar-event-place">${escape(event.place)}</small>`:''}${returnTime}</button>`;
   }
 

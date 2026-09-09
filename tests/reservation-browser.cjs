@@ -16,7 +16,7 @@ const catalog=[{id:'shared',name:'A → B',category:'Transfer',vehicle_type:'Hil
       const url=new URL(route.request().url());
       if(url.hostname!=='jeri.test')return route.fulfill({body:'',contentType:'text/javascript'});
       const name=url.pathname.slice(1)||'index.html';
-      if(name==='supabase-config.js')return route.fulfill({contentType:'text/javascript',body:`window.jeriSupabase={auth:{getUser:async()=>({data:{user:{email:'test@example.com'}}})},from(table){const q={select(){return q},order(){return q},then(resolve){return Promise.resolve({data:table==='service_catalog'?${JSON.stringify(catalog)}:[],error:null}).then(resolve)}};return q}};`});
+      if(name==='supabase-config.js')return route.fulfill({contentType:'text/javascript',body:`window.jeriSupabase={auth:{getUser:async()=>({data:{user:{email:'test@example.com'}}})},from(table){const q={update(row){window.catalogUpdate=row;return q},eq(){return q},select(){return q},order(){return q},then(resolve){return Promise.resolve({data:table==='service_catalog'?${JSON.stringify(catalog)}:[],error:null}).then(resolve)}};return q}};`});
       if(name==='cloud-data-sync.js')return route.fulfill({contentType:'text/javascript',body:'window.JeriCloudData={fetchAndCache:async()=>{}};'});
       // Exercise the real writer separately against a recording mock. No live data.
       if(['cloud-write-sync.js','cloud-delete-sync.js'].includes(name))return route.fulfill({contentType:'text/javascript',body:''});
@@ -69,6 +69,29 @@ const catalog=[{id:'shared',name:'A → B',category:'Transfer',vehicle_type:'Hil
     const labels=await page.locator('.reservation-sale-total > .reservation-payment-item > span:first-child').allTextContents();assert.deepEqual(labels,['NET total','Valor recebido','Saldo a receber']);
     assert.equal(await page.locator('#reservationCompanyCoverLive').count(),0);
     if(process.env.JERI_SCREENSHOT){await page.locator('.reservation-sale-total').scrollIntoViewIfNeeded();await page.screenshot({path:process.env.JERI_SCREENSHOT})}
+    console.log('Verificando bate e volta');
+    // Bate e volta survives saving, recreation of cards and cloud-style metadata hydration.
+    await page.locator('.reservation-service-draft select[data-leg-mode]').first().selectOption('daytrip');
+    assert.equal(await page.locator('.reservation-service-draft [data-field="returnDate"]').first().inputValue(),'');
+    await page.locator('#addReservationService').click();
+    assert.equal(await page.locator('.reservation-service-draft select[data-leg-mode]').first().inputValue(),'daytrip');
+    await page.locator('.remove-service-draft').last().click();
+    await page.evaluate(()=>document.querySelector('#reservationForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+    await page.waitForTimeout(1500);
+    await page.evaluate(S=>{const rows=JSON.parse(localStorage.getItem(S));for(const row of rows)delete row.legMode;localStorage.setItem(S,JSON.stringify(rows))},S);
+    await open();
+    assert.equal(await page.locator('.reservation-service-draft select[data-leg-mode]').first().inputValue(),'daytrip');
+    assert.deepEqual(await values(),[0,400]);
+    await page.locator('.reservation-service-draft select[data-leg-mode]').first().selectOption('roundtrip');
+    assert.equal(await page.locator('.reservation-service-draft [data-field="returnDate"]').first().isVisible(),true);
+    await page.evaluate(()=>window.closeModal());
+    await page.evaluate(()=>document.querySelector('.nav-item[data-section="servicos"]').click());
+    console.log('Verificando categoria');
+    await page.locator('[data-service-edit="shared"]').click();
+    assert.equal(await page.locator('#managerServiceCategory').isVisible(),true);
+    await page.locator('#managerServiceCategory').selectOption('Passeio');
+    await page.locator('#managerServiceSave').click();
+    await page.waitForFunction(()=>window.catalogUpdate?.category==='Passeio');
     // Run the mandatory cases through the actual monthly renderer.
     for(const [i,[amount,paidAmount,expected]] of [[400,100,100],[400,400,400],[1000,100,0],[1000,800,200],[1000,1000,400]].entries()){
       await page.evaluate(({R,S,amount,paidAmount})=>{localStorage.setItem(R,JSON.stringify([{id:1,amount,paidAmount}]));localStorage.setItem(S,JSON.stringify([{id:'a',reservationId:1,repasseAmount:400,date:'2026-09-10',repasseStatus:'Pago'}]));window.dispatchEvent(new Event('reservation-finance-refresh'));},{R,S,amount,paidAmount});

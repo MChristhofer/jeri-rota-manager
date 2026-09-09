@@ -80,12 +80,13 @@
       if(startLabel)startLabel.style.display='grid';
       if(endLabel)endLabel.style.display='grid';
       if(returnOptional)returnOptional.hidden=false;
-      setLabelText(dateLabel,'Data do serviço * ');
+      setLabelText(dateLabel,mode==='daytrip'?'Data do bate e volta * ':'Data do serviço * ');
       setLabelText(startLabel,'Horário de saída / início ');
       setLabelText(endLabel,'Horário de retorno / fim ');
     }
 
     card.dataset.legMode=mode;
+    window.JeriReservationDrafts?.update(card,{legMode:mode});
   }
 
   function decorateCard(card){
@@ -96,7 +97,7 @@
     if(!select){
       const label=document.createElement('label');
       label.className='reservation-leg-mode';
-      label.innerHTML='<span>Trecho do serviço *</span><select data-leg-mode><option value="outbound">Ida / serviço único</option><option value="return">Somente volta</option><option value="roundtrip">Ida e volta</option></select><small>Define quais datas entram na agenda operacional.</small>';
+      label.innerHTML='<span>Trecho do serviço *</span><select data-leg-mode><option value="outbound">Ida / serviço único</option><option value="return">Somente volta</option><option value="roundtrip">Ida e volta</option><option value="daytrip">Bate e volta</option></select><small>Define quais datas entram na agenda operacional.</small>';
       date.closest('label')?.insertAdjacentElement('beforebegin',label);
       select=label.querySelector('[data-leg-mode]');
       select.addEventListener('change',()=>applyMode(card,select.value,{clearOpposite:true}));
@@ -141,7 +142,7 @@
           applyMode(card,mode);
           const date=card.querySelector('[data-field="date"]');
           const returnDate=card.querySelector('[data-field="returnDate"]');
-          if((mode==='outbound'||mode==='roundtrip')&&!date?.value)valid=false;
+          if((mode==='outbound'||mode==='roundtrip'||mode==='daytrip')&&!date?.value)valid=false;
           if((mode==='return'||mode==='roundtrip')&&!returnDate?.value)valid=false;
         });
         if(!valid){event.preventDefault();event.stopImmediatePropagation();form.reportValidity()}
