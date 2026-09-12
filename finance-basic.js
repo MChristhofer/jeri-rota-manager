@@ -15,6 +15,7 @@
   const escape=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const monthOf=value=>String(value||'').slice(0,7);
   const isPaid=status=>/^(pago|quitado|repassado|realizado)$/i.test(String(status||'').trim());
+  const outstandingCompanyCover=row=>isPaid(row?.service?.repasseStatus)?0:row.companyCover;
   const serviceName=service=>service.title||service.service||service.tour||'Serviço';
   const formatDate=value=>{if(!value)return'—';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):dateFmt.format(date)};
   const formatMonth=value=>{
@@ -39,7 +40,7 @@
             <p class="eyebrow">VISÃO RÁPIDA</p>
             <h3 id="commitmentMonthOverviewTitle">Quanto precisa sair do caixa</h3>
           </div>
-          <small>NET total menos o saldo que os clientes ainda vão pagar</small>
+          <small>Considera somente a parte da empresa que ainda não foi paga</small>
         </div>
         <div id="commitmentMonthCards" class="commitment-month-grid"></div>
       </section>
@@ -105,7 +106,7 @@
       group.rows.push(row);
       group.net+=row.net;
       group.client+=row.clientContribution;
-      group.company+=row.companyCover;
+      group.company+=outstandingCompanyCover(row);
     });
     return [...groups.values()].sort((a,b)=>a.month.localeCompare(b.month));
   }
@@ -153,7 +154,7 @@
 
     const netTotal=window.JeriFinance.total(monthRows.map(row=>row.net));
     const clientTotal=window.JeriFinance.total(monthRows.map(row=>row.clientContribution));
-    const companyTotal=window.JeriFinance.total(monthRows.map(row=>row.companyCover));
+    const companyTotal=window.JeriFinance.total(monthRows.map(outstandingCompanyCover));
     document.getElementById('commitmentNetTotal').textContent=money.format(netTotal);
     document.getElementById('commitmentClientTotal').textContent=money.format(clientTotal);
     document.getElementById('commitmentCompanyTotal').textContent=money.format(companyTotal);
@@ -161,14 +162,15 @@
     const tbody=document.getElementById('commitmentTable');
     tbody.innerHTML=visibleRows.length?visibleRows.map(row=>{
       const serviceKey=String(row.service.id||row.service.sourceKey||'');
+      const paid=isPaid(row.service.repasseStatus);
       return `<tr>
         <td>${formatDate(row.operationalDate)}</td>
         <td><strong>${escape(row.reservation.reservationCode||'Reserva')}</strong><small>${escape(row.reservation.client||'Cliente')}</small></td>
         <td><strong>${escape(serviceName(row.service))}</strong></td>
         <td><strong>${money.format(row.net)}</strong></td>
         <td><strong class="commitment-client-value">${money.format(row.clientContribution)}</strong></td>
-        <td><strong class="commitment-company-value">${money.format(row.companyCover)}</strong></td>
-        <td class="row-actions"><button type="button" class="commitment-paid-button" ${isPaid(row.service.repasseStatus)?'disabled':''} data-commitment-service="${escape(serviceKey)}" data-commitment-reservation="${escape(row.service.reservationId)}">${isPaid(row.service.repasseStatus)?'Pago':'Marcar como pago'}</button></td>
+        <td><strong class="commitment-company-value">${money.format(row.companyCover)}</strong>${paid&&row.companyCover>0?'<small>Já pago</small>':''}</td>
+        <td class="row-actions"><button type="button" class="commitment-paid-button${paid?' is-paid':''}" title="${paid?'Clique para desfazer o pagamento':'Marcar este NET como pago'}" aria-label="${paid?'Pagamento marcado como pago. Clique para desfazer.':'Marcar pagamento como pago.'}" data-commitment-service="${escape(serviceKey)}" data-commitment-reservation="${escape(row.service.reservationId)}">${paid?'Pago ✓':'Marcar como pago'}</button></td>
       </tr>`;
     }).join(''):`<tr><td colspan="7"><div class="empty-state"><strong>Nenhum compromisso neste mês.</strong></div></td></tr>`;
   }
@@ -181,7 +183,9 @@
     if(!service)return;
 
     const previous=service.repasseStatus;
-    service.repasseStatus='Pago';
+    const wasPaid=isPaid(previous);
+    if(wasPaid&&!window.confirm('Desfazer a marcação deste pagamento?'))return;
+    service.repasseStatus=wasPaid?'A pagar':'Pago';
     write(SERVICES_KEY,services);
     renderCommitments();
 
@@ -190,13 +194,13 @@
     try{
       await window.JeriCloudWrite.syncReservation(reservation);
     }catch(error){
-      console.error('Falha ao sincronizar compromisso pago:',error);
+      console.error(wasPaid?'Falha ao desfazer pagamento:':'Falha ao sincronizar compromisso pago:',error);
       const latest=read(SERVICES_KEY);
       const rollback=latest.find(item=>String(item.reservationId)===String(service.reservationId)&&String(item.id||item.sourceKey||'')===String(service.id||service.sourceKey||''));
       if(rollback)rollback.repasseStatus=previous||'A pagar';
       write(SERVICES_KEY,latest);
       renderCommitments();
-      alert('Não foi possível salvar este pagamento no banco. Tente novamente.');
+      alert(wasPaid?'Não foi possível desfazer este pagamento no banco. Tente novamente.':'Não foi possível salvar este pagamento no banco. Tente novamente.');
     }
   }
 
