@@ -14,6 +14,16 @@
 <body>
   <main class="login-page">
     <section class="brand-panel" aria-label="Jeri Rota Manager">
+      <div class="brand-orbit brand-orbit-large" aria-hidden="true"></div>
+      <div class="brand-orbit brand-orbit-small" aria-hidden="true"></div>
+      <svg class="route-line" viewBox="0 0 760 460" preserveAspectRatio="none" aria-hidden="true">
+        <path class="route-path" pathLength="1" d="M 52 390 C 130 338, 116 246, 226 250 S 350 344, 432 260 S 486 104, 700 70" />
+        <g class="route-points">
+          <circle cx="52" cy="390" r="4" />
+          <circle cx="226" cy="250" r="3" />
+          <circle cx="700" cy="70" r="4" />
+        </g>
+      </svg>
       <div class="brand-lockup">
         <img class="brand-logo" src="jeri-rota-mark.svg" alt="Símbolo Jeri Rota" />
         <div class="brand-name"><strong>Jeri Rota</strong><small>MANAGER</small></div>
@@ -21,7 +31,7 @@
 
       <div class="brand-copy">
         <p class="eyebrow">CENTRAL DE OPERAÇÕES</p>
-        <h1>Uma rota mais clara para <em>cada operação.</em></h1>
+        <h1>Uma rota mais clara para <em><span>cada operação.</span></em></h1>
         <p>Reservas, repasses, serviços e financeiro reunidos em um ambiente interno pensado para a rotina da Jeri Rota.</p>
         <div class="brand-features" aria-label="Recursos do sistema">
           <span class="brand-feature">OPERAÇÃO</span>
@@ -60,7 +70,7 @@
               </span>
             </label>
 
-            <button class="login-button" id="loginButton" type="submit">Entrar no Manager</button>
+            <button class="login-button" id="loginButton" type="submit"><span class="button-label">Entrar no Manager</span><span class="button-spinner" aria-hidden="true"></span></button>
             <p id="loginMessage" class="message" aria-live="polite"></p>
           </form>
 
