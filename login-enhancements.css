@@ -1,0 +1,58 @@
+/* Refinamentos visuais e de interação do login */
+.auth-intro{max-width:430px}
+.brand-copy h1{font-size:clamp(40px,4.75vw,68px)}
+
+.route-story{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.9}
+.route-line{position:absolute;left:12%;right:9%;bottom:20%;height:1px;background:linear-gradient(90deg,rgba(239,209,140,.12),rgba(239,209,140,.72),rgba(239,209,140,.18));transform:rotate(-8deg);transform-origin:left center;box-shadow:0 0 18px rgba(217,163,60,.12)}
+.route-stop{position:absolute;display:grid;justify-items:center;gap:7px;color:rgba(230,238,242,.64);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;animation:routeLabelIn .65s ease both}
+.route-stop i{width:7px;height:7px;border:1px solid rgba(239,209,140,.78);border-radius:50%;background:#0a314d;box-shadow:0 0 0 5px rgba(239,209,140,.05)}
+.route-stop b{font-weight:700}
+.route-stop-fortaleza{left:11%;bottom:18%;animation-delay:.75s}
+.route-stop-jijoca{left:50%;bottom:24%;animation-delay:.95s}
+.route-stop-jeri{right:8%;bottom:31%;animation-delay:1.15s}
+.route-traveler{position:absolute;left:11.5%;bottom:19.1%;width:8px;height:8px;border-radius:50%;background:var(--jr-gold-light);box-shadow:0 0 0 5px rgba(239,209,140,.08),0 0 20px rgba(239,209,140,.45);animation:routeMove 9s cubic-bezier(.42,0,.32,1) 1.7s infinite}
+
+.field-label-row{width:100%}
+.forgot-password{border:0;background:transparent;padding:0;color:#8b681f;font:700 10px/1 var(--jr-body);cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .18s ease,text-decoration-color .18s ease}
+.forgot-password:hover{color:var(--jr-navy);text-decoration-color:rgba(8,38,62,.3)}
+.forgot-password:focus-visible{outline:3px solid rgba(217,163,60,.28);outline-offset:4px;border-radius:4px}
+.forgot-password:disabled{opacity:.55;cursor:wait}
+.caps-lock{margin-top:-2px;color:#a36a17;font-size:10px;font-weight:700}
+.recovery-note{margin:3px 0 -3px;color:#6f7c84;font-size:10px;line-height:1.45;text-align:right}
+
+.login-card{border-radius:18px;box-shadow:0 20px 58px rgba(19,37,53,.10)}
+.login-card:hover{box-shadow:0 25px 64px rgba(19,37,53,.13)}
+.security-row{letter-spacing:.01em}
+
+.login-button.is-success{background:#124d45;border-color:#124d45;box-shadow:0 12px 28px rgba(18,77,69,.18)}
+.login-button.is-success::before{display:none}
+
+.mobile-brand{position:relative;overflow:hidden}
+
+@keyframes routeLabelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes routeMove{
+  0%,9%{left:11.5%;bottom:19.1%;opacity:0}
+  14%{opacity:1}
+  48%{left:50.5%;bottom:25.3%;opacity:1}
+  82%{left:90.5%;bottom:32.1%;opacity:1}
+  88%,100%{left:90.5%;bottom:32.1%;opacity:0}
+}
+
+@media(max-width:930px){
+  .mobile-brand{display:flex!important;margin:-34px -20px 34px;padding:24px 20px 18px;background:linear-gradient(135deg,#061a2a,#0b3653);border-bottom:1px solid rgba(217,163,60,.24)}
+  .mobile-brand strong{color:#fff!important}
+  .mobile-brand small{color:var(--jr-gold-light)!important}
+  .auth-wrap{width:min(500px,100%)}
+}
+
+@media(max-width:520px){
+  .mobile-brand{margin:-26px -17px 28px;padding:21px 17px 17px}
+  .auth-wrap h2{font-size:35px}
+  .auth-intro{font-size:13px}
+  .login-card{border-radius:16px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .route-stop,.route-traveler{animation:none!important}
+  .route-traveler{display:none!important}
+}
