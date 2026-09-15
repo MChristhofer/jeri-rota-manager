@@ -10,10 +10,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="login.css" />
+  <link rel="stylesheet" href="login-enhancements.css" />
 </head>
 <body>
   <main class="login-page">
     <section class="brand-panel" aria-label="Jeri Rota Manager">
+      <div class="route-story" aria-hidden="true">
+        <div class="route-line"></div>
+        <span class="route-stop route-stop-fortaleza"><i></i><b>Fortaleza</b></span>
+        <span class="route-stop route-stop-jijoca"><i></i><b>Jijoca</b></span>
+        <span class="route-stop route-stop-jeri"><i></i><b>Jericoacoara</b></span>
+        <span class="route-traveler"></span>
+      </div>
+
       <div class="brand-lockup">
         <img class="brand-logo" src="jeri-rota-mark.svg" alt="Símbolo Jeri Rota" />
         <div class="brand-name"><strong>Jeri Rota</strong><small>MANAGER</small></div>
@@ -43,7 +52,7 @@
 
         <p class="auth-kicker">ACESSO INTERNO</p>
         <h2>Bem-vindo ao Manager</h2>
-        <p class="auth-intro">Entre com seu usuário autorizado para acessar a central de operações.</p>
+        <p class="auth-intro">Acesse sua central de reservas, serviços, repasses e financeiro.</p>
 
         <div class="login-card">
           <form id="loginForm" novalidate>
@@ -53,18 +62,19 @@
             </label>
 
             <label class="field">
-              <span class="field-label">Senha</span>
+              <span class="field-label field-label-row"><span>Senha</span><button class="forgot-password" id="forgotPassword" type="button">Esqueci minha senha</button></span>
               <span class="field-input password-input">
                 <input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
                 <button class="password-toggle" id="passwordToggle" type="button" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
               </span>
+              <span id="capsLockMessage" class="caps-lock" hidden>Caps Lock ativado</span>
             </label>
 
             <button class="login-button" id="loginButton" type="submit">Entrar no Manager</button>
             <p id="loginMessage" class="message" aria-live="polite"></p>
           </form>
 
-          <div class="security-row"><span class="security-icon" aria-hidden="true">✓</span><span>Ambiente seguro · acesso exclusivo Jeri Rota</span></div>
+          <div class="security-row"><span class="security-icon" aria-hidden="true">✓</span><span>Acesso protegido · uso exclusivo Jeri Rota</span></div>
         </div>
 
         <div class="back-site"><a href="https://www.jerirota.com.br/">← Voltar ao site da Jeri Rota</a></div>
