@@ -224,7 +224,7 @@ function renderReservations() {
       <td class="reservation-total"><strong>${currency.format(r.amount)}</strong></td>
       <td class="payment-summary"><strong>${currency.format(receivedAmount(r))} <span>de ${currency.format(r.amount)}</span></strong><small>Saldo ${currency.format(balance)} · ${payment.label}</small></td>
       <td><span class="status ${statusClass(r.status)}">${r.status}</span></td>
-      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-copy="${r.id}">Copiar reserva</button><button type="button" data-whatsapp="${r.id}">Enviar por WhatsApp</button><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}" data-delete-cloud="${escapeHtml(r.cloudId || '')}">Excluir</button></div></details></td>
+      <td class="row-actions"><details class="reservation-action-menu"><summary aria-label="Mais ações para ${escapeHtml(r.client)}">•••</summary><div class="reservation-action-popover"><button type="button" data-voucher-reservation="${r.id}">Gerar voucher</button><button type="button" data-copy="${r.id}">Copiar reserva</button><button type="button" data-whatsapp="${r.id}">Enviar por WhatsApp</button><button type="button" data-edit="${r.id}">Editar</button><button type="button" class="delete-button" data-delete="${r.id}" data-delete-cloud="${escapeHtml(r.cloudId || '')}">Excluir</button></div></details></td>
     </tr>`;
   }).join('');
 }
@@ -320,7 +320,7 @@ function setSection(section) {
   document.body.dataset.section = section;
   document.querySelectorAll('.content-section').forEach(el => el.classList.toggle('active', el.id === section));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
-  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
+  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', vouchers: 'Vouchers', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
   document.getElementById('pageTitle').textContent = titles[section];
   const pageSubtitle = document.getElementById('pageSubtitle');
   pageSubtitle.hidden = section !== 'reservas';

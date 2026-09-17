@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="reservation-operational-form.css?v=20260830-1" />
   <link rel="stylesheet" href="reservation-repasse-message.css?v=20260826-3" />
   <link rel="stylesheet" href="dashboard-calendar.css?v=20260826-2" />
+  <link rel="stylesheet" href="voucher-module.css?v=20260917-1" />
 </head>
 <body style="visibility:hidden">
   <div class="app-shell">
@@ -26,6 +27,7 @@
       <nav class="main-nav" aria-label="Menu principal">
         <button class="nav-item active" data-section="dashboard"><span>⌂</span> Dashboard</button>
         <button class="nav-item" data-section="reservas"><span>▣</span> Reservas</button>
+        <button class="nav-item" data-section="vouchers"><span>◇</span> Vouchers</button>
         <button class="nav-item" data-section="financeiro"><span>R$</span> Financeiro</button>
         <button class="nav-item" data-section="prestacao"><span>⇄</span> Prestação de contas</button>
       </nav>
@@ -131,6 +133,12 @@
         <div class="operation-board" id="operationBoard"></div>
       </section>
 
+      <section class="content-section" id="vouchers">
+        <div class="section-heading"><div><p class="eyebrow">DOCUMENTOS OFICIAIS</p><h2>Vouchers</h2><p>Emita, consulte e compartilhe vouchers vinculados às reservas.</p></div></div>
+        <div class="voucher-toolbar"><input id="voucherSearch" type="search" placeholder="Buscar por voucher, cliente, reserva ou telefone"><select id="voucherStatus"><option value="all">Todos</option><option value="issued">Emitidos</option><option value="superseded">Substituídos</option><option value="cancelled">Cancelados</option></select></div>
+        <article class="panel table-panel"><div class="table-wrap"><table class="voucher-table"><thead><tr><th>Voucher</th><th>Cliente</th><th>Reserva</th><th>Período</th><th>Versão</th><th>Status</th><th>Emissão</th><th>Ações</th></tr></thead><tbody id="voucherTable"></tbody></table></div></article>
+      </section>
+
       <section class="content-section" id="financeiro">
         <div class="section-heading"><div><p class="eyebrow">CONTROLE DE CAIXA</p><h2>Financeiro</h2><p>Veja o que entrou diretamente na Jeri Rota e o que ainda está pendente de cliente.</p></div></div>
         <div class="finance-grid">
@@ -222,10 +230,13 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js?v=20260830-3"></script>
   <script src="app.js?v=20260830-1"></script>
   <script src="dashboard-calendar.js?v=20260826-2"></script>
+  <script src="voucher-module.js?v=20260917-1"></script>
   <script>
     // Validação mínima obrigatória da reserva.
     (() => {
