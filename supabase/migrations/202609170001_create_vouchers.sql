@@ -147,12 +147,8 @@ as $$
     'issued_at', v.issued_at,
     'is_latest', not exists(select 1 from public.vouchers newer where newer.voucher_number=v.voucher_number and newer.version>v.version),
     'snapshot', jsonb_build_object(
-      'client', v.snapshot_data->'client', 'period', v.snapshot_data->'period',
-      'people', v.snapshot_data->'people', 'passengers', v.snapshot_data->'passengers',
-      'services', v.snapshot_data->'services', 'boarding', v.snapshot_data->'boarding',
-      'lodging', v.snapshot_data->'lodging', 'customer_notes', v.snapshot_data->'customer_notes',
-      'payment_status', v.snapshot_data->'payment_status',
-      'amount', case when v.show_value then v.snapshot_data->'amount' else null end
+      'client', v.snapshot_data->'client',
+      'period', v.snapshot_data->'period'
     )
   ) from public.vouchers v where v.validation_token=p_token limit 1;
 $$;
