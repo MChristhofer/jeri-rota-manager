@@ -40,9 +40,15 @@
     await loadVouchers();closeDialog();await makePdf(issued,true);setSection('vouchers');
   }
   async function qrData(url){if(!window.QRCode)return null;return QRCode.toDataURL(url,{width:240,margin:1,color:{dark:'#08263e',light:'#ffffff'}})}
+  let voucherLogoPromise;
+  async function logoDataUrl(){
+    if(voucherLogoPromise)return voucherLogoPromise;
+    voucherLogoPromise=(async()=>{try{const response=await fetch('jeri-rota-mark.svg');if(!response.ok)return null;const svg=await response.text();const blob=new Blob([svg],{type:'image/svg+xml'});const url=URL.createObjectURL(blob);try{return await new Promise(resolve=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=512;canvas.height=648;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,512,648);resolve(canvas.toDataURL('image/png'))};img.onerror=()=>resolve(null);img.src=url})}finally{URL.revokeObjectURL(url)}}catch(error){console.warn('Logo indisponível para o PDF:',error);return null}})();
+    return voucherLogoPromise;
+  }
   async function makePdf(v,upload=false){
     const {jsPDF}=window.jspdf||{};if(!jsPDF)return alert('Gerador de PDF indisponível. Atualize a página.');const s=v.snapshot_data||{};const doc=new jsPDF({unit:'mm',format:'a4'}),navy=[8,38,62],gold=[217,163,60];
-    doc.setFillColor(...navy);doc.rect(0,0,210,38,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('JERI ROTA',18,18);doc.setTextColor(...gold);doc.setFontSize(10);doc.text('VOUCHER OFICIAL',18,26);doc.setTextColor(20,32,42);doc.setFontSize(15);doc.text(`${v.voucher_number}  |  V${v.version}`,18,52);
+    doc.setFillColor(...navy);doc.rect(0,0,210,38,'F');const logo=await logoDataUrl();if(logo)doc.addImage(logo,'PNG',18,6,16,20);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('JERI ROTA',logo?40:18,18);doc.setTextColor(...gold);doc.setFontSize(10);doc.text('VOUCHER OFICIAL',logo?40:18,26);doc.setTextColor(20,32,42);doc.setFontSize(15);doc.text(`${v.voucher_number}  |  V${v.version}`,18,52);
     let y=64;const line=(label,value)=>{doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...navy);doc.text(label.toUpperCase(),18,y);doc.setFont('helvetica','normal');doc.setTextColor(45,55,62);const lines=doc.splitTextToSize(String(value||'A definir'),165);doc.text(lines,18,y+6);y+=11+(lines.length-1)*5};line('Cliente',s.client);line('Período',`${fmtDate(s.period?.start)} a ${fmtDate(s.period?.end)}`);line('Passageiros',`${s.people||1} · ${(s.passengers||[]).join(', ')}`);line('Serviços',(s.services||[]).map(x=>`${x.title} — ${fmtDate(x.date)}${x.route?` — ${x.route}`:''}`).join('\n'));line('Embarque',s.boarding);line('Pagamento',s.payment_status);if(v.show_value)line('Valor',money(s.amount));if(s.customer_notes)line('Observações',s.customer_notes);
     const url=publicUrl(v),qr=await qrData(url);if(qr){doc.addImage(qr,'PNG',18,230,36,36);doc.setFontSize(8);doc.setTextColor(80,90,96);doc.text('Escaneie para validar',18,271)}doc.setFontSize(8);doc.text(url,60,248,{maxWidth:125});doc.setDrawColor(...gold);doc.line(18,282,192,282);doc.text(`Emitido em ${fmtDate(v.issued_at)} · Documento verificável por QR Code`,18,289);
     const blob=doc.output('blob'),filename=`${v.voucher_number}-V${v.version}.pdf`;
