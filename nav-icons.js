@@ -5,6 +5,7 @@
     servicos:'ph-briefcase',
     operacao:'ph-steering-wheel',
     financeiro:'ph-wallet',
+    vouchers:'ph-ticket',
     prestacao:'ph-receipt'
   };
 
