@@ -6,6 +6,16 @@
   const fmtDate=v=>v?new Intl.DateTimeFormat('pt-BR',{dateStyle:'medium'}).format(new Date(String(v).length===10?`${v}T12:00:00`:v)):'A definir';
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
   let vouchers=[];
+  function ensureVoucherNav(){
+    const navRoot=document.querySelector('.main-nav');if(!navRoot)return;
+    let item=[...navRoot.querySelectorAll('.nav-item')].find(x=>x.dataset.section==='vouchers');
+    if(!item){item=document.createElement('button');item.type='button';item.className='nav-item';item.dataset.section='vouchers';item.innerHTML='<span>◇</span> Vouchers';item.addEventListener('click',()=>setSection('vouchers'))}
+    const services=[...navRoot.querySelectorAll('.nav-item')].find(x=>x.dataset.section==='servicos');
+    if(services){if(services.nextSibling!==item)navRoot.insertBefore(item,services.nextSibling)}else if(!item.isConnected){navRoot.appendChild(item)}
+  }
+  ensureVoucherNav();
+  const voucherNavObserver=new MutationObserver(()=>ensureVoucherNav());
+  const voucherNavRoot=document.querySelector('.main-nav');if(voucherNavRoot)voucherNavObserver.observe(voucherNavRoot,{childList:true});
   const reservationsList=()=>{try{return reservations}catch{return JSON.parse(localStorage.getItem('jeri-rota-manager-reservas-v1')||'[]')}};
   const servicesList=()=>JSON.parse(localStorage.getItem('jeri-rota-manager-reservation-services-v1')||'[]');
 
