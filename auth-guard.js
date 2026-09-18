@@ -36,7 +36,7 @@
         if(!document.querySelector('link[href^="manager-global-responsive.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-global-responsive.css?v=20260831-2';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="manager-services-section.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-services-section.css?v=20260831-5';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="reservation-list-actions.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='reservation-list-actions.css?v=20260830-1';document.head.appendChild(link)}
-        if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260825-1';document.body.appendChild(script)}
+        if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260917-1';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-list-actions.js"]')){const script=document.createElement('script');script.src='reservation-list-actions.js?v=20260907-1';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-leg-mode.js"]')){const script=document.createElement('script');script.src='reservation-leg-mode.js?v=20260909-1';document.body.appendChild(script)}
       };
@@ -50,11 +50,11 @@
           if(document.querySelector('script[src^="finance-basic.js"]')){openRequestedReservation();return}
           const script=document.createElement('script');script.src='finance-basic.js?v=20260907-1';script.onload=openRequestedReservation;script.onerror=()=>console.error('Falha ao carregar o módulo Compromissos.');document.body.appendChild(script)
         };
-        const loadCatalog=()=>{if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadCommitments();return}const catalog=document.createElement('script');catalog.src='reservation-service-catalog.js?v=20260907-1';catalog.onload=loadCommitments;catalog.onerror=()=>{console.error('Falha ao carregar catálogo de serviços.');loadCommitments()};document.body.appendChild(catalog)};
+        const loadCatalog=()=>{if(document.querySelector('script[src^="reservation-service-catalog.js"]')){loadCommitments();return}const catalog=document.createElement('script');catalog.src='reservation-service-catalog.js?v=20260917-1';catalog.onload=loadCommitments;catalog.onerror=()=>{console.error('Falha ao carregar catálogo de serviços.');loadCommitments()};document.body.appendChild(catalog)};
         const loadLocationSuggestions=()=>{if(document.querySelector('script[src^="reservation-location-suggestions.js"]')){loadCatalog();return}const locations=document.createElement('script');locations.src='reservation-location-suggestions.js?v=20260831-7';locations.onload=loadCatalog;document.body.appendChild(locations)};
         const loadEnhancements=()=>{if(document.querySelector('script[src^="reservation-enhancements.js"]')){loadLocationSuggestions();return}const enhance=document.createElement('script');enhance.src='reservation-enhancements.js?v=20260907-1';enhance.onload=loadLocationSuggestions;document.body.appendChild(enhance)};
         const releaseCompatibilityRequired=()=>{const form=document.getElementById('reservationForm');['service','date','boarding','amount'].forEach(name=>form?.elements[name]?.removeAttribute('required'))};
-        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260909-1';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
+        if(!document.querySelector('script[src^="reservation-flow.js"]')){const script=document.createElement('script');script.src='reservation-flow.js?v=20260917-1';script.onload=()=>{releaseCompatibilityRequired();loadEnhancements()};document.body.appendChild(script)}else{releaseCompatibilityRequired();loadEnhancements()}
       };
       if(document.readyState==='complete')initReservationModules();else window.addEventListener('load',initReservationModules,{once:true});
     }
