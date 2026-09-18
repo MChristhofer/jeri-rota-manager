@@ -53,6 +53,11 @@
           </div>
           <form id="managerServiceForm" class="manager-service-form">
             <label class="full">Serviço / rota *<input id="managerServiceName" placeholder="Ex.: Fortaleza → Jericoacoara" required></label>
+            <label class="full manager-service-image-field">Imagem principal do voucher
+              <input id="managerServiceImage" type="file" accept="image/jpeg,image/png,image/webp">
+              <small>Usada automaticamente no Voucher Premium. JPG, PNG ou WEBP até 5 MB.</small>
+              <div id="managerServiceImagePreview" class="manager-service-image-preview"></div>
+            </label>
             <label>Categoria<select id="managerServiceCategory"><option>Transfer</option><option>Passeio</option><option>Hospedagem</option><option>Outro</option></select></label>
             <label>Veículo <span class="optional-label">opcional</span><input id="managerServiceVehicle" placeholder="Ex.: Hilux, van ou ônibus"></label>
             <label>Modalidade<select id="managerServiceModality"><option>Compartilhado</option><option>Privativo</option><option>Regular</option><option>Outro</option></select></label>
@@ -113,6 +118,7 @@
       active:byId('managerServiceActive').value==='true',
       default_partner_name:byId('managerServicePartner').value.trim()||null,
       default_partner_phone:byId('managerServicePartnerPhone').value.trim()||null,
+      voucher_image_path:editingServiceId?(services.find(x=>String(x.id)===String(editingServiceId))?.voucher_image_path||null):null,
       updated_at:new Date().toISOString()
     };
   }
@@ -126,6 +132,8 @@
     byId('managerServiceReceipt').value='net_first';
     byId('managerServiceActive').value='true';
     byId('managerServiceNet').value='';
+    if(byId('managerServiceImage'))byId('managerServiceImage').value='';
+    if(byId('managerServiceImagePreview'))byId('managerServiceImagePreview').innerHTML='';
     byId('managerServiceSave').textContent='Salvar serviço';
     byId('managerServiceFormTitle').textContent='Novo serviço';
     byId('managerServiceCancel').style.display='none';
@@ -147,6 +155,9 @@
     byId('managerServiceActive').value=String(item.active!==false);
     byId('managerServicePartner').value=item.default_partner_name||'';
     byId('managerServicePartnerPhone').value=item.default_partner_phone||'';
+    if(byId('managerServiceImage'))byId('managerServiceImage').value='';
+    const publicImage=item.voucher_image_path?client.storage.from('service-images').getPublicUrl(item.voucher_image_path).data.publicUrl:'';
+    if(byId('managerServiceImagePreview'))byId('managerServiceImagePreview').innerHTML=publicImage?'<img src="'+esc(publicImage)+'" alt="Imagem atual do serviço"><span>Imagem atual</span>':'<span>Sem imagem cadastrada</span>';
     byId('managerServiceSave').textContent=duplicate?'Criar cópia':'Salvar alterações';
     byId('managerServiceFormTitle').textContent=duplicate?'Duplicar serviço':'Editar serviço';
     byId('managerServiceCancel').style.display='inline-flex';
@@ -159,7 +170,7 @@
     if(!services.length){host.innerHTML='<div class="manager-services-empty">Nenhum serviço cadastrado.</div>';return;}
     host.innerHTML=`<div class="manager-service-table-head"><span>Serviço / rota</span><span>Veículo</span><span>Modalidade</span><span>NET padrão</span><span>Status</span><span>Ações</span></div>`+
       services.map(x=>`<div class="manager-service-card">
-        <div class="manager-service-main"><strong>${esc(x.name||'Serviço')}</strong><small>${esc(x.category||'Serviço')}</small></div>
+        <div class="manager-service-main">${x.voucher_image_path?`<img class="manager-service-thumb" src="${esc(client.storage.from('service-images').getPublicUrl(x.voucher_image_path).data.publicUrl)}" alt="">`:``}<div><strong>${esc(x.name||'Serviço')}</strong><small>${esc(x.category||'Serviço')}</small></div></div>
         <span>${esc(x.vehicle_type||'—')}</span>
         <span>${esc(x.modality||'—')}</span>
         <strong>${money(x.net_value)}</strong>
@@ -208,25 +219,49 @@
     }
   }
 
+  async function uploadServiceImage(file,serviceId){
+    if(!file)return null;
+    if(file.size>5*1024*1024)throw new Error('A imagem deve ter no máximo 5 MB.');
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const safeExt=['jpg','jpeg','png','webp'].includes(ext)?ext:'jpg';
+    const path=serviceId+'/voucher.'+safeExt;
+    const {error}=await client.storage.from('service-images').upload(path,file,{upsert:true,contentType:file.type||undefined});
+    if(error)throw error;
+    return path;
+  }
   byId('managerServiceForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const row=serviceFormRow();if(!row.name)return;
+    const imageFile=byId('managerServiceImage')?.files?.[0]||null;
+    const wasEditing=Boolean(editingServiceId);
     const result=editingServiceId
-      ?await client.from('service_catalog').update(row).eq('id',editingServiceId)
-      :await client.from('service_catalog').insert(row);
+      ?await client.from('service_catalog').update(row).eq('id',editingServiceId).select('id').single()
+      :await client.from('service_catalog').insert(row).select('id').single();
     if(result.error){
       alert('Não foi possível salvar o serviço. Verifique se já existe um cadastro igual.');
       console.error(result.error);
       return;
     }
+    const savedId=result.data.id;
+    if(imageFile){
+      try{
+        const path=await uploadServiceImage(imageFile,savedId);
+        const imageUpdate=await client.from('service_catalog').update({voucher_image_path:path,updated_at:new Date().toISOString()}).eq('id',savedId);
+        if(imageUpdate.error)throw imageUpdate.error;
+      }catch(error){
+        console.error(error);
+        alert('O serviço foi salvo, mas não foi possível enviar a imagem do voucher: '+error.message);
+      }
+    }
     resetServiceForm();
-    await loadAll(editingServiceId?'updated':'created');
+    await loadAll(wasEditing?'updated':'created');
   });
 
   byId('managerServiceCancel')?.addEventListener('click',resetServiceForm);
   byId('managerNewService')?.addEventListener('click',()=>{resetServiceForm();byId('managerServiceName')?.focus()});
   byId('managerServiceNet')?.addEventListener('focus',e=>e.currentTarget.select());
   byId('managerServiceNet')?.addEventListener('blur',e=>{if(e.currentTarget.value.trim()!=='')e.currentTarget.value=formatMoney(parseMoney(e.currentTarget.value))});
+  byId('managerServiceImage')?.addEventListener('change',e=>{const file=e.currentTarget.files?.[0],host=byId('managerServiceImagePreview');if(!file||!host)return;if(file.size>5*1024*1024){alert('A imagem deve ter no máximo 5 MB.');e.currentTarget.value='';return}const url=URL.createObjectURL(file);host.innerHTML='<img src="'+url+'" alt="Prévia da imagem"><span>Prévia da nova imagem</span>';});
 
   byId('managerServiceList')?.addEventListener('click',async e=>{
     const edit=e.target.dataset.serviceEdit;
