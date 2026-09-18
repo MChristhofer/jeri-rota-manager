@@ -1,5 +1,5 @@
-/* Modo mínimo: o Manager expõe Dashboard, Reservas, Serviços e Compromissos. */
-.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="servicos"]):not([data-section="financeiro"]),
+/* Modo mínimo: o Manager expõe Dashboard, Reservas, Financeiro, Serviços e Vouchers. */
+.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="servicos"]):not([data-section="financeiro"]):not([data-section="vouchers"]),
 .main-nav a.nav-item,
 .content-section#operacao,
 .content-section#prestacao,
@@ -16,7 +16,8 @@
 .main-nav .nav-item[data-section="dashboard"],
 .main-nav .nav-item[data-section="reservas"],
 .main-nav .nav-item[data-section="servicos"],
-.main-nav .nav-item[data-section="financeiro"]{
+.main-nav .nav-item[data-section="financeiro"],
+.main-nav .nav-item[data-section="vouchers"]{
   display:flex!important;
 }
 
