@@ -131,6 +131,7 @@
       setExisting(card,'modality',variant.modality||'');
       setExisting(card,'vehicle',vehicleLabel(variant));
       if(type==='transfer'){
+        setExisting(card,'tour','');
         const routeParts=String(variant.name||'').split(/\s*(?:→|->)\s*/);
         const origin=variant.origin||routeParts[0]||'';
         const destination=variant.destination||routeParts[1]||'';
@@ -139,6 +140,10 @@
         setExisting(card,'route',[origin,destination].filter(Boolean).join(' → '));
         setExisting(card,'service',variant.name||['Transfer',origin&&destination?`${origin} → ${destination}`:''].filter(Boolean).join(' · '));
       }else{
+        // Passeios não podem herdar origem/rota/destino do serviço selecionado anteriormente.
+        setExisting(card,'origin','');
+        setExisting(card,'destination','');
+        setExisting(card,'route','');
         setExisting(card,'tour',variant.name||'');
         setExisting(card,'service',variant.name||'');
       }
