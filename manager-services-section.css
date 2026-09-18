@@ -81,3 +81,12 @@
 @media(max-width:760px){
   .manager-service-form,.manager-service-list{grid-template-columns:1fr}
 }
+
+
+.manager-service-image-field{grid-column:1/-1!important}
+.manager-service-image-field small{font-size:10px;font-weight:500;color:#7a8388}
+.manager-service-image-preview{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:2px;color:#7a8388;font-size:10px;font-weight:600}
+.manager-service-image-preview img{width:112px;height:72px;object-fit:cover;border-radius:10px;border:1px solid #e5dccf;background:#f7f2e9}
+.manager-service-main{display:flex;align-items:center;gap:10px}
+.manager-service-main>div{min-width:0}
+.manager-service-thumb{width:58px;height:42px;object-fit:cover;border-radius:8px;border:1px solid #e5dccf;flex:none;background:#f7f2e9}
