@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="dashboard-calendar.css?v=20260826-2" />
   <link rel="stylesheet" href="voucher-module.css?v=20260917-5" />
   <link rel="stylesheet" href="voucher-premium.css?v=20260918-2" />
+  <link rel="stylesheet" href="reservations-workspace.css?v=20260923-1" />
 </head>
 <body style="visibility:hidden">
   <div class="app-shell">
@@ -114,18 +115,27 @@
       </section>
 
       <section class="content-section" id="reservas">
-        <div class="reservation-toolbar" role="search" aria-label="Buscar e filtrar reservas">
-          <label class="reservation-search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" aria-label="Buscar reservas" placeholder="Buscar por cliente, serviço, telefone ou parceira" /></label>
-          <label class="reservation-filter"><span class="sr-only">Filtrar por status</span><select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
+        <div class="reservation-quick-filters" id="reservationQuickFilters" aria-label="Filtros rápidos">
+          <button type="button" data-reservation-view="upcoming" class="active">Próximos</button><button type="button" data-reservation-view="today">Hoje</button><button type="button" data-reservation-view="week">Próximos 7 dias</button><button type="button" data-reservation-view="pending">Pendentes</button><button type="button" data-reservation-view="confirmed">Confirmadas</button><button type="button" data-reservation-view="finished">Finalizadas</button><button type="button" data-reservation-view="history">Histórico</button>
+        </div>
+        <div class="reservation-toolbar reservation-workspace-toolbar" role="search" aria-label="Buscar e filtrar reservas">
+          <label class="reservation-search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" aria-label="Buscar reservas" placeholder="Cliente, telefone, reserva, serviço, parceiro ou local" /></label>
+          <label class="reservation-filter"><span class="sr-only">Data</span><input id="reservationDateFilter" type="date" aria-label="Filtrar por data" /></label>
+          <label class="reservation-filter"><span class="sr-only">Serviço</span><select id="reservationServiceFilter" aria-label="Filtrar por serviço"><option value="">Todos os serviços</option></select></label>
+          <label class="reservation-filter"><span class="sr-only">Pagamento</span><select id="reservationPaymentFilter" aria-label="Filtrar por pagamento"><option value="">Todos os pagamentos</option><option value="paid">Pago</option><option value="partial">Parcial</option><option value="unpaid">Sem pagamento</option><option value="unset">Sem valor</option></select></label>
+          <label class="reservation-filter"><span class="sr-only">Status</span><select id="statusFilter"><option value="todos">Todos os status</option><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Finalizada">Finalizada</option><option value="Cancelada">Cancelada</option></select></label>
+          <label class="reservation-filter"><span class="sr-only">Parceiro</span><select id="reservationPartnerFilter" aria-label="Filtrar por parceiro"><option value="">Todos os parceiros</option></select></label>
+          <button class="reservation-clear-filters" id="clearReservationFilters" type="button">Limpar filtros</button>
           <button class="reservation-clear-all" id="clearAllReservations" type="button">Apagar todas</button>
         </div>
         <article class="panel table-panel">
           <div class="table-wrap">
-            <table>
-              <thead><tr><th>Cliente</th><th>Serviço / Data</th><th>Pessoas</th><th>Valor</th><th>Pagamento</th><th>Status</th><th class="actions-heading">Ações</th></tr></thead>
+            <table class="reservation-workspace-table">
+              <thead><tr><th>Reserva / Cliente</th><th>Data</th><th>Serviço</th><th>PAX</th><th>Pagamento</th><th>Status</th><th class="actions-heading">Ações</th></tr></thead>
               <tbody id="reservationsTable"></tbody>
             </table>
           </div>
+          <footer class="reservation-pagination" id="reservationPagination"><div><label>Exibir <select id="reservationPageSize"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label><span id="reservationRange">0 reservas</span></div><nav id="reservationPages" aria-label="Paginação das reservas"></nav></footer>
         </article>
       </section>
 
@@ -242,6 +252,7 @@
   <script src="voucher-premium-template.js?v=20260923-1"></script>
   <script src="voucher-premium-export.js?v=20260923-1"></script>
   <script src="voucher-module-premium.js?v=20260923-1"></script>
+  <script src="reservations-workspace.js?v=20260923-1"></script>
   <script>
     // Validação mínima obrigatória da reserva.
     (() => {

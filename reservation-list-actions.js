@@ -101,6 +101,7 @@
   }
 
   function decoratePrimaryService(row){
+    if(row.matches('[data-reservation-row]'))return;
     const action=row.querySelector('[data-edit],[data-copy],[data-whatsapp],[data-delete]');
     const id=action?.dataset.edit||action?.dataset.copy||action?.dataset.whatsapp||action?.dataset.delete;
     if(!id)return;
