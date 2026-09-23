@@ -11,3 +11,5 @@
 @media(max-width:650px){.voucher-preview-shell .voucher-sheet{transform:scale(.45);margin-bottom:-163mm}.voucher-preview-controls{flex-direction:column-reverse}.voucher-preview-controls button{width:100%}}
 @media print{body>*:not(.voucher-premium-stage){display:none!important}.voucher-premium-stage{position:static;display:block}.voucher-sheet{box-shadow:none;break-after:page}}
 .vp-service-card{height:20mm;min-height:20mm}.vp-service-image{height:20mm;min-height:20mm}
+
+.vp-service-route{display:block;margin-top:7px;color:#536777;font-size:10px;font-weight:600;line-height:1.35}

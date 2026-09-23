@@ -29,12 +29,14 @@
   function reservationFor(service){return reservations().find(r=>String(r.id)===String(service.reservationId))||null}
   function serviceFor(id){return services().find(s=>String(s.id)===String(id))||null}
   function nextCode(){const nums=read(REPASSES_KEY_LOCAL).map(x=>Number(String(x.code||'').replace(/\D/g,''))||0);return `REP-${String((Math.max(0,...nums)+1)).padStart(5,'0')}`}
+  function invertRoute(value){const text=String(value||'');const parts=text.split(/\s*(?:→|->)\s*/);return parts.length===2?`${parts[1].trim()} → ${parts[0].trim()}`:text}
   function legData(service,leg){
-    const isReturn=leg==='return';
+    const isReturn=leg==='return',baseService=service.service||service.title||service.tour||'Serviço',baseRoute=service.route||'';
     return{
       date:isReturn?service.returnDate:(service.date||''),
-      service:isReturn?(service.returnService||service.service||service.title||'Serviço'):(service.service||service.title||service.tour||'Serviço'),
-      route:isReturn?(service.returnRoute||''):(service.route||''),
+      time:isReturn?(service.endTime||service.returnTime||service.startTime||service.time||''):(service.startTime||service.time||''),
+      service:isReturn?(service.returnService||invertRoute(baseService)||baseService):baseService,
+      route:isReturn?(service.returnRoute||invertRoute(baseRoute)):(baseRoute),
       boarding:isReturn?(service.dropoff||''):(service.boarding||''),
       dropoff:isReturn?(service.boarding||''):(service.dropoff||''),
       apartment:service.apartment||'',
@@ -47,6 +49,7 @@
     const lines=[`Código: ${code}`];
     if(r?.reservationCode)lines.push(`Reserva: ${r.reservationCode}`);
     if(data.date)lines.push(`Data: ${br(data.date)}`);
+    if(data.time)lines.push(`Horário: ${String(data.time).slice(0,5)}`);
     if(data.service)lines.push(`Serviço: ${data.service}`);
     if(data.route)lines.push(`Rota: ${String(data.route).split(' — ')[0].trim()}`);
     if(data.boarding)lines.push(`Embarque: ${data.boarding}`);

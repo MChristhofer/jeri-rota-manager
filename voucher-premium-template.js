@@ -43,7 +43,8 @@
       people:Number(snapshot.people)||1,
       services:sortServices(snapshot.services||[]).map(service=>({
         title:service.title||'Serviço',date:service.date||'',time:service.time||'',modality:service.modality||'',
-        vehicle:service.vehicle||'',boarding:service.boarding||'',image_url:service.image_url||fallbackImage(service.title)
+        vehicle:service.vehicle||'',boarding:service.boarding||'',dropoff:service.dropoff||'',leg:service.leg||'',
+        image_url:service.image_url||fallbackImage(service.title)
       })),
       boarding:snapshot.boarding||'A definir',
       boarding_time:snapshot.boarding_time||snapshot.services?.find(item=>item.time)?.time||'',
@@ -61,10 +62,11 @@
       <div class="vp-service-date">${escapeHtml(serviceDate(service.date)).replace(' ','<br>')}</div>
       ${image}
       <div class="vp-service-copy"><h3>${escapeHtml(service.title)}</h3><div class="vp-service-meta">
+        ${service.leg?`<span>${escapeHtml(service.leg)}</span>`:''}
         ${service.time?`<span>◷ ${escapeHtml(service.time)}</span>`:''}
         ${service.modality?`<span>♟ ${escapeHtml(service.modality)}</span>`:''}
         ${service.vehicle?`<span>▰ ${escapeHtml(service.vehicle)}</span>`:''}
-      </div></div>
+      </div>${service.boarding||service.dropoff?`<small class="vp-service-route">${escapeHtml(service.boarding||'A definir')} → ${escapeHtml(service.dropoff||'A definir')}</small>`:''}</div>
     </article>`;
   }
 
