@@ -7,6 +7,17 @@
     const backgroundPromises=[...container.querySelectorAll('*')].flatMap(element=>{const value=getComputedStyle(element).backgroundImage||'';return[...value.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map(match=>new Promise((resolve,reject)=>{const image=new Image();image.onload=resolve;image.onerror=()=>reject(new Error(`Fundo não carregou: ${match[1]}`));image.src=match[1]}))});
     await Promise.all([...container.querySelectorAll('img')].map(waitForImage).concat(backgroundPromises));
   }
+  function hasVisibleContent(canvas){
+    const context=canvas.getContext('2d',{willReadFrequently:true}),pixels=context.getImageData(0,0,canvas.width,canvas.height).data;
+    const step=4,minimum=Math.max(8,Math.floor((canvas.width/step)*.02));let visible=0;
+    for(let y=0;y<canvas.height;y+=step){
+      for(let x=0;x<canvas.width;x+=step){
+        const offset=(y*canvas.width+x)*4;
+        if(pixels[offset+3]>10&&(pixels[offset]<248||pixels[offset+1]<248||pixels[offset+2]<248)&&++visible>=minimum)return true;
+      }
+    }
+    return false;
+  }
   async function renderBlob(container){
     if(!window.html2canvas)throw new Error('Renderizador HTML indisponível.');
     const {jsPDF}=window.jspdf||{};if(!jsPDF)throw new Error('Gerador de PDF indisponível.');
@@ -16,8 +27,9 @@
     const pageWidth=210,pageHeight=297,pixelsPerPage=Math.ceil(canvas.width*(pageHeight/pageWidth));
     if(container.scrollHeight/container.scrollWidth<=pageHeight/pageWidth+.01){doc.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,pageWidth,pageHeight,undefined,'FAST');return doc.output('blob')}
     for(let offset=0,page=0;offset<canvas.height;offset+=pixelsPerPage,page++){
-      if(page&&canvas.height-offset<20)break;
-      if(page)doc.addPage();const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=Math.min(pixelsPerPage,canvas.height-offset);slice.getContext('2d').drawImage(canvas,0,offset,canvas.width,slice.height,0,0,canvas.width,slice.height);const height=pageWidth*(slice.height/slice.width);doc.addImage(slice.toDataURL('image/jpeg',.94),'JPEG',0,0,pageWidth,height,undefined,'FAST');
+      const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=Math.min(pixelsPerPage,canvas.height-offset);slice.getContext('2d').drawImage(canvas,0,offset,canvas.width,slice.height,0,0,canvas.width,slice.height);
+      if(page&&!hasVisibleContent(slice))break;
+      if(page)doc.addPage();const height=pageWidth*(slice.height/slice.width);doc.addImage(slice.toDataURL('image/jpeg',.94),'JPEG',0,0,pageWidth,height,undefined,'FAST');
     }
     return doc.output('blob');
   }
@@ -27,5 +39,5 @@
     if(download){const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),30000)}
     return blob;
   }
-  window.JeriVoucherPremiumExport={waitForVoucherAssets,renderBlob,exportAndStore};
+  window.JeriVoucherPremiumExport={waitForVoucherAssets,hasVisibleContent,renderBlob,exportAndStore};
 })();
