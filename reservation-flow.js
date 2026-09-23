@@ -168,30 +168,69 @@
   const baseRenderReservations=window.renderReservations||renderReservations;
   window.renderReservations=function(){baseRenderReservations();enhanceReservationRows()};renderReservations=window.renderReservations;
 
+  function invertRepasseLabel(value){
+    const text=String(value||'').trim();
+    const parts=text.split(/\s*(?:→|->)\s*/);
+    return parts.length===2?`${parts[1].trim()} → ${parts[0].trim()}`:text;
+  }
+
+  function repasseOccurrence(service,leg){
+    const returning=leg==='return';
+    const baseService=service.service||service.title||service.tour||'Serviço';
+    const baseRoute=service.route||'';
+    return{
+      ...service,
+      reservationLeg:returning?'return':'outbound',
+      sourceServiceId:service.id,
+      date:returning?(service.returnDate||''):(service.date||''),
+      startTime:returning?(service.endTime||service.returnTime||service.startTime||service.time||''):(service.startTime||service.time||''),
+      service:returning?(service.returnService||invertRepasseLabel(baseService)||baseService):baseService,
+      title:returning?(service.returnService||invertRepasseLabel(service.title||baseService)||baseService):(service.title||baseService),
+      route:returning?(service.returnRoute||invertRepasseLabel(baseRoute)):baseRoute,
+      boarding:returning?(service.dropoff||''):(service.boarding||''),
+      dropoff:returning?(service.boarding||''):(service.dropoff||''),
+      repasseAmount:returning?(service.returnRepasseAmount??service.repasseAmount??service.netTotal):(service.repasseAmount??service.netTotal)
+    };
+  }
+
+  function repasseOccurrences(list){
+    const rows=[];
+    list.forEach(service=>{
+      if(service.date)rows.push(repasseOccurrence(service,'outbound'));
+      if(service.returnDate)rows.push(repasseOccurrence(service,'return'));
+      if(!service.date&&!service.returnDate)rows.push({...service,reservationLeg:service.reservationLeg||service.leg||'single',sourceServiceId:service.id});
+    });
+    return rows.sort((a,b)=>String(a.date||'9999-12-31').localeCompare(String(b.date||'9999-12-31'))||String(a.startTime||a.time||'99:99').localeCompare(String(b.startTime||b.time||'99:99')));
+  }
+
   function openServiceManager(id){
     const r=reservations.find(x=>x.id===id);if(!r)return;
-    const list=reservationServices(id);
+    const stored=reservationServices(id);
+    const list=repasseOccurrences(stored);
     if(list.length<=1){startRepasse(r,list[0]||{});return}
     let modal=byId('serviceRepasseModal');if(!modal){modal=document.createElement('div');modal.id='serviceRepasseModal';modal.className='modal-backdrop';document.body.appendChild(modal)}
-    modal.innerHTML=`<div class="modal service-repasse-modal"><button class="close-button" type="button" data-close-services>×</button><p class="eyebrow">${escape(r.reservationCode)}</p><h2>${escape(r.client)}</h2><p class="modal-subtitle">Escolha o serviço que será enviado pelo WhatsApp.</p><div class="linked-services-list">${list.map(s=>`<article class="linked-service"><div><strong>${escape(s.title||s.service||s.tour||'Serviço')}</strong><small>${s.date?new Date(s.date+'T12:00:00').toLocaleDateString('pt-BR'): 'Sem data'}${s.route?` · ${escape(s.route)}`:''}${s.boarding?` · ${escape(s.boarding)}`:''}</small></div><button class="primary-button" type="button" data-repass-service="${escape(s.id)}">Abrir WhatsApp</button></article>`).join('')}</div></div>`;
+    const formatCardDate=value=>{if(!value)return'Sem data';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString('pt-BR')};
+    modal.innerHTML=`<div class="modal service-repasse-modal"><button class="close-button" type="button" data-close-services>×</button><p class="eyebrow">${escape(r.reservationCode)}</p><h2>${escape(r.client)}</h2><p class="modal-subtitle">Escolha a execução que será enviada pelo WhatsApp.</p><div class="linked-services-list">${list.map((s,index)=>`<article class="linked-service"><div><strong>${escape(s.service||s.title||s.tour||'Serviço')} · ${s.reservationLeg==='return'?'VOLTA':s.reservationLeg==='outbound'?'IDA':'SERVIÇO'}</strong><small>${formatCardDate(s.date)}${s.startTime?` · ${escape(String(s.startTime).slice(0,5))}`:''}${s.route?` · ${escape(s.route)}`:''}${s.boarding?` · ${escape(s.boarding)}`:''}</small></div><button class="primary-button" type="button" data-repass-occurrence="${index}">Abrir WhatsApp</button></article>`).join('')}</div></div>`;
     modal.classList.add('open');modal.setAttribute('aria-hidden','false');
     modal.querySelector('[data-close-services]')?.addEventListener('click',()=>modal.classList.remove('open'));
-    modal.querySelectorAll('[data-repass-service]').forEach(b=>b.addEventListener('click',()=>{modal.classList.remove('open');startRepasse(r,list.find(s=>s.id===b.dataset.repassService))}));
+    modal.querySelectorAll('[data-repass-occurrence]').forEach(b=>b.addEventListener('click',()=>{const selected=list[Number(b.dataset.repassOccurrence)];modal.classList.remove('open');if(selected)startRepasse(r,selected)}));
   }
+
   function startRepasse(r,s){
     const formatDate=value=>{if(!value)return'Não informada';const date=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString('pt-BR')};
     const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
-    const leg={outbound:'IDA',return:'VOLTA',single:'IDA'}[s.reservationLeg||s.leg]||'IDA';
+    const leg={outbound:'IDA',return:'VOLTA',single:'SERVIÇO'}[s.reservationLeg||s.leg]||'SERVIÇO';
     const service=s.service||s.title||s.tour||r.service||'Não informado';
-    const operational=decodeOperationalMeta(s.responsible);const time=s.startTime||s.time||s.serviceTime||s.boardingTime||operational.startTime||r.time||r.serviceTime||'Não informado';
+    const operational=decodeOperationalMeta(s.responsible);
+    const time=s.startTime||s.time||s.serviceTime||s.boardingTime||operational.startTime||r.time||r.serviceTime||'Não informado';
     const people=Math.max(1,Number(r.people)||String(r.client||'').split('/').filter(name=>name.trim()).length||1);
     const message=[
       'JERI ROTA — DADOS DA RESERVA',
       `Reserva: ${r.reservationCode||'Não informada'}`,
+      `Trecho: ${leg}`,
       `Serviço: ${service}`,
       `Data: ${formatDate(s.date||r.date)}`,
       `Horário: ${time}`,
-      `Trecho: ${leg}`,
       `Embarque: ${s.boarding||r.boarding||'Não informado'}`,
       `Desembarque: ${s.dropoff||r.dropoff||'Não informado'}`,
       `Passageiro(s): ${r.client||'Não informado'}`,
