@@ -17,6 +17,16 @@
 
   function fallbackImage(title){return localImages.find(([pattern])=>pattern.test(titleKey(title)))?.[1]||''}
   function splitPassengers(value){return String(value||'').split(/\s*[/,;]\s*/).map(item=>item.trim()).filter(Boolean)}
+  function serviceSortKey(service){
+    const date=String(service?.date||'').slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return [Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY];
+    const time=String(service?.time||'').match(/^(\d{1,2}):(\d{2})/);
+    const minutes=time?Math.min(Number(time[1]),23)*60+Math.min(Number(time[2]),59):Number.POSITIVE_INFINITY;
+    return [Date.parse(`${date}T12:00:00`),minutes];
+  }
+  function sortServices(services=[]){
+    return services.map((service,index)=>({service,index,key:serviceSortKey(service)})).sort((a,b)=>a.key[0]-b.key[0]||a.key[1]-b.key[1]||a.index-b.index).map(item=>item.service);
+  }
 
   function publicViewModel({voucher={},snapshot={},qrDataUrl='',preview=false}){
     const amount=Number(snapshot.amount)||0;
@@ -31,7 +41,7 @@
       passengers:Array.isArray(snapshot.passengers)&&snapshot.passengers.length?snapshot.passengers:splitPassengers(snapshot.client),
       period:snapshot.period||{},
       people:Number(snapshot.people)||1,
-      services:(snapshot.services||[]).map(service=>({
+      services:sortServices(snapshot.services||[]).map(service=>({
         title:service.title||'Serviço',date:service.date||'',time:service.time||'',modality:service.modality||'',
         vehicle:service.vehicle||'',boarding:service.boarding||'',image_url:service.image_url||fallbackImage(service.title)
       })),
@@ -84,5 +94,5 @@
     </article>`;
   }
 
-  window.JeriVoucherPremium={publicViewModel,render,fallbackImage,splitPassengers,escapeHtml};
+  window.JeriVoucherPremium={publicViewModel,render,fallbackImage,splitPassengers,sortServices,escapeHtml};
 })();
