@@ -161,7 +161,7 @@
     const tbody=byId('reservationsTable');if(!tbody)return;
     [...tbody.querySelectorAll('tr')].forEach(row=>{
       const edit=row.querySelector('[data-edit]');if(!edit)return;const id=Number(edit.dataset.edit);const r=reservations.find(x=>x.id===id);if(!r)return;
-      const firstCell=row.cells[0];if(firstCell&&!firstCell.querySelector('.reservation-code-small'))firstCell.insertAdjacentHTML('afterbegin',`<small class="reservation-code-small">${escape(r.reservationCode||'')}</small>`);
+      const firstCell=row.cells[0];if(firstCell&&!firstCell.querySelector('.reservation-code-small,.reservation-code'))firstCell.insertAdjacentHTML('afterbegin',`<small class="reservation-code-small">${escape(r.reservationCode||'')}</small>`);
       const actions=row.querySelector('.row-actions');if(actions&&!actions.querySelector('[data-services]')){const b=document.createElement('button');b.type='button';b.className='edit-button';b.dataset.services=id;b.textContent='Repasse';actions.prepend(b)}
     });
   }
