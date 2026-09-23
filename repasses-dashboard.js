@@ -30,14 +30,22 @@
     const copied = document.execCommand('copy'); area.remove(); return copied;
   }
 
+  function invertRoute(value) {
+    const text=String(value||'');
+    const parts=text.split(/\s*(?:→|->)\s*/);
+    return parts.length===2?`${parts[1].trim()} → ${parts[0].trim()}`:text;
+  }
   function serviceData(service, leg) {
     const returning = leg === 'return';
+    const baseTitle=title(service);
+    const baseRoute=service.route||'';
     return {
       date: returning ? service.returnDate : service.date,
-      service: returning ? (service.returnService || service.service || title(service)) : title(service),
-      route: returning ? (service.returnRoute || service.route || '') : (service.route || ''),
-      boarding: returning ? service.dropoff : service.boarding,
-      dropoff: returning ? service.boarding : service.dropoff,
+      time: returning ? (service.endTime||service.returnTime||service.startTime||service.time||'') : (service.startTime||service.time||''),
+      service: returning ? (service.returnService || invertRoute(baseTitle) || baseTitle) : baseTitle,
+      route: returning ? (service.returnRoute || invertRoute(baseRoute)) : baseRoute,
+      boarding: returning ? (service.dropoff||'') : (service.boarding||''),
+      dropoff: returning ? (service.boarding||'') : (service.dropoff||''),
       apartment: service.apartment || '',
       amount: returning ? (service.returnRepasseAmount ?? service.repasseAmount) : service.repasseAmount
     };
@@ -53,6 +61,7 @@
     if (data) {
       lines.push(`Trecho: ${leg === 'return' ? 'VOLTA' : 'IDA'}`);
       lines.push(`Data: ${brDate(data.date)}`);
+      if(data.time) lines.push(`Horário: ${String(data.time).slice(0,5)}`);
       lines.push(`Serviço: ${data.service}`);
       if (data.route) lines.push(`Rota: ${data.route}`);
       if (data.boarding) lines.push(`Embarque: ${data.boarding}`);
@@ -91,7 +100,7 @@
       const contact = phones(reservation).join(' / ') || 'Sem telefone';
       const rows = services.length ? services.flatMap(service => legs(service).map(leg => {
         const data = serviceData(service, leg); const mode = decision(service, leg);
-        return `<div class="reservation-service-row"><div><div class="service-row-title"><strong>${escapeHtml(data.service)}</strong><span class="leg-badge">${leg === 'return' ? 'VOLTA' : 'IDA'}</span><span class="decision-badge ${mode === 'undecided' ? 'pending' : mode}">${decisionLabel(mode)}</span></div><div class="service-row-meta"><span>${brDate(data.date)}</span>${data.route ? `<span>${escapeHtml(data.route)}</span>` : ''}${data.amount !== null && data.amount !== undefined && data.amount !== '' ? `<span>Repasse ${currency.format(Number(data.amount) || 0)}</span>` : ''}</div>${data.boarding || data.dropoff ? `<div class="service-row-path"><strong>Operação:</strong> ${escapeHtml(data.boarding || 'A definir')} → ${escapeHtml(data.dropoff || 'A definir')}</div>` : ''}</div><div class="service-row-actions"><button class="outline-button" data-copy-service="${escapeHtml(service.id)}" data-leg="${leg}" data-reservation="${escapeHtml(reservation.id)}" type="button">Copiar</button><button class="primary-button" data-send-service="${escapeHtml(service.id)}" data-leg="${leg}" data-reservation="${escapeHtml(reservation.id)}" type="button">Repassar no WhatsApp</button><button class="text-button" data-own-service="${escapeHtml(service.id)}" data-leg="${leg}" type="button">Não repassar</button></div></div>`;
+        return `<div class="reservation-service-row"><div><div class="service-row-title"><strong>${escapeHtml(data.service)}</strong><span class="leg-badge">${leg === 'return' ? 'VOLTA' : 'IDA'}</span><span class="decision-badge ${mode === 'undecided' ? 'pending' : mode}">${decisionLabel(mode)}</span></div><div class="service-row-meta"><span>${brDate(data.date)}${data.time?` · ${escapeHtml(String(data.time).slice(0,5))}`:''}</span>${data.route ? `<span>${escapeHtml(data.route)}</span>` : ''}${data.amount !== null && data.amount !== undefined && data.amount !== '' ? `<span>Repasse ${currency.format(Number(data.amount) || 0)}</span>` : ''}</div>${data.boarding || data.dropoff ? `<div class="service-row-path"><strong>Operação:</strong> ${escapeHtml(data.boarding || 'A definir')} → ${escapeHtml(data.dropoff || 'A definir')}</div>` : ''}</div><div class="service-row-actions"><button class="outline-button" data-copy-service="${escapeHtml(service.id)}" data-leg="${leg}" data-reservation="${escapeHtml(reservation.id)}" type="button">Copiar</button><button class="primary-button" data-send-service="${escapeHtml(service.id)}" data-leg="${leg}" data-reservation="${escapeHtml(reservation.id)}" type="button">Repassar no WhatsApp</button><button class="text-button" data-own-service="${escapeHtml(service.id)}" data-leg="${leg}" type="button">Não repassar</button></div></div>`;
       })).join('') : '<div class="repasse-empty-state compact">Esta reserva ainda não possui serviços cadastrados.</div>';
       return `<article class="reservation-repasse-card"><header class="reservation-repasse-head"><div><span class="reservation-code">${escapeHtml(reservation.reservationCode || 'RESERVA')}</span><strong>${escapeHtml(reservation.client || 'Passageiro não informado')}</strong><small>${escapeHtml(contact)} · ${Number(reservation.people) || 1} pessoa${Number(reservation.people) === 1 ? '' : 's'}</small>${reservation.notes ? `<small class="reservation-note">${escapeHtml(reservation.notes)}</small>` : ''}</div><div class="reservation-head-actions"><button class="outline-button" data-copy-reservation="${escapeHtml(reservation.id)}" type="button">Copiar reserva</button><button class="outline-button whatsapp" data-share-reservation="${escapeHtml(reservation.id)}" type="button">Enviar reserva pelo WhatsApp</button></div></header>${rows}</article>`;
     }).join('');
