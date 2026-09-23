@@ -27,20 +27,23 @@
       const vehicle=entry.vehicle_type||item.vehicle||'';
       const boarding=item.boardingPoints?.[0]?.location||item.boarding||'';
       const dropoff=item.dropoffPoints?.[0]?.location||item.dropoff||'';
+      const outboundDate=item.date||item.serviceDate||item.service_date||reservation.date||'';
+      const returnDate=item.returnDate||item.return_date||'';
       const imagePath=entry.voucher_image_path||'';
       const imageUrl=serviceImageUrl(imagePath)||premium.fallbackImage(title);
-      if(item.date||!item.returnDate){
+      if(outboundDate||!returnDate){
         occurrences.push({
-          title,date:item.date||reservation.date,time:item.startTime||item.time||'',modality,vehicle,
-          boarding,dropoff,leg:item.returnDate?'IDA':'SERVIÇO',image_path:imagePath,image_url:imageUrl
+          title,date:outboundDate,time:item.startTime||item.time||'',modality,vehicle,
+          boarding,dropoff,leg:returnDate?'IDA':'SERVIÇO',image_path:imagePath,image_url:imageUrl
         });
       }
-      if(item.returnDate){
-        const returnTitle=item.returnService||invertLabel(title);
+      if(returnDate){
         occurrences.push({
-          title:returnTitle,date:item.returnDate,time:item.endTime||item.returnTime||item.startTime||item.time||'',
+          // A volta é a segunda execução do mesmo serviço. Mantém nome,
+          // modalidade e veículo; inverte somente os locais.
+          title,date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
           modality,vehicle,boarding:dropoff,dropoff:boarding,leg:'VOLTA',image_path:imagePath,
-          image_url:imageUrl||premium.fallbackImage(returnTitle)
+          image_url:imageUrl||premium.fallbackImage(title)
         });
       }
     });

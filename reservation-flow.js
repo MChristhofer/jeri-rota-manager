@@ -177,18 +177,25 @@
   function repasseOccurrence(service,leg){
     const returning=leg==='return';
     const baseService=service.service||service.title||service.tour||'Serviço';
+    const baseTitle=service.title||baseService;
     const baseRoute=service.route||'';
+    const outboundDate=service.date||service.serviceDate||service.service_date||'';
+    const returnDate=service.returnDate||service.return_date||'';
+    const boarding=service.boardingPoints?.[0]?.location||service.boarding||'';
+    const dropoff=service.dropoffPoints?.[0]?.location||service.dropoff||'';
     return{
       ...service,
       reservationLeg:returning?'return':'outbound',
       sourceServiceId:service.id,
-      date:returning?(service.returnDate||''):(service.date||''),
-      startTime:returning?(service.endTime||service.returnTime||service.startTime||service.time||''):(service.startTime||service.time||''),
-      service:returning?(service.returnService||invertRepasseLabel(baseService)||baseService):baseService,
-      title:returning?(service.returnService||invertRepasseLabel(service.title||baseService)||baseService):(service.title||baseService),
-      route:returning?(service.returnRoute||invertRepasseLabel(baseRoute)):baseRoute,
-      boarding:returning?(service.dropoff||''):(service.boarding||''),
-      dropoff:returning?(service.boarding||''):(service.dropoff||''),
+      date:returning?returnDate:outboundDate,
+      startTime:returning?(service.endTime||service.returnTime||service.return_time||service.startTime||service.time||''):(service.startTime||service.time||''),
+      // Ida e volta continuam sendo o MESMO serviço. Na volta mudam apenas
+      // data/horário e os locais de embarque/desembarque.
+      service:baseService,
+      title:baseTitle,
+      route:baseRoute,
+      boarding:returning?dropoff:boarding,
+      dropoff:returning?boarding:dropoff,
       repasseAmount:returning?(service.returnRepasseAmount??service.repasseAmount??service.netTotal):(service.repasseAmount??service.netTotal)
     };
   }
@@ -196,9 +203,11 @@
   function repasseOccurrences(list){
     const rows=[];
     list.forEach(service=>{
-      if(service.date)rows.push(repasseOccurrence(service,'outbound'));
-      if(service.returnDate)rows.push(repasseOccurrence(service,'return'));
-      if(!service.date&&!service.returnDate)rows.push({...service,reservationLeg:service.reservationLeg||service.leg||'single',sourceServiceId:service.id});
+      const outboundDate=service.date||service.serviceDate||service.service_date||'';
+      const returnDate=service.returnDate||service.return_date||'';
+      if(outboundDate)rows.push(repasseOccurrence(service,'outbound'));
+      if(returnDate)rows.push(repasseOccurrence(service,'return'));
+      if(!outboundDate&&!returnDate)rows.push({...service,reservationLeg:service.reservationLeg||service.leg||'single',sourceServiceId:service.id});
     });
     return rows.sort((a,b)=>String(a.date||'9999-12-31').localeCompare(String(b.date||'9999-12-31'))||String(a.startTime||a.time||'99:99').localeCompare(String(b.startTime||b.time||'99:99')));
   }
