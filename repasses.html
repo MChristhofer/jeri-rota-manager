@@ -25,8 +25,15 @@
         <a class="nav-item active" href="repasses.html" style="text-decoration:none"><span>↗</span> Repasses</a>
       </nav>
       <div class="sidebar-bottom">
-        <div class="profile-mini"><div class="avatar">JR</div><div><strong>Jeri Rota</strong><small>Operação interna</small></div></div>
-        <button class="nav-item" id="logoutSystemButton" type="button"><span>↪</span> Sair</button>
+        <div class="profile-mini">
+          <button class="profile-avatar-button" type="button" data-profile-avatar aria-label="Alterar foto de perfil" title="Alterar foto de perfil">
+            <img data-profile-avatar-image alt="Foto de perfil" hidden>
+            <i class="ph ph-user" data-profile-avatar-icon aria-hidden="true"></i>
+          </button>
+          <input class="profile-avatar-input" data-profile-avatar-input type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="profile-copy"><strong>Jeri Rota</strong><small data-profile-email>Operação interna</small></div>
+        </div>
+        <button class="nav-item logout-button" id="logoutSystemButton" type="button"><span>↪</span> Sair</button>
       </div>
     </aside>
 
@@ -120,7 +127,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-rules.js?v=20260907-1"></script>
   <script src="supabase-config.js"></script>
-  <script src="auth-guard.js?v=20260825-9"></script>
+  <script src="auth-guard.js?v=20260927-1"></script>
   <script src="repasses-dashboard.js?v=20260825-10"></script>
 </body>
 </html>
