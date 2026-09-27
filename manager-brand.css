@@ -211,3 +211,81 @@ legend{color:var(--gold-dark);font-size:10px;letter-spacing:.08em;text-transform
   .preview-card{position:static}
   .page-shell{width:min(100% - 22px,1260px)}
 }
+
+
+/* Perfil do usuário */
+.profile-mini{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  align-items:center;
+  gap:11px;
+  padding:4px 2px 12px;
+}
+.profile-avatar-button{
+  position:relative;
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(214,169,78,.38);
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+  color:var(--gold);
+  overflow:hidden;
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+}
+.profile-avatar-button:hover{
+  border-color:rgba(214,169,78,.75);
+  background:rgba(214,169,78,.11);
+  transform:translateY(-1px);
+}
+.profile-avatar-button:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+}
+.profile-avatar-button.is-uploading{opacity:.6;cursor:wait}
+.profile-avatar-button i{font-size:20px;line-height:1}
+.profile-avatar-button img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.profile-avatar-button img[hidden]{display:none!important}
+.profile-copy{min-width:0}
+.profile-copy strong,
+.profile-copy small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.profile-copy strong{font-size:11.5px;color:#fff}
+.profile-copy small{margin-top:3px;color:#9fb2bf;font-size:10px}
+.profile-avatar-input{display:none!important}
+#logoutSystemButton.logout-button{
+  width:100%;
+  margin-top:3px!important;
+  min-height:43px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:11px;
+  padding:10px 13px!important;
+  border:1px solid rgba(214,169,78,.23)!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.045)!important;
+  color:#dce6eb!important;
+  box-shadow:none!important;
+}
+#logoutSystemButton.logout-button .nav-icon,
+#logoutSystemButton.logout-button > span{
+  color:var(--gold)!important;
+}
+#logoutSystemButton.logout-button:hover{
+  background:rgba(214,169,78,.10)!important;
+  border-color:rgba(214,169,78,.42)!important;
+  color:#fff!important;
+}
