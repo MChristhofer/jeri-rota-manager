@@ -18,12 +18,40 @@
     try{await loadCloudData()}catch(syncError){console.error('Falha ao carregar dados do Supabase:',syncError);alert('Não foi possível carregar os dados oficiais do Supabase. Verifique a conexão e atualize a página.');location.replace(loginUrl);return}
 
     document.body.style.visibility='visible';
-    const button=document.getElementById('logoutSystemButton');const profile=document.querySelector('.profile-mini');
-    if(button&&profile){profile.appendChild(button);button.style.margin='0 0 0 auto';button.style.padding='7px 9px';button.style.width='auto';button.style.flex='0 0 auto';button.style.border='1px solid rgba(255,255,255,.18)';button.style.background='rgba(255,255,255,.08)';button.style.borderRadius='8px';button.style.fontSize='12px';button.innerHTML='<span style="width:auto">↪</span> Sair'}
-    if(button){button.addEventListener('click',async()=>{button.disabled=true;const original=button.innerHTML;button.innerHTML='<span style="width:auto">↪</span> Saindo...';const {error:logoutError}=await client.auth.signOut();if(logoutError){console.error('Erro ao sair:',logoutError);button.disabled=false;button.innerHTML=original;alert('Não foi possível encerrar a sessão. Tente novamente.');return}location.replace(loginUrl)})}
+    const button=document.getElementById('logoutSystemButton');
+    if(button){
+      button.classList.add('logout-button');
+      button.innerHTML='<span aria-hidden="true">↪</span> Sair';
+      button.addEventListener('click',async()=>{
+        button.disabled=true;
+        const original=button.innerHTML;
+        button.innerHTML='<span aria-hidden="true">↪</span> Saindo...';
+        const {error:logoutError}=await client.auth.signOut();
+        if(logoutError){
+          console.error('Erro ao sair:',logoutError);
+          button.disabled=false;
+          button.innerHTML=original;
+          alert('Não foi possível encerrar a sessão. Tente novamente.');
+          return;
+        }
+        location.replace(loginUrl);
+      });
+    }
 
-    const profileInfo=document.querySelector('.profile-mini > div:not(.avatar)');
-    if(profileInfo&&user.email&&!profileInfo.querySelector('[data-user-email]')){const email=document.createElement('small');email.dataset.userEmail='true';email.textContent=user.email;email.style.marginTop='3px';email.style.maxWidth='105px';email.style.overflow='hidden';email.style.textOverflow='ellipsis';email.style.whiteSpace='nowrap';email.title=user.email;profileInfo.appendChild(email)}
+    const loadProfileUi=()=>{
+      if(document.querySelector('script[src^="profile-ui.js"]'))return;
+      const script=document.createElement('script');
+      script.src='profile-ui.js?v=20260927-1';
+      document.body.appendChild(script);
+    };
+    const loadNavIcons=()=>{
+      if(document.querySelector('script[src^="nav-icons.js"]'))return;
+      const script=document.createElement('script');
+      script.src='nav-icons.js?v=20260927-1';
+      document.body.appendChild(script);
+    };
+    loadNavIcons();
+    loadProfileUi();
 
     if(currentPage==='index.html'||currentPage===''){
       const openRequestedReservation=()=>{const id=new URLSearchParams(location.search).get('openReservation');if(!id)return;const tryOpen=()=>{if(typeof window.setSection==='function')window.setSection('reservas');else if(typeof setSection==='function')setSection('reservas');if(typeof window.openModal==='function')window.openModal(Number(id));else if(typeof openModal==='function')openModal(Number(id));else return false;return true};if(!tryOpen()){let attempts=0;const timer=setInterval(()=>{attempts+=1;if(tryOpen()||attempts>20)clearInterval(timer)},100)}};
@@ -37,7 +65,6 @@
         if(!document.querySelector('link[href^="manager-services-section.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-services-section.css?v=20260918-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="reservation-list-actions.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='reservation-list-actions.css?v=20260830-1';document.head.appendChild(link)}
         const reservationWorkspaceStyle=document.querySelector('link[href^="reservations-workspace.css"]');if(reservationWorkspaceStyle)document.head.appendChild(reservationWorkspaceStyle);
-        if(!document.querySelector('script[src^="nav-icons.js"]')){const script=document.createElement('script');script.src='nav-icons.js?v=20260917-1';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-list-actions.js"]')){const script=document.createElement('script');script.src='reservation-list-actions.js?v=20260923-1';document.body.appendChild(script)}
         if(!document.querySelector('script[src^="reservation-leg-mode.js"]')){const script=document.createElement('script');script.src='reservation-leg-mode.js?v=20260909-1';document.body.appendChild(script)}
       };
