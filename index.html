@@ -36,10 +36,14 @@
 
       <div class="sidebar-bottom">
         <div class="profile-mini">
-          <div class="avatar">JR</div>
-          <div><strong>Jeri Rota</strong><small>Administrador</small></div>
+          <button class="profile-avatar-button" type="button" data-profile-avatar aria-label="Alterar foto de perfil" title="Alterar foto de perfil">
+            <img data-profile-avatar-image alt="Foto de perfil" hidden>
+            <i class="ph ph-user" data-profile-avatar-icon aria-hidden="true"></i>
+          </button>
+          <input class="profile-avatar-input" data-profile-avatar-input type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="profile-copy"><strong>Jeri Rota</strong><small data-profile-email>Administrador</small></div>
         </div>
-        <button class="nav-item" id="logoutSystemButton" type="button" style="margin-top:12px"><span>↪</span> Sair do sistema</button>
+        <button class="nav-item logout-button" id="logoutSystemButton" type="button"><span>↪</span> Sair</button>
       </div>
     </aside>
 
@@ -99,19 +103,6 @@
           </article>
         </div>
 
-        <div class="dashboard-foot-summary">
-          <span><strong id="dashboardTodayCount">0</strong> serviços hoje</span>
-          <span>•</span>
-          <span><strong id="dashboardFutureCount">0</strong> reservas futuras</span>
-          <span>•</span>
-          <span>Último serviço agendado: <strong id="dashboardLastDate">—</strong></span>
-        </div>
-
-        <div class="compat-dashboard" aria-hidden="true">
-          <span id="confirmedMetric">0</span><span id="todayMetric">0</span><span id="nextTripCount">0</span>
-          <div id="paymentDonut"><span id="paymentPercent">0%</span></div>
-          <span id="receivedValue">R$ 0,00</span><span id="openValue">R$ 0,00</span>
-        </div>
       </section>
 
       <section class="content-section" id="reservas">
@@ -245,7 +236,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="auth-guard.js?v=20260923-2"></script>
+  <script src="auth-guard.js?v=20260927-1"></script>
   <script src="finance-rules.js?v=20260907-1"></script>
   <script src="app.js?v=20260918-2"></script>
   <script src="dashboard-calendar.js?v=20260923-2"></script>
