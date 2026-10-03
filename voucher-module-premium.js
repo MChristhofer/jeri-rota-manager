@@ -14,11 +14,24 @@
     return 'service:'+String(item.sourceKey||item.cloudId||item.id||('index-'+index));
   }
 
+  function serviceLegMode(item){
+    const explicit=String(item?.legMode||item?.leg_mode||'').toLowerCase();
+    if(['outbound','return','roundtrip','daytrip'].includes(explicit))return explicit;
+    const outboundDate=item?.date||item?.serviceDate||item?.service_date||'';
+    const returnDate=item?.returnDate||item?.return_date||'';
+    if(!outboundDate&&returnDate)return'return';
+    if(outboundDate&&returnDate)return'roundtrip';
+    return'outbound';
+  }
+
   function serviceChoiceLabel(item,index){
     const title=item.title||item.service||item.tour||('Serviço '+(index+1));
-    const date=item.date||item.serviceDate||item.service_date||item.returnDate||item.return_date||'';
+    const mode=serviceLegMode(item);
+    const outboundDate=item.date||item.serviceDate||item.service_date||'';
     const returnDate=item.returnDate||item.return_date||'';
-    return [title,date?fmtDate(date):'',returnDate&&returnDate!==date?'até '+fmtDate(returnDate):''].filter(Boolean).join(' · ');
+    const primaryDate=mode==='return'?returnDate:(outboundDate||returnDate);
+    const legLabel=mode==='return'?'VOLTA':mode==='roundtrip'?'IDA E VOLTA':mode==='daytrip'?'BATE E VOLTA':'IDA';
+    return [legLabel,title,primaryDate?fmtDate(primaryDate):'',mode==='roundtrip'&&returnDate&&returnDate!==outboundDate?'até '+fmtDate(returnDate):''].filter(Boolean).join(' · ');
   }
 
   async function buildSnapshot(reservation,notes='',scopeKey='reservation'){
@@ -41,24 +54,40 @@
       const vehicle=entry.vehicle_type||item.vehicle||'';
       const boarding=item.boardingPoints?.[0]?.location||item.boarding||'';
       const dropoff=item.dropoffPoints?.[0]?.location||item.dropoff||'';
-      const outboundDate=item.date||item.serviceDate||item.service_date||reservation.date||'';
+      const mode=serviceLegMode(item);
+      const outboundDate=item.date||item.serviceDate||item.service_date||'';
       const returnDate=item.returnDate||item.return_date||'';
       const imagePath=entry.voucher_image_path||'';
       const imageUrl=serviceImageUrl(imagePath)||premium.fallbackImage(title);
-      if(outboundDate||!returnDate){
+      const serviceType=String(item.serviceType||item.service_type||entry.category||'').toLowerCase();
+      const isTransfer=serviceType==='transfer'||/transfer/i.test(title);
+
+      if(mode==='return'){
+        // Serviço "Somente volta" já possui embarque e desembarque próprios.
+        // Não inventar uma ida usando a data geral da reserva e não inverter os locais.
         occurrences.push({
-          title,date:outboundDate,time:item.startTime||item.time||'',modality,vehicle,
-          boarding,dropoff,leg:returnDate?'IDA':'SERVIÇO',image_path:imagePath,image_url:imageUrl
-        });
-      }
-      if(returnDate){
-        occurrences.push({
-          // A volta é a segunda execução do mesmo serviço. Mantém nome,
-          // modalidade e veículo; inverte somente os locais.
           title,date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
-          modality,vehicle,boarding:dropoff,dropoff:boarding,leg:'VOLTA',image_path:imagePath,
+          modality,vehicle,boarding,dropoff,leg:'VOLTA',image_path:imagePath,
           image_url:imageUrl||premium.fallbackImage(title)
         });
+      }else{
+        if(outboundDate||(!returnDate&&reservation.date)){
+          occurrences.push({
+            title,date:outboundDate||reservation.date,time:item.startTime||item.time||'',modality,vehicle,
+            boarding,dropoff,leg:mode==='daytrip'?'BATE E VOLTA':(isTransfer||mode==='roundtrip'?'IDA':'SERVIÇO'),
+            image_path:imagePath,image_url:imageUrl
+          });
+        }
+        if(mode==='roundtrip'&&returnDate){
+          occurrences.push({
+            // Em ida e volta no MESMO serviço, a volta reutiliza o trecho invertido.
+            // Serviços de volta cadastrados separadamente entram no ramo "return" acima
+            // e preservam exatamente os locais informados no cadastro.
+            title,date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
+            modality,vehicle,boarding:dropoff,dropoff:boarding,leg:'VOLTA',image_path:imagePath,
+            image_url:imageUrl||premium.fallbackImage(title)
+          });
+        }
       }
     });
     const services=premium.sortServices(occurrences);
@@ -72,7 +101,7 @@
       reservation_code:reservation.reservationCode||String(reservation.id),client:reservation.client,
       phone:reservation.phone||'',email:reservation.email||'',period:{start,end},people:Number(reservation.people)||1,
       passengers:premium.splitPassengers(reservation.client),services,
-      boarding:services.find(item=>item.leg!=='VOLTA'&&item.boarding)?.boarding||reservation.boarding||services.find(item=>item.boarding)?.boarding||'A definir',
+      boarding:services.find(item=>item.leg!=='VOLTA'&&item.boarding)?.boarding||services.find(item=>item.boarding)?.boarding||reservation.boarding||'A definir',
       boarding_time:services.find(item=>item.leg!=='VOLTA'&&item.time)?.time||services.find(item=>item.time)?.time||'',
       payment_status:paid<=0?'Aguardando sinal':paid>=amount?'Pago':'Sinal recebido',
       amount,paid_amount:paid,balance:Math.max(0,amount-paid),customer_notes:notes
