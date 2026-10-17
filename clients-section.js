@@ -25,12 +25,13 @@
   const timestamp=reservation=>String(reservation.createdAt||reservation.updatedAt||reservation.date||'');
   const getReservations=()=>{
     try{
+      const saved=JSON.parse(localStorage.getItem(KEY)||'[]');
+      if(Array.isArray(saved))return saved;
+    }catch(error){console.warn('Não foi possível ler as reservas salvas.',error)}
+    try{
       if(typeof reservations!=='undefined'&&Array.isArray(reservations))return reservations;
     }catch(error){console.warn('Não foi possível ler as reservas em memória.',error)}
-    try{
-      const saved=JSON.parse(localStorage.getItem(KEY)||'[]');
-      return Array.isArray(saved)?saved:[];
-    }catch{return[]}
+    return[];
   };
 
   function buildClients(source){
