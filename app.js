@@ -313,14 +313,14 @@ function renderSettlement() {
   }).join('');
 }
 
-function renderAll() { renderDashboard(); renderReservations(); renderOperation(); renderFinance(); renderSettlement(); }
+function renderAll() { renderDashboard(); renderReservations(); renderOperation(); renderFinance(); renderSettlement(); window.JeriClients?.render(); }
 function escapeHtml(value = '') { return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
 
 function setSection(section) {
   document.body.dataset.section = section;
   document.querySelectorAll('.content-section').forEach(el => el.classList.toggle('active', el.id === section));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
-  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', vouchers: 'Vouchers', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
+  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', clientes: 'Clientes', vouchers: 'Vouchers', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
   document.getElementById('pageTitle').textContent = titles[section];
   const pageSubtitle = document.getElementById('pageSubtitle');
   pageSubtitle.hidden = section !== 'reservas';
