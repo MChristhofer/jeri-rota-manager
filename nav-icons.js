@@ -2,6 +2,7 @@
   const iconBySection={
     dashboard:'ph-house',
     reservas:'ph-calendar-check',
+    clientes:'ph-users-three',
     servicos:'ph-briefcase',
     operacao:'ph-steering-wheel',
     financeiro:'ph-wallet',
