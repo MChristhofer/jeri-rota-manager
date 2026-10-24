@@ -94,6 +94,13 @@
                   <small>Uma parada por linha: Nome | minutos | entrada mínima R$ | entrada máxima R$ | descrição. Deixe vazio quando não houver tempo/taxa confirmados. Não colocar o preço do passeio aqui.</small>
                 </label>
                 <label class="wide">Condições públicas e restrições<textarea id="managerCommercialConditions" maxlength="1300" rows="3"></textarea></label>
+                <label>Preço anunciado / pessoa (R$)<input id="managerCommercialPrice" type="number" min="0" step="0.01" placeholder="180.00"></label>
+                <label>Taxa turística / pessoa (R$)<input id="managerCommercialTourismFee" type="number" min="0" step="0.01" placeholder="41.50"></label>
+                <label>Data de revisão da oferta<input id="managerCommercialPriceReviewed" type="date"></label>
+                <label class="wide">Embarques (uma linha por local, horário | local | observação)<textarea id="managerCommercialBoarding" rows="4" placeholder="02:30 | Praia do Futuro |&#10;03:00 | Av. Beira Mar |"></textarea></label>
+                <label class="wide">Regra de bagagem<textarea id="managerCommercialBaggage" maxlength="1200" rows="2"></textarea></label>
+                <label class="wide">Formas de pagamento<textarea id="managerCommercialPayment" maxlength="1200" rows="2"></textarea></label>
+                <label class="wide">Condições de reserva<textarea id="managerCommercialReservation" maxlength="1200" rows="2"></textarea></label>
                 <label class="wide manager-commercial-publish">Disponível para o bot<select id="managerCommercialEnabled"><option value="false">Não — rascunho</option><option value="true">Sim — informação aprovada</option></select></label>
               </div>
               <p class="manager-commercial-help">Cada serviço tem seu próprio perfil. Se a ida e a volta têm horários diferentes, cadastre informações separadamente em cada serviço correspondente.</p>
@@ -138,7 +145,13 @@
     stops_description:'managerCommercialStops',requires_vehicle_change:'managerCommercialChange',
     vehicle_change_place:'managerCommercialChangePlace',
     vehicle_change_minutes:'managerCommercialChangeMinutes',
-    public_conditions:'managerCommercialConditions',bot_enabled:'managerCommercialEnabled'
+    public_conditions:'managerCommercialConditions',bot_enabled:'managerCommercialEnabled',
+    advertised_price_per_person:'managerCommercialPrice',
+    tourism_fee_per_person:'managerCommercialTourismFee',
+    price_reviewed_at:'managerCommercialPriceReviewed',
+    baggage_policy:'managerCommercialBaggage',
+    payment_terms:'managerCommercialPayment',
+    reservation_terms:'managerCommercialReservation'
   };
   const blankCommercial=()=>({direction:'ida',operation_type:'regular',bot_enabled:false,requires_vehicle_change:false});
   let commercialProfiles=new Map();
@@ -176,11 +189,26 @@
       else row[field]=raw||(['direction','operation_type'].includes(field)?(field==='direction'?'ida':'regular'):'');
     }
     row.itinerary_stops=parseItineraryEditor();
+    row.boarding_points=String(byId('managerCommercialBoarding')?.value||'')
+      .split(/\r?\n/).map(v=>v.trim()).filter(Boolean).map((linha,i)=>{
+        const p=linha.split('|').map(v=>v.trim());
+        if(p.length!==3||!p[1]||(p[0]&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(p[0])))
+          throw new Error('Embarque '+(i+1)+': informe HH:MM | Local | Observação.');
+        return {order:i+1,time:p[0]||null,name:p[1],notes:p[2]};
+      });
+    for(const k of ['advertised_price_per_person','tourism_fee_per_person']){
+      if(row[k]!==''){const v=Number(row[k]);if(!Number.isFinite(v)||v<0)throw new Error('Preço ou taxa inválida');row[k]=v;}
+      else row[k]=null;
+    }
+    row.price_reviewed_at=row.price_reviewed_at||null;
     return row;
   }
   function loadCommercialForm(profile){
     const values={...blankCommercial(),...(profile||{})};
     if(byId('managerCommercialItinerary'))byId('managerCommercialItinerary').value=formatItineraryEditor(values.itinerary_stops);
+    if(byId('managerCommercialBoarding'))byId('managerCommercialBoarding').value=
+      (Array.isArray(values.boarding_points)?values.boarding_points:[])
+      .map(p=>[p.time||'',p.name||'',p.notes||''].join(' | ')).join('\n');
     for(const [field,id] of Object.entries(commercialFields)){
       if(!byId(id))continue;
       const value=values[field];
