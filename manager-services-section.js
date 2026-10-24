@@ -71,6 +71,29 @@
             <label>Status<select id="managerServiceActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
             <label class="manager-service-compat-field">Parceiro / motorista padrão<input id="managerServicePartner"></label>
             <label class="manager-service-compat-field">WhatsApp padrão<input id="managerServicePartnerPhone"></label>
+            <fieldset class="manager-commercial-fieldset">
+              <legend>Cérebro Comercial · Informações para o bot</legend>
+              <p class="manager-commercial-help">Horários e condições oficiais deste serviço. Nunca cadastre NET, telefone de parceiros, comissões ou valores internos nestes campos.</p>
+              <div class="manager-commercial-grid">
+                <label>Sentido<select id="managerCommercialDirection"><option value="ida">Ida</option><option value="volta">Volta</option><option value="local">Transfer local</option><option value="passeio">Passeio</option><option value="ambos">Ambos (somente se horários iguais)</option><option value="especial">Especializado</option></select></label>
+                <label>Atendimento<select id="managerCommercialOperation"><option value="regular">Regular</option><option value="especializado">Especializado / sob consulta</option></select></label>
+                <label>Saída fixa<input id="managerCommercialDeparture" type="time"></label>
+                <label>Janela de saída (início)<input id="managerCommercialStart" type="time"></label>
+                <label>Janela de saída (fim)<input id="managerCommercialEnd" type="time"></label>
+                <label>Chegada estimada<input id="managerCommercialArrival" type="time"></label>
+                <label>Duração estimada (minutos)<input id="managerCommercialDuration" type="number" min="1" max="3000"></label>
+                <label>Troca para 4x4?<select id="managerCommercialChange"><option value="false">Não confirmada</option><option value="true">Sim</option></select></label>
+                <label>Local da troca<input id="managerCommercialChangePlace" maxlength="150" placeholder="Jijoca"></label>
+                <label>Tempo da troca/trecho (min)<input id="managerCommercialChangeMinutes" type="number" min="1" max="500"></label>
+                <label class="wide">Detalhes da saída<textarea id="managerCommercialDepartureNotes" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Detalhes da chegada<textarea id="managerCommercialArrivalNotes" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Inclusões confirmadas<textarea id="managerCommercialIncludes" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Paradas / roteiro<textarea id="managerCommercialStops" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Condições públicas e restrições<textarea id="managerCommercialConditions" maxlength="1300" rows="3"></textarea></label>
+                <label class="wide manager-commercial-publish">Disponível para o bot<select id="managerCommercialEnabled"><option value="false">Não — rascunho</option><option value="true">Sim — informação aprovada</option></select></label>
+              </div>
+              <p class="manager-commercial-help">Cada serviço tem seu próprio perfil. Se a ida e a volta têm horários diferentes, cadastre informações separadamente em cada serviço correspondente.</p>
+            </fieldset>
             <div class="manager-service-help"><strong>Uso na Reserva:</strong> este cadastro alimenta diretamente o seletor de serviços da reserva. O NET é carregado como padrão e continua editável na reserva. Embarque e desembarque são informados somente na reserva.</div>
             <div class="manager-service-actions"><button type="button" class="outline-button" id="managerServiceCancel" style="display:none">Cancelar</button><button class="primary-button" type="submit" id="managerServiceSave">Salvar serviço</button></div>
           </form>
@@ -102,6 +125,53 @@
     if(item!==nav)item.addEventListener('click',()=>{const b=byId('newReservationButton');if(b&&item.dataset.section!=='repasses')b.style.display=''});
   });
 
+  const commercialFields={
+    direction:'managerCommercialDirection',operation_type:'managerCommercialOperation',
+    departure_time:'managerCommercialDeparture',departure_window_start:'managerCommercialStart',
+    departure_window_end:'managerCommercialEnd',arrival_time:'managerCommercialArrival',
+    estimated_minutes:'managerCommercialDuration',departure_notes:'managerCommercialDepartureNotes',
+    arrival_notes:'managerCommercialArrivalNotes',included_services:'managerCommercialIncludes',
+    stops_description:'managerCommercialStops',requires_vehicle_change:'managerCommercialChange',
+    vehicle_change_place:'managerCommercialChangePlace',
+    vehicle_change_minutes:'managerCommercialChangeMinutes',
+    public_conditions:'managerCommercialConditions',bot_enabled:'managerCommercialEnabled'
+  };
+  const blankCommercial=()=>({direction:'ida',operation_type:'regular',bot_enabled:false,requires_vehicle_change:false});
+  let commercialProfiles=new Map();
+  function commercialFormRow(){
+    const row={};
+    for(const [field,id] of Object.entries(commercialFields)){
+      const input=byId(id);const raw=String(input?.value??'').trim();
+      if(field==='bot_enabled'||field==='requires_vehicle_change')row[field]=raw==='true';
+      else if(field==='estimated_minutes'||field==='vehicle_change_minutes')row[field]=raw?Number(raw):null;
+      else if(['departure_time','arrival_time','departure_window_start','departure_window_end'].includes(field))row[field]=raw||null;
+      else row[field]=raw||(['direction','operation_type'].includes(field)?(field==='direction'?'ida':'regular'):'');
+    }
+    return row;
+  }
+  function loadCommercialForm(profile){
+    const values={...blankCommercial(),...(profile||{})};
+    for(const [field,id] of Object.entries(commercialFields)){
+      if(!byId(id))continue;
+      const value=values[field];
+      byId(id).value=typeof value==='boolean'?String(value):
+        ['departure_time','arrival_time','departure_window_start','departure_window_end'].includes(field)
+          ?String(value||'').slice(0,5):String(value??'');
+    }
+  }
+  async function loadCommercialProfiles(){
+    const {data,error}=await client.from('service_commercial_profiles').select('*');
+    if(error){console.error('[COMERCIAL] Falha de leitura:',error);return false;}
+    commercialProfiles=new Map((data||[]).map(p=>[String(p.service_catalog_id),p]));
+    return true;
+  }
+  async function saveCommercialProfile(serviceId,profile){
+    const {error}=await client.from('service_commercial_profiles').upsert({
+      service_catalog_id:serviceId,...profile,updated_at:new Date().toISOString()
+    },{onConflict:'service_catalog_id'});
+    if(error)throw error;
+  }
+
   function serviceFormRow(){
     return{
       name:byId('managerServiceName').value.trim(),
@@ -132,6 +202,7 @@
     byId('managerServiceReceipt').value='net_first';
     byId('managerServiceActive').value='true';
     byId('managerServiceNet').value='';
+    loadCommercialForm(null);
     if(byId('managerServiceImage'))byId('managerServiceImage').value='';
     if(byId('managerServiceImagePreview'))byId('managerServiceImagePreview').innerHTML='';
     byId('managerServiceSave').textContent='Salvar serviço';
@@ -155,6 +226,7 @@
     byId('managerServiceActive').value=String(item.active!==false);
     byId('managerServicePartner').value=item.default_partner_name||'';
     byId('managerServicePartnerPhone').value=item.default_partner_phone||'';
+    loadCommercialForm(duplicate?commercialProfiles.get(String(item.id)):commercialProfiles.get(String(item.id)));
     if(byId('managerServiceImage'))byId('managerServiceImage').value='';
     const publicImage=item.voucher_image_path?client.storage.from('service-images').getPublicUrl(item.voucher_image_path).data.publicUrl:'';
     if(byId('managerServiceImagePreview'))byId('managerServiceImagePreview').innerHTML=publicImage?'<img src="'+esc(publicImage)+'" alt="Imagem atual do serviço"><span>Imagem atual</span>':'<span>Sem imagem cadastrada</span>';
@@ -188,6 +260,7 @@
     const {data,error}=await client.from('service_catalog').select('*').order('name').order('modality');
     if(error){console.error('Não foi possível carregar os serviços:',error);return;}
     services=data||[];
+    await loadCommercialProfiles();
     renderServices();
     notifyCatalogChanged(reason);
   }
@@ -232,6 +305,11 @@
   byId('managerServiceForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const row=serviceFormRow();if(!row.name)return;
+    const commercial=commercialFormRow();
+    if(commercial.departure_window_start&&commercial.departure_window_end&&
+      commercial.departure_window_start>commercial.departure_window_end){
+      alert('A janela de saída termina antes do horário inicial.');return;
+    }
     const imageFile=byId('managerServiceImage')?.files?.[0]||null;
     const wasEditing=Boolean(editingServiceId);
     const result=editingServiceId
@@ -243,6 +321,14 @@
       return;
     }
     const savedId=result.data.id;
+    try{
+      await saveCommercialProfile(savedId,commercial);
+    }catch(commercialError){
+      console.error('[COMERCIAL] Falha ao salvar perfil:',commercialError);
+      alert('O serviço foi salvo, mas os dados do Cérebro Comercial NÃO foram publicados. Verifique a permissão e tente novamente.');
+      editingServiceId=savedId;
+      return;
+    }
     if(imageFile){
       try{
         const path=await uploadServiceImage(imageFile,savedId);
