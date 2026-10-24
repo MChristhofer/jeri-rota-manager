@@ -90,3 +90,16 @@
 .manager-service-main{display:flex;align-items:center;gap:10px}
 .manager-service-main>div{min-width:0}
 .manager-service-thumb{width:58px;height:42px;object-fit:cover;border-radius:8px;border:1px solid #e5dccf;flex:none;background:#f7f2e9}
+
+/* Cérebro Comercial: edição separada dos campos financeiros */
+.manager-commercial-fieldset{grid-column:1/-1;min-width:0;border:1px solid #decba7;border-radius:14px;padding:17px;background:#fffcf6}
+.manager-commercial-fieldset legend{font-size:13px;font-weight:800;color:#09283f;padding:0 8px}
+.manager-commercial-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0}
+.manager-commercial-grid label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.manager-commercial-grid .wide{grid-column:span 2}
+.manager-commercial-grid input,.manager-commercial-grid select,.manager-commercial-grid textarea{width:100%;min-width:0;min-height:40px;border:1px solid #d8cbbb;border-radius:9px;background:#fff;padding:9px;color:#102b3d;font:500 12px 'DM Sans',sans-serif}
+.manager-commercial-grid textarea{resize:vertical}
+.manager-commercial-help{color:#65532f;font-size:12px;line-height:1.55;margin:6px 0}
+.manager-commercial-publish select{font-weight:700}
+@media(max-width:950px){.manager-commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.manager-commercial-grid{grid-template-columns:1fr}.manager-commercial-grid .wide{grid-column:span 1}}
