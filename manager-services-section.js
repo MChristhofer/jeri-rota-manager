@@ -88,7 +88,11 @@
                 <label class="wide">Detalhes da saída<textarea id="managerCommercialDepartureNotes" maxlength="1000" rows="2"></textarea></label>
                 <label class="wide">Detalhes da chegada<textarea id="managerCommercialArrivalNotes" maxlength="1000" rows="2"></textarea></label>
                 <label class="wide">Inclusões confirmadas<textarea id="managerCommercialIncludes" maxlength="1000" rows="2"></textarea></label>
-                <label class="wide">Paradas / roteiro<textarea id="managerCommercialStops" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Paradas / roteiro (resumo)<textarea id="managerCommercialStops" maxlength="1000" rows="2"></textarea></label>
+                <label class="wide">Paradas ordenadas · cérebro do bot
+                  <textarea id="managerCommercialItinerary" rows="7" spellcheck="false" placeholder="Árvore da Preguiça | | | | Parada para fotos&#10;Lagun Beach | 50 | 50 | 50 | Banho e descanso"></textarea>
+                  <small>Uma parada por linha: Nome | minutos | entrada mínima R$ | entrada máxima R$ | descrição. Deixe vazio quando não houver tempo/taxa confirmados. Não colocar o preço do passeio aqui.</small>
+                </label>
                 <label class="wide">Condições públicas e restrições<textarea id="managerCommercialConditions" maxlength="1300" rows="3"></textarea></label>
                 <label class="wide manager-commercial-publish">Disponível para o bot<select id="managerCommercialEnabled"><option value="false">Não — rascunho</option><option value="true">Sim — informação aprovada</option></select></label>
               </div>
@@ -138,6 +142,30 @@
   };
   const blankCommercial=()=>({direction:'ida',operation_type:'regular',bot_enabled:false,requires_vehicle_change:false});
   let commercialProfiles=new Map();
+  function parseItineraryEditor(){
+    const linhas=String(byId('managerCommercialItinerary')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    if(linhas.length>30)throw new Error('Máximo de 30 paradas.');
+    return linhas.map((linha,index)=>{
+      const partes=linha.split('|').map(x=>x.trim());
+      if(partes.length!==5||!partes[0]||partes[0].length>90)throw new Error('Linha '+(index+1)+': use Nome | minutos | entrada mínima | entrada máxima | descrição.');
+      const numero=(v,tipo)=>{if(!v)return null;const raw=v.replace(',','.');const n=Number(raw);if(!Number.isFinite(n)||n<0||n>10000)throw new Error('Valor inválido em '+tipo+' na linha '+(index+1));return n};
+      const tempo=numero(partes[1],'minutos'),min=numero(partes[2],'entrada mínima'),max=numero(partes[3],'entrada máxima');
+      if(tempo!==null&&(!Number.isInteger(tempo)||tempo<1))throw new Error('Minutos inválidos na linha '+(index+1));
+      if((min===null)!==(max===null))throw new Error('Informe os dois valores da entrada na linha '+(index+1));
+      if(min!==null&&max<min)throw new Error('Entrada máxima menor que mínima na linha '+(index+1));
+      if(partes[4].length>180)throw new Error('Descrição longa na linha '+(index+1));
+      return {order:index+1,name:partes[0],type:'parada',duration_minutes:tempo,admission_brl_min:min,admission_brl_max:max,description:partes[4]};
+    });
+  }
+  function formatItineraryEditor(paradas){
+    if(!Array.isArray(paradas))return '';
+    return [...paradas].sort((a,b)=>(a.order||0)-(b.order||0)).map(p=>[
+      String(p.name||'').replace(/[|\n]/g,' '),
+      p.duration_minutes??'',p.admission_brl_min??'',p.admission_brl_max??'',
+      String(p.description||'').replace(/[|\n]/g,' ')
+    ].join(' | ')).join('\n');
+  }
+
   function commercialFormRow(){
     const row={};
     for(const [field,id] of Object.entries(commercialFields)){
@@ -147,10 +175,12 @@
       else if(['departure_time','arrival_time','departure_window_start','departure_window_end'].includes(field))row[field]=raw||null;
       else row[field]=raw||(['direction','operation_type'].includes(field)?(field==='direction'?'ida':'regular'):'');
     }
+    row.itinerary_stops=parseItineraryEditor();
     return row;
   }
   function loadCommercialForm(profile){
     const values={...blankCommercial(),...(profile||{})};
+    if(byId('managerCommercialItinerary'))byId('managerCommercialItinerary').value=formatItineraryEditor(values.itinerary_stops);
     for(const [field,id] of Object.entries(commercialFields)){
       if(!byId(id))continue;
       const value=values[field];
@@ -305,7 +335,9 @@
   byId('managerServiceForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const row=serviceFormRow();if(!row.name)return;
-    const commercial=commercialFormRow();
+    let commercial;
+    try{commercial=commercialFormRow()}
+    catch(error){alert('Verifique as paradas do roteiro: '+error.message);return}
     if(commercial.departure_window_start&&commercial.departure_window_end&&
       commercial.departure_window_start>commercial.departure_window_end){
       alert('A janela de saída termina antes do horário inicial.');return;
