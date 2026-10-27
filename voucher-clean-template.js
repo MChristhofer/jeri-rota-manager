@@ -116,7 +116,7 @@
     const copy=terms?.translations?.[locale];
     if(!copy)throw new Error('Política geral indisponível para o idioma selecionado.');
     const clauses=copy.clauses.map((item,index)=>'<div class="vc-condition"><h3>'+(index+1)+'. '+esc(item[0])+'</h3><p>'+esc(item[1])+'</p></div>').join('');
-    return '<section class="vc-page vc-terms-page" data-voucher-page>'+header(t,locale,model)+
+    return '<section class="vc-page vc-terms-page" data-voucher-page>'+
       '<main class="vc-main"><div class="vc-terms-head"><span>'+esc(model.voucher_number||'—')+'</span><h1>'+esc(copy.title)+'</h1><h2>'+esc(copy.subtitle)+'</h2><p>'+esc(copy.summary)+'</p></div>'+
       '<div class="vc-terms-grid">'+clauses+'</div><div class="vc-terms-link"><strong>'+esc(copy.link)+'</strong><span>'+esc(terms.url)+'</span><small>Versão publicada no site em '+esc(terms.version)+' · '+esc(copy.footer)+'</small></div></main>'+
       footer(locale,model,number,total)+'</section>';

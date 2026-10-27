@@ -174,13 +174,56 @@
       document.getElementById(key).addEventListener(key==='voucherCustomerNotes'?'input':'change',refresh);
     refresh();
   }
-  async function issue(reservation,scopeKey='reservation'){if(reservation.status!=='Confirmada')return alert('Confirme a reserva antes de emitir o voucher.');const body=document.getElementById('voucherModalBody');body.classList.add('voucher-loading');try{const snapshot=await buildSnapshot(reservation,document.getElementById('voucherCustomerNotes').value.trim(),scopeKey);
-    snapshot.language=document.getElementById('voucherLanguage').value;
-    snapshot.template=document.getElementById('voucherTemplate').value;
-    const translatedTitles=JSON.parse(document.getElementById('voucherTranslationState').value||'[]');
-    snapshot.services.forEach((item,index)=>item.title_i18n=translatedTitles[index]||{});
-    if(snapshot.template==='classic'&&snapshot.language!=='pt')throw new Error('Selecione o modelo minimalista para idiomas diferentes do português.');
-    const show=document.getElementById('voucherShowValue').checked,{data:issued,error}=await client.rpc('issue_voucher',{p_reservation_id:reservation.cloudId,p_snapshot:snapshot,p_show_value:show});if(error)throw error;issued.show_value=show;const qr=await qrData(publicUrl(issued)),sheet=stage(premium.render(premium.publicViewModel({voucher:issued,snapshot,qrDataUrl:qr})));await exporter.exportAndStore({container:sheet,voucher:issued,client,upload:true,download:true});await loadVouchers();closeDialog();setSection('vouchers')}catch(error){console.error(error);alert(`Não foi possível emitir o voucher: ${error.message||error}`);body.classList.remove('voucher-loading')}}
+  async function issue(reservation,scopeKey='reservation'){
+    if(reservation.status!=='Confirmada')return alert('Confirme a reserva antes de emitir o voucher.');
+    const body=document.getElementById('voucherModalBody');
+    body.classList.add('voucher-loading');
+    let issued=null;
+    try{
+      const snapshot=await buildSnapshot(reservation,document.getElementById('voucherCustomerNotes').value.trim(),scopeKey);
+      snapshot.language=document.getElementById('voucherLanguage').value;
+      snapshot.template=document.getElementById('voucherTemplate').value;
+      const translatedTitles=JSON.parse(document.getElementById('voucherTranslationState').value||'[]');
+      snapshot.services.forEach((item,index)=>item.title_i18n=translatedTitles[index]||{});
+      if(snapshot.template==='classic'&&snapshot.language!=='pt'){
+        throw new Error('Selecione o modelo minimalista para idiomas diferentes do português.');
+      }
+      const show=document.getElementById('voucherShowValue').checked;
+      // Validação do layout antes da emissão persistida e do incremento da versão:
+      // se o conteúdo não couber, a reserva anterior permanece intacta.
+      if(snapshot.template==='clean'){
+        const draft={voucher_number:'Pré-visualização',issued_at:new Date().toISOString(),status:'issued',show_value:show};
+        const sheet=stage(premium.render(premium.publicViewModel({voucher:draft,snapshot,preview:true})));
+        if(document.fonts?.ready)await document.fonts.ready;
+        exporter.normalizeCleanPages(sheet);
+      }
+      const {data,error}=await client.rpc('issue_voucher',{
+        p_reservation_id:reservation.cloudId,p_snapshot:snapshot,p_show_value:show
+      });
+      if(error)throw error;
+      issued=data;
+      issued.show_value=show;
+      const qr=await qrData(publicUrl(issued));
+      const sheet=stage(premium.render(premium.publicViewModel({voucher:issued,snapshot,qrDataUrl:qr})));
+      await exporter.exportAndStore({container:sheet,voucher:issued,client,upload:true,download:true});
+      await loadVouchers();
+      closeDialog();
+      setSection('vouchers');
+    }catch(error){
+      console.error(error);
+      if(issued){
+        // O RPC já gerou o voucher. Não pedir nova emissão: recuperar pelo painel.
+        try{await loadVouchers()}catch(loadError){console.error(loadError)}
+        closeDialog();
+        setSection('vouchers');
+        alert('O voucher '+issued.voucher_number+' foi registrado, mas o PDF não foi concluído: '+(error.message||error)+'. Acesse Vouchers e use Baixar PDF para tentar novamente, sem reemitir a reserva.');
+      }else{
+        alert('Não foi possível emitir o voucher: '+(error.message||error));
+      }
+    }finally{
+      body.classList.remove('voucher-loading');
+    }
+  }
   async function generatePdf(voucher,download=true){const qr=await qrData(publicUrl(voucher)),sheet=stage(premium.render(premium.publicViewModel({voucher,snapshot:voucher.snapshot_data||{},qrDataUrl:qr})));return exporter.exportAndStore({container:sheet,voucher,client,upload:!voucher.pdf_path,download})}
   async function downloadStored(voucher){if(!voucher.pdf_path)return generatePdf(voucher);const {data,error}=await client.storage.from('vouchers').createSignedUrl(voucher.pdf_path,300);if(error)return generatePdf(voucher);window.open(data.signedUrl,'_blank','noopener')}
   async function viewVoucher(voucher){const qr=await qrData(publicUrl(voucher));openDialog();document.getElementById('voucherModalTitle').textContent=voucher.voucher_number;document.getElementById('voucherModalBody').innerHTML=`<div class="voucher-preview-shell">${premium.render(premium.publicViewModel({voucher,snapshot:voucher.snapshot_data||{},qrDataUrl:qr}))}</div><div class="voucher-preview-controls"><button class="outline-button" data-voucher-close-action>Fechar</button><button class="primary-button" data-voucher-download-now>Baixar PDF</button></div>`;document.querySelector('[data-voucher-close-action]').onclick=closeDialog;document.querySelector('[data-voucher-download-now]').onclick=()=>downloadStored(voucher)}

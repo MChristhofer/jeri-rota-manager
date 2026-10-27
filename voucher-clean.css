@@ -61,3 +61,26 @@
 @media(max-width:900px){.voucher-preview-shell{height:70vh}.voucher-preview-shell .vc-book{transform:scale(.72);transform-origin:top left;margin-bottom:-140mm}}
 @media(max-width:650px){.voucher-preview-shell .vc-book{transform:scale(.45);margin-bottom:-290mm}.voucher-config{grid-template-columns:1fr}}
 @media print{.vc-book{box-shadow:none}.vc-page{box-shadow:none}}
+
+/* Ajuste responsivo à quantidade de informações no PDF (sem reduzir escala A4). */
+.vc-document-page.vc-compact .vc-top{min-height:15mm;padding-bottom:2mm}
+.vc-document-page.vc-compact .vc-head{padding:3mm 0 2mm}
+.vc-document-page.vc-compact .vc-reference{margin-top:1.8mm}
+.vc-document-page.vc-compact .vc-summary{min-height:16mm;margin-bottom:2mm}
+.vc-document-page.vc-compact .vc-summary>div{padding:2mm 2.7mm}
+.vc-document-page.vc-compact .vc-section{margin:1mm 0 1.5mm}
+.vc-document-page.vc-compact .vc-section h2{margin-bottom:1mm;padding-bottom:1mm}
+.vc-document-page.vc-compact .vc-service-row{min-height:11.4mm;padding:1.35mm 2.2mm}
+.vc-document-page.vc-compact .vc-service-route{margin-top:.75mm;gap:.25mm}
+.vc-document-page.vc-compact .vc-pickup,.vc-document-page.vc-compact .vc-notes{margin-top:1mm;padding:1.8mm 2.7mm}
+.vc-document-page.vc-compact .vc-validation{min-height:29mm;padding:2mm;margin-top:auto}
+.vc-document-page.vc-compact .vc-footer{margin-top:1.5mm;padding-top:1.5mm}
+.vc-document-page.vc-ultra-compact .vc-head{padding:2mm 0 1mm}
+.vc-document-page.vc-ultra-compact .vc-reference{font-size:4.5mm;margin-top:1mm}
+.vc-document-page.vc-ultra-compact .vc-top{min-height:12mm;padding-bottom:1mm}
+.vc-document-page.vc-ultra-compact .vc-service-row{min-height:10.4mm;padding:.8mm 2mm}
+.vc-document-page.vc-ultra-compact .vc-service-main strong{font-size:2.85mm}
+.vc-document-page.vc-ultra-compact .vc-service-route span,.vc-document-page.vc-ultra-compact .vc-service-details{font-size:2.3mm}
+.vc-document-page.vc-ultra-compact .vc-validation{min-height:27mm;padding:1.8mm}
+.vc-terms-page .vc-terms-head{padding:1.5mm 0 3mm}
+.vc-terms-page .vc-terms-grid{margin-top:3mm}
