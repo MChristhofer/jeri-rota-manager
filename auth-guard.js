@@ -47,7 +47,7 @@
     const loadNavIcons=()=>{
       if(document.querySelector('script[src^="nav-icons.js"]'))return;
       const script=document.createElement('script');
-      script.src='nav-icons.js?v=20260927-1';
+      script.src='nav-icons.js?v=20261027-hospedagens-1';
       document.body.appendChild(script);
     };
     loadNavIcons();
@@ -60,7 +60,7 @@
       const loadUiPolish=()=>{
         if(!document.querySelector('link[href^="ui-polish.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='ui-polish.css?v=20260825-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="sidebar-motion.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='sidebar-motion.css?v=20260826-1';document.head.appendChild(link)}
-        if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20260830-3';document.head.appendChild(link)}
+        if(!document.querySelector('link[href^="minimal-manager.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='minimal-manager.css?v=20261027-hospedagens-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="manager-global-responsive.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-global-responsive.css?v=20260831-2';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="manager-services-section.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='manager-services-section.css?v=20260918-1';document.head.appendChild(link)}
         if(!document.querySelector('link[href^="reservation-list-actions.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='reservation-list-actions.css?v=20260830-1';document.head.appendChild(link)}
