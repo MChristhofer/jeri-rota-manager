@@ -14,3 +14,16 @@
 .vc-footer{display:flex;justify-content:space-between;align-items:start;gap:5mm;border-top:.35mm solid var(--vc-border);padding:3mm 10mm 4mm;margin:2mm 0 0}.vc-footer span:first-child{font-weight:800;color:var(--vc-navy);font-size:2.3mm;white-space:nowrap}.vc-footer span:last-child{color:var(--vc-muted);font-size:2mm;max-width:114mm;text-align:right;line-height:1.35}
 @media(max-width:900px){.voucher-preview-shell .vc-sheet{transform-origin:top left}}
 @media print{.vc-sheet{box-shadow:none;break-after:page}}
+
+/* Preferencias de emissão no modal de reservas */
+.voucher-config{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.voucher-config .voucher-field{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
+.voucher-config select{width:100%;padding:11px 12px;border:1px solid #dcdedb;border-radius:9px;background:#fff;color:#173044;font:inherit}
+.voucher-translation-box{margin:10px 0 12px;padding:10px 12px;background:#faf9f6;border:1px solid #e5e4df;border-radius:9px}
+.voucher-translation-box summary{cursor:pointer;font-size:12px;font-weight:700;color:#173044}
+.voucher-translation-box p{font-size:11px;color:#657582;line-height:1.4;margin:8px 0}
+#voucherTranslationFields{max-height:220px;overflow:auto;display:grid;gap:9px}
+#voucherTranslationFields .voucher-field{display:grid;gap:4px}
+#voucherTranslationFields input{width:100%;font-size:12px;padding:9px;border:1px solid #dcdedb;border-radius:7px}
+#voucherLanguageNotice:not([hidden]){display:block;margin:8px 0}
+@media(max-width:640px){.voucher-config{grid-template-columns:1fr}}
