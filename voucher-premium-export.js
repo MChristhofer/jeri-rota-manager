@@ -18,18 +18,81 @@
     }
     return false;
   }
+
+  function overflowPx(page){
+    // Browser A4 can vary by a few pixels after font rendering.
+    return Math.max(0,page.scrollHeight-page.clientHeight);
+  }
+  function applyCompactLayout(page){
+    if(overflowPx(page)<=3)return true;
+    page.classList.add('vc-compact');
+    if(overflowPx(page)<=3)return true;
+    page.classList.add('vc-ultra-compact');
+    return overflowPx(page)<=3;
+  }
+  function splitDocumentPage(page){
+    const rows=[...page.querySelectorAll('.vc-service-row')];
+    if(rows.length<2)return null;
+    // Clone only the document structure. The last row and validation block
+    // move to the new final page, avoiding a page with an orphaned QR.
+    const next=page.cloneNode(true);
+    next.querySelector('.vc-summary')?.remove();
+    next.querySelectorAll('.vc-service-row').forEach(row=>row.remove());
+    next.querySelectorAll('.vc-continuation').forEach(node=>node.remove());
+    const destination=next.querySelector('.vc-service-table');
+    const last=rows[rows.length-1];
+    destination.appendChild(last.cloneNode(true));
+    last.remove();
+    const endBlocks=['.vc-pickup','.vc-money','.vc-notes','.vc-validation'];
+    endBlocks.forEach(selector=>page.querySelector(selector)?.remove());
+    if(!page.querySelector('.vc-continuation')){
+      const more=document.createElement('div');
+      more.className='vc-continuation';
+      more.textContent=page.querySelector('.vc-reference')?.textContent||'Jeri Rota';
+      page.querySelector('.vc-main')?.appendChild(more);
+    }
+    page.after(next);
+    return next;
+  }
+  function normalizeCleanPages(container){
+    // Called after fonts/assets finish loading. Dynamically reduce nonessential
+    // spacing; if necessary transfer services to another A4 document page.
+    let pages=[...container.querySelectorAll('[data-voucher-page]')];
+    for(let i=0;i<pages.length;i++){
+      const page=pages[i];
+      if(applyCompactLayout(page))continue;
+      if(!page.classList.contains('vc-document-page')){
+        throw new Error('As condições gerais não cabem na página '+(i+1)+'.');
+      }
+      const next=splitDocumentPage(page);
+      if(!next)throw new Error('O conteúdo da página '+(i+1)+' excede a área A4 e não pode ser dividido sem perda de informação.');
+      pages=[...container.querySelectorAll('[data-voucher-page]')];
+      if(pages.length>40)throw new Error('O documento ultrapassou o limite de páginas aceito.');
+      // Page i is smaller now. Check it again without advancing.
+      i--;
+    }
+    pages=[...container.querySelectorAll('[data-voucher-page]')];
+    const labels={pt:'Página',en:'Page',fr:'Page',es:'Página'};
+    const label=labels[container.getAttribute('lang')]||'Página';
+    pages.forEach((page,i)=>{
+      const count=page.querySelector('.vc-footer span:last-child');
+      if(count)count.textContent=label+' '+(i+1)+' / '+pages.length;
+    });
+    return pages;
+  }
+
   async function renderBlob(container){
     if(!window.html2canvas)throw new Error('Renderizador HTML indisponível.');
     const {jsPDF}=window.jspdf||{};if(!jsPDF)throw new Error('Gerador de PDF indisponível.');
     await waitForVoucherAssets(container);
-    const cleanPages=[...container.querySelectorAll('[data-voucher-page]')];
+    const cleanPages=normalizeCleanPages(container);
     if(cleanPages.length){
       const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
       for(let i=0;i<cleanPages.length;i++){
         const page=cleanPages[i];
         // Rejeita conteúdo que extrapole o A4, evitando páginas órfãs e cortes.
-        const overflow=page.scrollHeight-page.clientHeight;
-        if(overflow>3)throw new Error('O voucher excedeu a página '+(i+1)+' em '+overflow+' pixels. Reduza as observações ou divida serviços.');
+        const overflow=overflowPx(page);
+        if(overflow>3)throw new Error('Não foi possível adequar a página '+(i+1)+' ao tamanho A4 sem cortar o conteúdo.');
         const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:page.scrollWidth,windowHeight:page.scrollHeight});
         if(i)doc.addPage();
         doc.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,210,297,undefined,'FAST');
@@ -54,5 +117,5 @@
     if(download){const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),30000)}
     return blob;
   }
-  window.JeriVoucherPremiumExport={waitForVoucherAssets,hasVisibleContent,renderBlob,exportAndStore};
+  window.JeriVoucherPremiumExport={waitForVoucherAssets,hasVisibleContent,normalizeCleanPages,renderBlob,exportAndStore};
 })();
