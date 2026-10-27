@@ -66,14 +66,14 @@
         // Serviço "Somente volta" já possui embarque e desembarque próprios.
         // Não inventar uma ida usando a data geral da reserva e não inverter os locais.
         occurrences.push({
-          title,date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
+          title,title_i18n:item.title_i18n||item.titles||{},date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
           modality,vehicle,boarding,dropoff,leg:'VOLTA',image_path:imagePath,
           image_url:imageUrl||premium.fallbackImage(title)
         });
       }else{
         if(outboundDate||(!returnDate&&reservation.date)){
           occurrences.push({
-            title,date:outboundDate||reservation.date,time:item.startTime||item.time||'',modality,vehicle,
+            title,title_i18n:item.title_i18n||item.titles||{},date:outboundDate||reservation.date,time:item.startTime||item.time||'',modality,vehicle,
             boarding,dropoff,leg:mode==='daytrip'?'BATE E VOLTA':(isTransfer||mode==='roundtrip'?'IDA':'SERVIÇO'),
             image_path:imagePath,image_url:imageUrl
           });
@@ -83,7 +83,7 @@
             // Em ida e volta no MESMO serviço, a volta reutiliza o trecho invertido.
             // Serviços de volta cadastrados separadamente entram no ramo "return" acima
             // e preservam exatamente os locais informados no cadastro.
-            title,date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
+            title,title_i18n:item.title_i18n||item.titles||{},date:returnDate,time:item.endTime||item.returnTime||item.return_time||item.startTime||item.time||'',
             modality,vehicle,boarding:dropoff,dropoff:boarding,leg:'VOLTA',image_path:imagePath,
             image_url:imageUrl||premium.fallbackImage(title)
           });
@@ -134,14 +134,29 @@
     const snapshot=await buildSnapshot(reservation,current?.snapshot_data?.customer_notes||'',scopeKey);
     snapshot.language=current?.snapshot_data?.language||'pt';
     snapshot.template=current?.snapshot_data?.template||(current?'classic':'clean');
+    snapshot.services.forEach((item,index)=>{item.title_i18n={...(item.title_i18n||{}),...(current?.snapshot_data?.services?.[index]?.title_i18n||{})}});
     const changes=current?snapshotChanges(snapshot,current.snapshot_data):[];
     const previewVoucher=current||{voucher_number:'Número gerado na emissão',issued_at:new Date().toISOString(),status:'issued',show_value:false,scope_key:scopeKey};
 
     openDialog();
     document.getElementById('voucherModalTitle').textContent=current?'Reemitir voucher':'Pré-visualizar voucher';
-    document.getElementById('voucherModalBody').innerHTML=`${changes.length?`<p class="voucher-change-warning">Alterações encontradas: ${esc(changes.join(', '))}. A confirmação criará uma nova versão.</p>`:''}<div class="voucher-preview-shell" id="voucherPreviewShell">${premium.render(premium.publicViewModel({voucher:previewVoucher,snapshot,preview:!current}))}</div><div class="voucher-config"><label class="voucher-field">Modelo do voucher<select id="voucherTemplate"><option value="clean" ${snapshot.template==='clean'?'selected':''}>Minimalista — sem imagens</option><option value="classic" ${snapshot.template==='classic'?'selected':''}>Clássico — com imagens (português)</option></select></label><label class="voucher-field">Idioma<select id="voucherLanguage"><option value="pt" ${snapshot.language==='pt'?'selected':''}>Português</option><option value="en" ${snapshot.language==='en'?'selected':''}>English</option><option value="fr" ${snapshot.language==='fr'?'selected':''}>Français</option><option value="es" ${snapshot.language==='es'?'selected':''}>Español</option></select></label></div><label class="voucher-field">Observações para o cliente<textarea id="voucherCustomerNotes">${esc(snapshot.customer_notes)}</textarea></label><label class="voucher-check"><input id="voucherShowValue" type="checkbox" ${current?.show_value===true?'checked':''}> Exibir valores no voucher</label><p class="voucher-change-warning" id="voucherLanguageNotice" hidden>O modelo com imagens utiliza apenas rótulos em português. Para outros idiomas, escolha o modelo minimalista.</p><div class="voucher-preview-controls"><button class="outline-button" data-voucher-back-scope>Escolher outro</button><button class="primary-button" id="issueVoucherButton">${current?'Reemitir Voucher':'Emitir Voucher'}</button></div>`;
+    document.getElementById('voucherModalBody').innerHTML=`${changes.length?`<p class="voucher-change-warning">Alterações encontradas: ${esc(changes.join(', '))}. A confirmação criará uma nova versão.</p>`:''}<div class="voucher-preview-shell" id="voucherPreviewShell">${premium.render(premium.publicViewModel({voucher:previewVoucher,snapshot,preview:!current}))}</div><div class="voucher-config"><label class="voucher-field">Modelo do voucher<select id="voucherTemplate"><option value="clean" ${snapshot.template==='clean'?'selected':''}>Minimalista — sem imagens</option><option value="classic" ${snapshot.template==='classic'?'selected':''}>Clássico — com imagens (português)</option></select></label><label class="voucher-field">Idioma<select id="voucherLanguage"><option value="pt" ${snapshot.language==='pt'?'selected':''}>Português</option><option value="en" ${snapshot.language==='en'?'selected':''}>English</option><option value="fr" ${snapshot.language==='fr'?'selected':''}>Français</option><option value="es" ${snapshot.language==='es'?'selected':''}>Español</option></select></label></div><details class="voucher-translation-box"><summary>Personalizar o nome dos serviços por idioma (opcional)</summary><p>Nomes próprios e textos livres não são traduzidos automaticamente. Ajuste aqui os títulos para o idioma do cliente.</p><div id="voucherTranslationFields"></div></details><input type="hidden" id="voucherTranslationState"><label class="voucher-field">Observações para o cliente<textarea id="voucherCustomerNotes">${esc(snapshot.customer_notes)}</textarea></label><label class="voucher-check"><input id="voucherShowValue" type="checkbox" ${current?.show_value===true?'checked':''}> Exibir valores no voucher</label><p class="voucher-change-warning" id="voucherLanguageNotice" hidden>O modelo com imagens utiliza apenas rótulos em português. Para outros idiomas, escolha o modelo minimalista.</p><div class="voucher-preview-controls"><button class="outline-button" data-voucher-back-scope>Escolher outro</button><button class="primary-button" id="issueVoucherButton">${current?'Reemitir Voucher':'Emitir Voucher'}</button></div>`;
     document.querySelector('[data-voucher-back-scope]').onclick=()=>previewReservation(id,null);
     document.getElementById('issueVoucherButton').onclick=()=>issue(reservation,scopeKey);
+    const renderTranslationFields=()=>{
+      const locale=document.getElementById('voucherLanguage').value;
+      document.getElementById('voucherTranslationFields').innerHTML=snapshot.services.map((item,index)=>'<label class="voucher-field">'+esc(item.date||'')+' · '+esc(item.title||'Serviço')+'<input type="text" data-translation-index="'+index+'" value="'+esc(item.title_i18n?.[locale]||'')+'" placeholder="'+esc(item.title||'Nome do serviço')+'"></label>').join('');
+      document.getElementById('voucherTranslationState').value=JSON.stringify(snapshot.services.map(item=>item.title_i18n||{}));
+    };
+    document.getElementById('voucherTranslationFields').addEventListener('input',event=>{
+      const idx=Number(event.target.dataset.translationIndex);
+      if(!Number.isInteger(idx)||!snapshot.services[idx])return;
+      const locale=document.getElementById('voucherLanguage').value;
+      snapshot.services[idx].title_i18n=snapshot.services[idx].title_i18n||{};
+      snapshot.services[idx].title_i18n[locale]=event.target.value.trim();
+      document.getElementById('voucherTranslationState').value=JSON.stringify(snapshot.services.map(item=>item.title_i18n||{}));
+      document.getElementById('voucherPreviewShell').innerHTML=premium.render(premium.publicViewModel({voucher:previewVoucher,snapshot,preview:!current}));
+    });
     const refresh=()=>{
       snapshot.language=document.getElementById('voucherLanguage').value;
       snapshot.template=document.getElementById('voucherTemplate').value;
@@ -151,6 +166,7 @@
       notice.hidden=!(snapshot.template==='classic'&&snapshot.language!=='pt');
       document.getElementById('issueVoucherButton').disabled=!notice.hidden;
       document.getElementById('voucherPreviewShell').innerHTML=premium.render(premium.publicViewModel({voucher:previewVoucher,snapshot,preview:!current}));
+      renderTranslationFields();
     };
     for(const key of ['voucherLanguage','voucherTemplate','voucherCustomerNotes','voucherShowValue'])
       document.getElementById(key).addEventListener(key==='voucherCustomerNotes'?'input':'change',refresh);
@@ -159,6 +175,8 @@
   async function issue(reservation,scopeKey='reservation'){if(reservation.status!=='Confirmada')return alert('Confirme a reserva antes de emitir o voucher.');const body=document.getElementById('voucherModalBody');body.classList.add('voucher-loading');try{const snapshot=await buildSnapshot(reservation,document.getElementById('voucherCustomerNotes').value.trim(),scopeKey);
     snapshot.language=document.getElementById('voucherLanguage').value;
     snapshot.template=document.getElementById('voucherTemplate').value;
+    const translatedTitles=JSON.parse(document.getElementById('voucherTranslationState').value||'[]');
+    snapshot.services.forEach((item,index)=>item.title_i18n=translatedTitles[index]||{});
     if(snapshot.template==='classic'&&snapshot.language!=='pt')throw new Error('Selecione o modelo minimalista para idiomas diferentes do português.');
     const show=document.getElementById('voucherShowValue').checked,{data:issued,error}=await client.rpc('issue_voucher',{p_reservation_id:reservation.cloudId,p_snapshot:snapshot,p_show_value:show});if(error)throw error;issued.show_value=show;const qr=await qrData(publicUrl(issued)),sheet=stage(premium.render(premium.publicViewModel({voucher:issued,snapshot,qrDataUrl:qr})));await exporter.exportAndStore({container:sheet,voucher:issued,client,upload:true,download:true});await loadVouchers();closeDialog();setSection('vouchers')}catch(error){console.error(error);alert(`Não foi possível emitir o voucher: ${error.message||error}`);body.classList.remove('voucher-loading')}}
   async function generatePdf(voucher,download=true){const qr=await qrData(publicUrl(voucher)),sheet=stage(premium.render(premium.publicViewModel({voucher,snapshot:voucher.snapshot_data||{},qrDataUrl:qr})));return exporter.exportAndStore({container:sheet,voucher,client,upload:!voucher.pdf_path,download})}
