@@ -7,6 +7,7 @@
     operacao:'ph-steering-wheel',
     financeiro:'ph-wallet',
     vouchers:'ph-ticket',
+    hospedagens:'ph-bed',
     prestacao:'ph-receipt'
   };
 
