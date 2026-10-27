@@ -104,6 +104,7 @@
       boarding:services.find(item=>item.leg!=='VOLTA'&&item.boarding)?.boarding||services.find(item=>item.boarding)?.boarding||reservation.boarding||'A definir',
       boarding_time:services.find(item=>item.leg!=='VOLTA'&&item.time)?.time||services.find(item=>item.time)?.time||'',
       payment_status:paid<=0?'Aguardando sinal':paid>=amount?'Pago':'Sinal recebido',
+      currency:reservation.currency||reservation.currencyCode||'BRL',
       amount,paid_amount:paid,balance:Math.max(0,amount-paid),customer_notes:notes
     }
   }
