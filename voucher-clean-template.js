@@ -8,6 +8,14 @@
     fr:{tag:'fr-FR',document:'VOUCHER OFFICIEL DE VOYAGE',sub:'Confirmation des prestations',issued:'Émis le',reservation:'Réservation',status:'RÉSERVATION CONFIRMÉE',cancelled:'VOUCHER ANNULÉ',client:'VOYAGEURS',period:'DATES DU VOYAGE',people:'PERSONNES',services:'PRESTATIONS RÉSERVÉES',date:'DATE',description:'PRESTATION / DESCRIPTION',details:'DÉTAILS',boarding:'Prise en charge',dropoff:'Destination',time:'Horaire',type:'Modalité',vehicle:'Véhicule',leg:'Trajet',free:'Journée libre',payment:'RÉCAPITULATIF FINANCIER',total:'Total de la réservation',paid:'Montant reçu',balance:'Solde',notes:'REMARQUES ET INSTRUCTIONS',pickup:'LIEU DE PRISE EN CHARGE',validation:'VALIDATION DU DOCUMENT',scan:'Scannez pour vérifier l’authenticité et le statut du voucher.',support:'ASSISTANCE PENDANT LE SÉJOUR',conditions:'Les prestations sont régies par le contrat signé et les conditions de réservation. Les tarifs des fournisseurs ne figurent pas sur ce document.',noServices:'Aucune prestation enregistrée.',noNotes:'Consultez les informations transmises par Jeri Rota.',pending:'À confirmer',noQr:'QR indisponible'},
     es:{tag:'es-ES',document:'VOUCHER OFICIAL DE VIAJE',sub:'Confirmación de servicios',issued:'Emitido el',reservation:'Reserva',status:'RESERVA CONFIRMADA',cancelled:'VOUCHER CANCELADO',client:'VIAJEROS',period:'FECHAS DEL VIAJE',people:'PERSONAS',services:'SERVICIOS CONTRATADOS',date:'FECHA',description:'SERVICIO / DESCRIPCIÓN',details:'DETALLES',boarding:'Recogida',dropoff:'Destino',time:'Horario',type:'Modalidad',vehicle:'Vehículo',leg:'Trayecto',free:'Día libre',payment:'RESUMEN FINANCIERO',total:'Total de la reserva',paid:'Importe recibido',balance:'Saldo',notes:'OBSERVACIONES E INSTRUCCIONES',pickup:'PUNTO DE RECOGIDA',validation:'VALIDACIÓN DEL DOCUMENTO',scan:'Escanee para comprobar la autenticidad y el estado del voucher.',support:'ASISTENCIA DURANTE EL VIAJE',conditions:'Los servicios se rigen por el contrato firmado y las condiciones de la reserva. Las tarifas de los proveedores no se muestran en este documento.',noServices:'No hay servicios registrados.',noNotes:'Consulte las instrucciones enviadas por Jeri Rota.',pending:'Por confirmar',noQr:'QR no disponible'}
   };
+  const systemText={
+    pt:{branding:'TURISMO PERSONALIZADO',leg:{'IDA':'Ida','VOLTA':'Volta','IDA E VOLTA':'Ida e volta','BATE E VOLTA':'Bate-volta','SERVIÇO':'Serviço'},modality:{'PRIVATIVO':'Privativo','PRIVADO':'Privativo','COMPARTILHADO':'Compartilhado','SEMI-PRIVADO':'Semi-privativo','SEMI-PRIVATIVO':'Semi-privativo'}},
+    en:{branding:'TAILOR-MADE TRAVEL',leg:{'IDA':'Outbound','VOLTA':'Return','IDA E VOLTA':'Round trip','BATE E VOLTA':'Day trip','SERVIÇO':'Service'},modality:{'PRIVATIVO':'Private','PRIVADO':'Private','COMPARTILHADO':'Shared','SEMI-PRIVADO':'Semi-private','SEMI-PRIVATIVO':'Semi-private'}},
+    fr:{branding:'VOYAGES SUR MESURE',leg:{'IDA':'Aller','VOLTA':'Retour','IDA E VOLTA':'Aller-retour','BATE E VOLTA':'Excursion à la journée','SERVIÇO':'Prestation'},modality:{'PRIVATIVO':'Privé','PRIVADO':'Privé','COMPARTILHADO':'Partagé','SEMI-PRIVADO':'Semi-privé','SEMI-PRIVATIVO':'Semi-privé'}},
+    es:{branding:'VIAJES PERSONALIZADOS',leg:{'IDA':'Ida','VOLTA':'Regreso','IDA E VOLTA':'Ida y vuelta','BATE E VOLTA':'Excursión de un día','SERVIÇO':'Servicio'},modality:{'PRIVATIVO':'Privado','PRIVADO':'Privado','COMPARTILHADO':'Compartido','SEMI-PRIVADO':'Semiprivado','SEMI-PRIVATIVO':'Semiprivado'}}
+  };
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  function systemTerm(value,locale,group){return systemText[locale][group]?.[normalize(value)]||value}
   const esc=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function lang(value){return Object.prototype.hasOwnProperty.call(languages,value)?value:'pt'}
   function date(value,locale){
@@ -35,8 +43,8 @@
   function tags(service,locale,t){
     const items=[];
     if(service?.time)items.push(t.time+': '+service.time);
-    if(service?.leg)items.push(t.leg+': '+service.leg);
-    if(service?.modality)items.push(t.type+': '+service.modality);
+    if(service?.leg)items.push(t.leg+': '+systemTerm(service.leg,locale,'leg'));
+    if(service?.modality)items.push(t.type+': '+systemTerm(service.modality,locale,'modality'));
     if(service?.vehicle)items.push(t.vehicle+': '+service.vehicle);
     return items;
   }
@@ -49,7 +57,7 @@
     const status=model.status==='cancelled'?t.cancelled:t.status;
     const html=[];
     html.push('<article class="voucher-sheet vc-sheet" data-voucher-sheet lang="'+locale+'">');
-    html.push('<header class="vc-top"><div class="vc-brand"><img src="jeri-rota-mark.svg" alt="" crossorigin="anonymous"><div><div class="vc-brand-name">JERI ROTA</div><div class="vc-brand-small">TURISMO PERSONALIZADO</div></div></div><div class="vc-status">'+esc(status)+'</div></header>');
+    html.push('<header class="vc-top"><div class="vc-brand"><img src="jeri-rota-mark.svg" alt="" crossorigin="anonymous"><div><div class="vc-brand-name">JERI ROTA</div><div class="vc-brand-small">'+systemText[locale].branding+'</div></div></div><div class="vc-status">'+esc(status)+'</div></header>');
     html.push('<section class="vc-head"><p class="vc-overline">'+t.sub+'</p><h1>'+t.document+'</h1><div class="vc-reference">'+esc(model.voucher_number||'—')+'</div><div class="vc-id-meta">'+t.reservation+': <strong>'+esc(model.reservation_code||'—')+'</strong><span>·</span>'+t.issued+' '+date(model.issued_at,locale)+'</div></section>');
     html.push('<section class="vc-summary"><div><span>'+t.client+'</span><strong>'+passengers.map(esc).join(' &amp; ')+'</strong></div><div><span>'+t.period+'</span><strong>'+date(period.start,locale)+' – '+date(period.end,locale)+'</strong></div><div><span>'+t.people+'</span><strong>'+esc(model.people||passengers.length)+'</strong></div></section>');
     html.push('<section class="vc-section"><h2>'+t.services+'</h2><div class="vc-service-table"><div class="vc-service-header"><div>'+t.date+'</div><div>'+t.description+'</div><div>'+t.details+'</div></div>');
