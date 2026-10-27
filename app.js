@@ -398,6 +398,7 @@ function openModal(id = null) {
     reservationForm.querySelector('[name="client"]').value = reservation.client;
     reservationForm.querySelector('[name="phone"]').value = reservation.phone;
     reservationForm.querySelector('[name="email"]').value = reservation.email || '';
+    reservationForm.querySelector('[name="holderCpf"]').value = reservation.holderCpf || '';
     reservationForm.querySelector('[name="service"]').value = reservation.service;
     reservationForm.querySelector('[name="date"]').value = reservation.date;
     reservationForm.querySelector('[name="people"]').value = reservation.people;
@@ -453,6 +454,14 @@ reservationForm.addEventListener('submit', event => {
   const partnerOperation = data.partnerOperation || 'propria';
   const netAmount = partnerOperation === 'propria' ? 0 : Math.max(0, Number(data.netAmount) || 0);
   const settledAmount = partnerOperation === 'propria' ? 0 : clamp(Number(data.settledAmount) || 0, 0, netAmount);
+  const holderCpf = String(data.holderCpf||'').replace(/\D/g,'');
+  function cpfValid(value){
+    if(!value)return true;
+    if(!/^\d{11}$/.test(value)||/^(\d)\1{10}$/.test(value))return false;
+    const digit=(length)=>{let n=0;for(let i=0;i<length;i++)n+=Number(value[i])*(length+1-i);const rest=(n*10)%11;return rest===10?0:rest};
+    return digit(9)===Number(value[9])&&digit(10)===Number(value[10]);
+  }
+  if(!cpfValid(holderCpf)){alert('CPF inválido. Confira os 11 dígitos ou deixe o campo vazio.');reservationForm.querySelector('[name="holderCpf"]').focus();return;}
   const currentReservation = activeEditingId ? reservations.find(item => String(item.id) === String(activeEditingId)) : null;
   const reservation = normalizeReservation({
     ...(currentReservation || {}),
@@ -460,6 +469,7 @@ reservationForm.addEventListener('submit', event => {
     client: data.client.trim(),
     phone: data.phone.trim(),
     email: data.email?.trim() || '',
+    holderCpf,
     service: data.service.trim(),
     date: data.date || dateOffset(0),
     people: Math.max(1, Number(data.people)),
