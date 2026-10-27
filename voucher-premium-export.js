@@ -22,6 +22,21 @@
     if(!window.html2canvas)throw new Error('Renderizador HTML indisponível.');
     const {jsPDF}=window.jspdf||{};if(!jsPDF)throw new Error('Gerador de PDF indisponível.');
     await waitForVoucherAssets(container);
+    const cleanPages=[...container.querySelectorAll('[data-voucher-page]')];
+    if(cleanPages.length){
+      const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+      for(let i=0;i<cleanPages.length;i++){
+        const page=cleanPages[i];
+        // Rejeita conteúdo que extrapole o A4, evitando páginas órfãs e cortes.
+        const overflow=page.scrollHeight-page.clientHeight;
+        if(overflow>3)throw new Error('O voucher excedeu a página '+(i+1)+' em '+overflow+' pixels. Reduza as observações ou divida serviços.');
+        const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:page.scrollWidth,windowHeight:page.scrollHeight});
+        if(i)doc.addPage();
+        doc.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,210,297,undefined,'FAST');
+        if(page.classList.contains('vc-terms-page'))doc.link(10,260,190,18,{url:'https://www.jerirota.com.br/termos-e-condicoes/'});
+      }
+      return doc.output('blob');
+    }
     const canvas=await html2canvas(container,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:container.scrollWidth,windowHeight:container.scrollHeight});
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
     const pageWidth=210,pageHeight=297,pixelsPerPage=Math.ceil(canvas.width*(pageHeight/pageWidth));

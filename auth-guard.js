@@ -12,7 +12,7 @@
 
     async function loadCloudData(){
       if(!(currentPage==='index.html'||currentPage===''))return;
-      if(!window.JeriCloudData){await new Promise((resolve,reject)=>{const existing=document.querySelector('script[src^="cloud-data-sync.js"]');if(existing){if(window.JeriCloudData){resolve();return}existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return}const script=document.createElement('script');script.src='cloud-data-sync.js?v=20260907-1';script.onload=resolve;script.onerror=reject;document.body.appendChild(script)})}
+      if(!window.JeriCloudData){await new Promise((resolve,reject)=>{const existing=document.querySelector('script[src^="cloud-data-sync.js"]');if(existing){if(window.JeriCloudData){resolve();return}existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return}const script=document.createElement('script');script.src='cloud-data-sync.js?v=20261027-cpf-1';script.onload=resolve;script.onerror=reject;document.body.appendChild(script)})}
       if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
     }
     try{await loadCloudData()}catch(syncError){console.error('Falha ao carregar dados do Supabase:',syncError);alert('Não foi possível carregar os dados oficiais do Supabase. Verifique a conexão e atualize a página.');location.replace(loginUrl);return}

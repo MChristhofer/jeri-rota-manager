@@ -51,6 +51,7 @@
       boarding_time:snapshot.boarding_time||snapshot.services?.find(item=>item.time)?.time||'',
       payment_status:snapshot.payment_status||'',amount,paid_amount:paid,balance,
       show_value:voucher.show_value??snapshot.show_value??true,
+      holder_cpf_masked:snapshot.holder_cpf_masked||'',
       template:snapshot.template||'classic',language:snapshot.language||'pt',currency:snapshot.currency||'BRL',
       customer_notes:snapshot.customer_notes||'',qr_data_url:qrDataUrl
     };

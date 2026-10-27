@@ -99,6 +99,7 @@
       voucher_scope_key:scopeKey,
       voucher_scope_label:scopeKey==='reservation'?'Reserva completa':'Serviço específico',
       reservation_code:reservation.reservationCode||String(reservation.id),client:reservation.client,
+      holder_cpf_masked:reservation.holderCpf?'***.***.***-'+String(reservation.holderCpf).slice(-2):'',
       phone:reservation.phone||'',email:reservation.email||'',period:{start,end},people:Number(reservation.people)||1,
       passengers:premium.splitPassengers(reservation.client),services,
       boarding:services.find(item=>item.leg!=='VOLTA'&&item.boarding)?.boarding||services.find(item=>item.boarding)?.boarding||reservation.boarding||'A definir',

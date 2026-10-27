@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="dashboard-calendar.css?v=20260826-2" />
   <link rel="stylesheet" href="voucher-module.css?v=20260927-1" />
   <link rel="stylesheet" href="voucher-premium.css?v=20260923-2" />
-  <link rel="stylesheet" href="voucher-clean.css?v=20261027-1" />
+  <link rel="stylesheet" href="voucher-clean.css?v=20261027-2" />
   <link rel="stylesheet" href="reservations-workspace.css?v=20260923-1" />
   <link rel="stylesheet" href="clients-section.css?v=20261017-1" />
 </head>
@@ -213,6 +213,7 @@
             <label>Telefone *<input required name="phone" placeholder="Ex.: (85) 99999-9999" /></label>
              <label>Quantidade de pessoas<input min="1" value="2" name="people" type="number" /></label>
              <label>E-mail <span class="optional-label">opcional</span><input name="email" type="email" autocomplete="email" placeholder="cliente@exemplo.com" /></label>
+             <label>CPF do titular <span class="optional-label">opcional</span><input name="holderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" title="CPF do titular da reserva" /></label>
             <label class="reservation-status-field">Status<select name="status"><option value="Confirmada">Confirmada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></label>
           </div>
         </fieldset>
@@ -261,14 +262,15 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="auth-guard.js?v=20260927-1"></script>
+  <script src="auth-guard.js?v=20261027-cpf-1"></script>
   <script src="finance-rules.js?v=20260907-1"></script>
-  <script src="app.js?v=20260918-2"></script>
+  <script src="app.js?v=20261027-cpf-1"></script>
   <script src="dashboard-calendar.js?v=20260923-2"></script>
-  <script src="voucher-premium-template.js?v=20261027-1"></script>
-  <script src="voucher-clean-template.js?v=20261027-1"></script>
-  <script src="voucher-premium-export.js?v=20260923-1"></script>
-  <script src="voucher-module-premium.js?v=20261027-1"></script>
+  <script src="voucher-premium-template.js?v=20261027-2"></script>
+  <script src="voucher-terms.js?v=20261027-2"></script>
+  <script src="voucher-clean-template.js?v=20261027-2"></script>
+  <script src="voucher-premium-export.js?v=20261027-2"></script>
+  <script src="voucher-module-premium.js?v=20261027-2"></script>
   <script src="reservations-workspace.js?v=20260923-1"></script>
   <script src="clients-section.js?v=20261017-1"></script>
   <script>
