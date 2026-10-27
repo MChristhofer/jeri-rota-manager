@@ -44,12 +44,14 @@
       services:sortServices(snapshot.services||[]).map(service=>({
         title:service.title||'Serviço',date:service.date||'',time:service.time||'',modality:service.modality||'',
         vehicle:service.vehicle||'',boarding:service.boarding||'',dropoff:service.dropoff||'',leg:service.leg||'',
-        image_url:service.image_url||fallbackImage(service.title)
+        image_url:service.image_url||fallbackImage(service.title),
+        title_i18n:service.title_i18n||service.titles||service.translations||{}
       })),
       boarding:snapshot.boarding||'A definir',
       boarding_time:snapshot.boarding_time||snapshot.services?.find(item=>item.time)?.time||'',
       payment_status:snapshot.payment_status||'',amount,paid_amount:paid,balance,
       show_value:voucher.show_value??snapshot.show_value??true,
+      template:snapshot.template||'classic',language:snapshot.language||'pt',currency:snapshot.currency||'BRL',
       customer_notes:snapshot.customer_notes||'',qr_data_url:qrDataUrl
     };
   }
@@ -71,6 +73,7 @@
   }
 
   function render(model){
+    if(model.template==='clean'&&window.JeriVoucherClean)return window.JeriVoucherClean.render(model);
     const passengers=model.passengers.length?model.passengers:[model.client];
     const payment=model.show_value?`<section class="vp-card vp-payment"><div class="vp-card-title">▤ <span>PAGAMENTO</span></div><div class="vp-payment-values"><div><small>Valor da reserva</small><strong>${money(model.amount)}</strong></div><div><small>Sinal recebido</small><strong>${money(model.paid_amount)}</strong></div></div><div class="vp-balance"><span>${model.balance>0?'SALDO NO EMBARQUE':'RESERVA QUITADA'}</span><strong>${model.balance>0?money(model.balance):'PAGO'}</strong></div></section>`:'';
     return`<article class="voucher-sheet" data-voucher-sheet>
