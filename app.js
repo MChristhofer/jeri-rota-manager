@@ -320,7 +320,7 @@ function setSection(section) {
   document.body.dataset.section = section;
   document.querySelectorAll('.content-section').forEach(el => el.classList.toggle('active', el.id === section));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
-  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', clientes: 'Clientes', vouchers: 'Vouchers', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas' };
+  const titles = { dashboard: 'Olá, Jeri Rota', reservas: 'Reservas', clientes: 'Clientes', vouchers: 'Vouchers', operacao: 'Operação diária', financeiro: 'Controle financeiro', prestacao: 'Prestação de contas', hospedagens: 'Hospedagens parceiras' };
   document.getElementById('pageTitle').textContent = titles[section];
   const pageSubtitle = document.getElementById('pageSubtitle');
   pageSubtitle.hidden = section !== 'reservas';
