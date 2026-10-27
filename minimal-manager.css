@@ -1,5 +1,5 @@
-/* Modo mínimo: o Manager expõe Dashboard, Reservas, Clientes, Financeiro, Serviços e Vouchers. */
-.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="clientes"]):not([data-section="servicos"]):not([data-section="financeiro"]):not([data-section="vouchers"]),
+/* Modo mínimo: o Manager expõe Dashboard, Reservas, Clientes, Financeiro, Serviços, Vouchers e Hospedagens. */
+.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="clientes"]):not([data-section="servicos"]):not([data-section="financeiro"]):not([data-section="vouchers"]):not([data-section="hospedagens"]),
 .main-nav a.nav-item,
 .content-section#operacao,
 .content-section#prestacao,
@@ -18,7 +18,8 @@
 .main-nav .nav-item[data-section="clientes"],
 .main-nav .nav-item[data-section="servicos"],
 .main-nav .nav-item[data-section="financeiro"],
-.main-nav .nav-item[data-section="vouchers"]{
+.main-nav .nav-item[data-section="vouchers"],
+.main-nav .nav-item[data-section="hospedagens"]{
   display:flex!important;
 }
 
