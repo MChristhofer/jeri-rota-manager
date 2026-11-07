@@ -9,6 +9,7 @@
 
   try{
     const {data:{user},error}=await client.auth.getUser();if(error||!user){location.replace(loginUrl);return}
+    if((user.email||'').toLowerCase()==='financeiro@jerirota.com.br'){location.replace('financeiro-area.html');return}
 
     async function loadCloudData(){
       if(!(currentPage==='index.html'||currentPage===''))return;
