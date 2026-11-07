@@ -8,6 +8,7 @@
     financeiro:'ph-wallet',
     vouchers:'ph-ticket',
     hospedagens:'ph-bed',
+    acompanhamento:'ph-clipboard-text',
     prestacao:'ph-receipt'
   };
 
