@@ -47,7 +47,7 @@
     const loadNavIcons=()=>{
       if(document.querySelector('script[src^="nav-icons.js"]'))return;
       const script=document.createElement('script');
-      script.src='nav-icons.js?v=20261027-hospedagens-1';
+      script.src='nav-icons.js?v=20261106-acompanhamento-icone-1';
       document.body.appendChild(script);
     };
     loadNavIcons();
