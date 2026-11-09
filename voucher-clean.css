@@ -84,3 +84,43 @@
 .vc-document-page.vc-ultra-compact .vc-validation{min-height:27mm;padding:1.8mm}
 .vc-terms-page .vc-terms-head{padding:1.5mm 0 3mm}
 .vc-terms-page .vc-terms-grid{margin-top:3mm}
+
+
+/* Refinamento premium A4 - 04/11/2026.
+   Distribui as 12 condicoes por toda a altura util sem inserir paginas vazias.
+   A paginacao do exportador continua validando overflow em todos os idiomas. */
+.vc-terms-page .vc-main{display:flex;flex-direction:column;min-height:0}
+.vc-terms-page .vc-terms-head{background:#faf8f3;border-top:.75mm solid #c09a58;border-bottom:1px solid #dce5e8;padding:3.3mm 3.7mm 3mm;margin-top:1.6mm}
+.vc-terms-page .vc-terms-head h1{font-size:5.4mm}
+.vc-terms-page .vc-terms-head p{font-size:2.85mm;line-height:1.38}
+.vc-terms-page .vc-terms-grid{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(6,minmax(max-content,1fr));
+  column-gap:4mm;
+  row-gap:2.5mm;
+  align-content:stretch;
+  margin:3.5mm 0 2.7mm;
+}
+.vc-terms-page .vc-condition{
+  min-width:0;
+  padding:2.1mm 2.8mm 2mm 3mm;
+  border:1px solid #dce4e8;
+  border-left:.8mm solid #c19a58;
+  border-radius:1.3mm;
+  background:#fff;
+  break-inside:avoid;
+}
+.vc-terms-page .vc-condition h3{margin:0 0 1.2mm;font-size:2.95mm;line-height:1.24;color:#15354a}
+.vc-terms-page .vc-condition p{margin:0;font-size:2.62mm;line-height:1.35;color:#344c5c}
+.vc-terms-page .vc-terms-link{
+  margin-top:0;
+  padding:3mm 3.7mm;
+  border-left:.85mm solid #c19a58;
+  border-radius:1mm;
+}
+.vc-document-page:not(.vc-compact):not(.vc-ultra-compact) .vc-service-route{gap:1.15mm;margin-top:1.7mm}
+.vc-document-page:not(.vc-compact):not(.vc-ultra-compact) .vc-service-route span{display:block;border-left:.6mm solid #c19a58;padding:1.1mm 1.6mm;background:#f7f9fa;font-size:2.65mm;line-height:1.33}
+.vc-document-page:not(.vc-compact):not(.vc-ultra-compact) .vc-service-date{font-size:2.95mm}

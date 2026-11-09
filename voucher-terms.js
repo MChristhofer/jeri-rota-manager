@@ -3,7 +3,8 @@
   // Resumo operacional da politica publicada pela Jeri Rota.
   // Não substituir contrato/versão aceita por termos atualizados.
   const url='https://www.jerirota.com.br/termos-e-condicoes/';
-  const version='2026-09-11';
+  // Data da versao atual publicada no site (03/11/2026). A versao aceita na contratacao prevalece.
+  const version='2026-11-03';
   const copies={
     pt:{
       title:'CONDIÇÕES GERAIS DE CONTRATAÇÃO', subtitle:'Resumo das condições operacionais da Jeri Rota',
