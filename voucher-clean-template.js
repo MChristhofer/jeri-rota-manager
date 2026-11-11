@@ -14,6 +14,12 @@
     fr:{branding:'VOYAGES SUR MESURE',leg:{'IDA':'Aller','VOLTA':'Retour','IDA E VOLTA':'Aller-retour','BATE E VOLTA':'Excursion à la journée','SERVIÇO':'Prestation'},modality:{'PRIVATIVO':'Privé','PRIVADO':'Privé','COMPARTILHADO':'Partagé','SEMI-PRIVADO':'Semi-privé','SEMI-PRIVATIVO':'Semi-privé'}},
     es:{branding:'VIAJES PERSONALIZADOS',leg:{'IDA':'Ida','VOLTA':'Regreso','IDA E VOLTA':'Ida y vuelta','BATE E VOLTA':'Excursión de un día','SERVIÇO':'Servicio'},modality:{'PRIVATIVO':'Privado','PRIVADO':'Privado','COMPARTILHADO':'Compartido','SEMI-PRIVADO':'Semiprivado','SEMI-PRIVATIVO':'Semiprivado'}}
   };
+  const formalLabels={
+    pt:{doc:'Nº Doc',name:'Nome',address:'Local de embarque',holder:'Titular',email:'E-mail',phone:'Fone',language:'Idioma',checkin:'Check-In',checkout:'Check-Out',pax:'PAX',item:'Item',check:'Rese. / Chk-In',out:'Check-Out',observations:'Observações',type:'Tipo',passenger:'Passageiro',document:'Docto',birth:'Nascimento',nationality:'Nacionalidade',payer:'Pagante',unknown:'Não informado',portuguese:'Português',important:'INFORMAÇÕES IMPORTANTES',responsible:'Responsável',website:'www.jerirota.com.br',valueTotal:'Valor da reserva',valuePaid:'Sinal / valor recebido',valueBalance:'Saldo a pagar',validation:'Validação',terms:'CONDIÇÕES GERAIS'},
+    en:{doc:'Document',name:'Name',address:'Pick-up point',holder:'Lead traveller',email:'E-mail',phone:'Phone',language:'Language',checkin:'Check-In',checkout:'Check-Out',pax:'PAX',item:'Item',check:'Booking / Check-In',out:'Check-Out',observations:'Notes',type:'Type',passenger:'Traveller',document:'Document',birth:'Birth date',nationality:'Nationality',payer:'Paying',unknown:'Not informed',portuguese:'English',important:'IMPORTANT INFORMATION',responsible:'Responsible',website:'www.jerirota.com.br',valueTotal:'Booking total',valuePaid:'Amount received',valueBalance:'Balance',validation:'Validation',terms:'GENERAL TERMS'},
+    fr:{doc:'Document',name:'Nom',address:'Lieu de prise en charge',holder:'Titulaire',email:'E-mail',phone:'Téléphone',language:'Langue',checkin:'Check-In',checkout:'Check-Out',pax:'PAX',item:'Prestation',check:'Réservation / Check-In',out:'Check-Out',observations:'Observations',type:'Type',passenger:'Voyageur',document:'Document',birth:'Naissance',nationality:'Nationalité',payer:'Payant',unknown:'Non renseigné',portuguese:'Français',important:'INFORMATIONS IMPORTANTES',responsible:'Responsable',website:'www.jerirota.com.br',valueTotal:'Total',valuePaid:'Montant reçu',valueBalance:'Solde',validation:'Validation',terms:'CONDITIONS GÉNÉRALES'},
+    es:{doc:'Documento',name:'Nombre',address:'Punto de recogida',holder:'Titular',email:'E-mail',phone:'Teléfono',language:'Idioma',checkin:'Check-In',checkout:'Check-Out',pax:'PAX',item:'Servicio',check:'Reserva / Check-In',out:'Check-Out',observations:'Observaciones',type:'Tipo',passenger:'Pasajero',document:'Documento',birth:'Nacimiento',nationality:'Nacionalidad',payer:'Pagante',unknown:'No informado',portuguese:'Español',important:'INFORMACIÓN IMPORTANTE',responsible:'Responsable',website:'www.jerirota.com.br',valueTotal:'Valor de la reserva',valuePaid:'Importe recibido',valueBalance:'Saldo',validation:'Validación',terms:'CONDICIONES GENERALES'}
+  };
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
   function systemTerm(value,locale,group){return systemText[locale][group]?.[normalize(value)]||value}
   const esc=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,67 +65,98 @@
     return pages;
   }
   function header(t,locale,model){
-    return '<header class="vc-top"><div class="vc-brand"><img src="jeri-rota-mark.svg" crossorigin="anonymous" alt=""><div>'+
+    return '<header class="vc-top vc-formal-top"><div class="vc-brand"><img src="jeri-rota-mark.svg" crossorigin="anonymous" alt=""><div>'+
       '<strong>JERI ROTA</strong><small>'+esc(systemText[locale].branding)+'</small></div></div>'+
       '<div class="vc-company"><strong>JERI ROTA · AGÊNCIA DE TURISMO</strong>'+
       '<span>CNPJ / Cadastur 63.754.344/0001-06</span>'+
-      '<span>contato@jerirota.com.br · +55 88 98227-4666</span>'+
-      '<span>www.jerirota.com.br · Fortaleza/CE · Brasil</span></div></header>';
+      '<span>+55 88 98227-4666 · contato@jerirota.com.br</span>'+
+      '<span>www.jerirota.com.br · Ceará · Brasil</span></div></header>';
   }
   function footer(locale,model,index,total){
-    const place={pt:'Página',en:'Page',fr:'Page',es:'Página'}[locale];
-    return '<footer class="vc-footer"><span>JERI ROTA · '+esc(model.voucher_number||'—')+'</span><span>'+place+' '+index+' / '+total+'</span></footer>';
+    const issued=date(model.issued_at,locale);
+    return '<footer class="vc-footer vc-formal-footer"><span>www.jerirota.com.br &nbsp; v1.0</span><span>'+index+' de '+total+'</span><span>'+esc(issued)+'</span></footer>';
   }
-  function serviceRow(service,locale,t){
-    const details=tags(service,locale,t);
-    // Locais são exibidos uma única vez, em linha própria.
-    const pickup=service.boarding||'';
-    const destination=service.dropoff||'';
-    const route=pickup||destination?
-      '<div class="vc-service-route">'+(pickup?'<span>'+esc(t.boarding)+': '+esc(pickup)+'</span>':'')+
-      (destination?'<span>'+esc(t.dropoff)+': '+esc(destination)+'</span>':'')+'</div>':'';
-    return '<div class="vc-service-row">'+
-      '<div class="vc-service-date">'+esc(shortDate(service.date,locale))+'</div>'+
-      '<div class="vc-service-main"><strong>'+esc(title(service,locale))+'</strong>'+route+'</div>'+
-      '<div class="vc-service-details">'+esc(details.join(' · ')||'—')+'</div></div>';
+  function serviceRow(service,locale,t,people){
+    const details=[];
+    if(service?.time)details.push(t.time+': '+service.time);
+    if(service?.leg)details.push(t.leg+': '+systemTerm(service.leg,locale,'leg'));
+    if(service?.modality)details.push(t.type+': '+systemTerm(service.modality,locale,'modality'));
+    if(service?.vehicle)details.push(t.vehicle+': '+service.vehicle);
+    if(service?.boarding)details.push(t.boarding+': '+service.boarding);
+    if(service?.dropoff)details.push(t.dropoff+': '+service.dropoff);
+    const check=date(service?.date,locale);
+    return '<div class="vc-formal-service-row">'+
+      '<div class="vc-formal-item"><strong>'+esc(title(service,locale))+'</strong>'+(service?.modality?'<small>'+esc(systemTerm(service.modality,locale,'modality'))+'</small>':'')+'</div>'+
+      '<div>'+esc(check)+'</div><div>—</div><div>'+esc(details.join(' · ')||'—')+'</div><div class="vc-formal-pax">'+esc(people||1)+'</div></div>';
+  }
+  function passengerRows(model,locale,f){
+    const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[model.client||'—'];
+    return passengers.map((name,index)=>'<div class="vc-formal-passenger-row">'+
+      '<div>'+esc(f.payer)+'</div><div>'+esc(name)+'</div><div>'+(index===0&&model.holder_cpf_masked?esc(model.holder_cpf_masked):'—')+'</div><div>—</div><div>—</div></div>').join('');
+  }
+  function importantBlock(model,locale,f){
+    const items=locale==='pt'?[
+      'Confira os dados deste voucher e comunique qualquer divergência antes da execução do serviço.',
+      'Para serviços compartilhados, esteja pronto no local e horário informados; atrasos podem inviabilizar o embarque.',
+      'Horários, veículos e sequência de embarques podem sofrer ajustes por trânsito, clima, maré, segurança ou necessidade operacional.',
+      'Bagagens especiais, excesso de volumes e equipamentos devem ser informados previamente à Jeri Rota.',
+      'Cancelamentos, remarcações, no-show e condições específicas seguem os Termos e Condições aplicáveis à reserva.'
+    ]:[
+      'Check the information on this voucher and report any discrepancy before the service.',
+      'For shared services, be ready at the informed place and time.',
+      'Times, vehicles and routes may change due to traffic, weather, safety or operational needs.',
+      'Special or excess luggage must be informed in advance.',
+      'Cancellations, changes and no-show follow the applicable booking terms.'
+    ];
+    const note=model.customer_notes?'<p class="vc-formal-customer-note"><strong>Observação:</strong> '+esc(model.customer_notes)+'</p>':'';
+    return '<section class="vc-formal-important"><h2>'+esc(f.important)+'</h2>'+items.map((item,index)=>'<p><b>'+(index+1)+' - </b>'+esc(item)+'</p>').join('')+note+'</section>';
   }
   function page1(model,locale,t,services,number,total,qrPage){
+    const f=formalLabels[locale]||formalLabels.pt;
     const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[model.client||'—'];
     const period=model.period||{};
+    const titular=passengers[0]||model.client||'—';
     const main=[];
-    main.push('<section class="vc-head"><div class="vc-document-title"><div><span>'+t.sub+'</span><h1>'+t.document+'</h1></div><div class="vc-status '+(model.status==='cancelled'?'vc-cancelled':'')+'">'+esc(model.status==='cancelled'?t.cancelled:t.status)+'</div></div>'+
-      '<div class="vc-reference">'+esc(model.voucher_number||'—')+'</div><div class="vc-id-meta">'+t.reservation+': '+esc(model.reservation_code||'—')+' &nbsp; · &nbsp; '+t.issued+' '+esc(date(model.issued_at,locale))+'</div></section>');
+    main.push('<section class="vc-formal-sale-bar">VOUCHER Nº ['+esc(model.voucher_number||'—')+'] &nbsp; - &nbsp; Data: '+esc(date(model.issued_at,locale))+'</section>');
     if(number===1){
-      main.push('<section class="vc-summary"><div><span>'+t.client+'</span><strong>'+passengers.map(esc).join(' / ')+'</strong>'+
-        (model.holder_cpf_masked?'<small>CPF: '+esc(model.holder_cpf_masked)+'</small>':'')+'</div>'+
-        '<div><span>'+t.period+'</span><strong>'+esc(date(period.start,locale))+' – '+esc(date(period.end,locale))+'</strong></div>'+
-        '<div><span>'+t.people+'</span><strong>'+esc(model.people||passengers.length)+'</strong></div></section>');
+      main.push('<section class="vc-formal-client">'+
+        '<div><b>'+esc(f.doc)+':</b> '+esc(model.holder_cpf_masked||f.unknown)+'</div><div><b>'+esc(f.name)+':</b> '+esc(model.client||f.unknown)+'</div>'+
+        '<div class="wide"><b>'+esc(f.address)+':</b> '+esc(model.boarding||f.unknown)+'</div>'+
+        '<div><b>'+esc(f.holder)+':</b> '+esc(titular)+'</div><div><b>'+esc(f.email)+':</b> '+esc(model.email||f.unknown)+'</div>'+
+        '<div><b>'+esc(f.phone)+':</b> '+esc(model.phone||f.unknown)+'</div><div><b>'+esc(f.language)+':</b> '+esc(f.portuguese)+'</div>'+
+        '<div class="vc-formal-dates"><span><b>'+esc(f.checkin)+':</b> '+esc(date(period.start,locale))+'</span><span><b>'+esc(f.checkout)+':</b> '+esc(date(period.end,locale))+'</span><span><b>'+esc(f.pax)+':</b> '+esc(model.people||passengers.length)+'</span></div>'+
+      '</section>');
     }
-    main.push('<section class="vc-section vc-services"><h2>'+t.services+'</h2><div class="vc-service-table"><div class="vc-service-header"><div>'+t.date+'</div><div>'+t.description+'</div><div>'+t.details+'</div></div>');
-    if(!services.length)main.push('<div class="vc-no-services">'+t.noServices+'</div>');
-    main.push(services.map(item=>serviceRow(item,locale,t)).join(''));
-    main.push('</div></section>');
+    main.push('<section class="vc-formal-services"><div class="vc-formal-table-head"><div>'+esc(f.item)+'</div><div>'+esc(f.check)+'</div><div>'+esc(f.out)+'</div><div>'+esc(f.observations)+'</div><div>'+esc(f.pax)+'</div></div>'+
+      (services.length?services.map(item=>serviceRow(item,locale,t,model.people||passengers.length)).join(''):'<div class="vc-no-services">'+esc(t.noServices)+'</div>')+
+      '</section>');
+    if(number===1){
+      main.push('<section class="vc-formal-passengers"><div class="vc-formal-passenger-head"><div>'+esc(f.type)+'</div><div>'+esc(f.passenger)+'</div><div>'+esc(f.document)+'</div><div>'+esc(f.birth)+'</div><div>'+esc(f.nationality)+'</div></div>'+passengerRows(model,locale,f)+'</section>');
+    }
     if(qrPage){
-      if(model.boarding||model.boarding_time)main.push('<section class="vc-pickup"><strong>'+t.pickup+'</strong><span>'+esc(model.boarding||t.pending)+(model.boarding_time?' · '+t.time+': '+esc(model.boarding_time):'')+'</span></section>');
-      if(model.show_value)main.push('<section class="vc-money"><div><small>'+t.total+'</small><strong>'+esc(cash(model.amount,model.currency,locale))+'</strong></div><div><small>'+t.paid+'</small><strong>'+esc(cash(model.paid_amount,model.currency,locale))+'</strong></div><div><small>'+t.balance+'</small><strong>'+esc(cash(model.balance,model.currency,locale))+'</strong></div></section>');
-      if(model.customer_notes)main.push('<section class="vc-notes"><strong>'+t.notes+'</strong><p>'+esc(model.customer_notes)+'</p></section>');
-      main.push('<section class="vc-validation"><div class="vc-validation-text"><strong>'+t.validation+'</strong><span>'+t.scan+'</span><b>'+esc(model.voucher_number||'—')+'</b></div>'+
-        (model.qr_data_url?'<img class="vc-qr vp-qr" src="'+esc(model.qr_data_url)+'" alt="QR de validação">':'<div class="vc-qr vp-qr vp-qr-pending">'+t.noQr+'</div>')+
-        '<div class="vc-assistance"><strong>'+t.support+'</strong><b>+55 88 98227-4666</b><small>contato@jerirota.com.br</small></div></section>');
-    }else{
-      main.push('<div class="vc-continuation">'+esc(model.voucher_number||'—')+' · '+t.services+'</div>');
+      if(model.show_value){
+        main.push('<section class="vc-formal-money"><div><span>'+esc(f.valueTotal)+'</span><strong>'+esc(cash(model.amount,model.currency,locale))+'</strong></div><div><span>'+esc(f.valuePaid)+'</span><strong>'+esc(cash(model.paid_amount,model.currency,locale))+'</strong></div><div><span>'+esc(f.valueBalance)+'</span><strong>'+esc(cash(model.balance,model.currency,locale))+'</strong></div></section>');
+      }
+      main.push(importantBlock(model,locale,f));
+      main.push('<section class="vc-formal-validation"><div><strong>'+esc(f.validation)+'</strong><p>'+esc(t.scan)+'</p><b>'+esc(model.voucher_number||'—')+'</b></div>'+
+        (model.qr_data_url?'<img class="vc-qr vp-qr" src="'+esc(model.qr_data_url)+'" alt="QR de validação">':'<div class="vc-qr vp-qr vp-qr-pending">'+esc(t.noQr)+'</div>')+
+        '<div><strong>Jeri Rota</strong><p>+55 88 98227-4666<br>contato@jerirota.com.br<br>www.jerirota.com.br</p></div></section>');
     }
-    return '<section class="vc-page vc-document-page" data-voucher-page>'+header(t,locale,model)+'<main class="vc-main">'+main.join('')+'</main>'+footer(locale,model,number,total)+'</section>';
+    return '<section class="vc-page vc-document-page vc-formal-page" data-voucher-page>'+header(t,locale,model)+'<main class="vc-main vc-formal-main">'+main.join('')+'</main>'+footer(locale,model,number,total)+'</section>';
   }
   function termsPage(model,locale,t,number,total){
     const terms=window.JeriVoucherTerms;
     const copy=terms?.translations?.[locale];
+    const f=formalLabels[locale]||formalLabels.pt;
     if(!copy)throw new Error('Política geral indisponível para o idioma selecionado.');
-    const clauses=copy.clauses.map((item,index)=>'<div class="vc-condition"><h3>'+(index+1)+'. '+esc(item[0])+'</h3><p>'+esc(item[1])+'</p></div>').join('');
-    return '<section class="vc-page vc-terms-page" data-voucher-page>'+
-      '<main class="vc-main"><div class="vc-terms-head"><span>'+esc(model.voucher_number||'—')+'</span><h1>'+esc(copy.title)+'</h1><h2>'+esc(copy.subtitle)+'</h2><p>'+esc(copy.summary)+'</p></div>'+
-      '<div class="vc-terms-grid">'+clauses+'</div><div class="vc-terms-link"><strong>'+esc(copy.link)+'</strong><span>'+esc(terms.url)+'</span><small>Versão publicada no site em '+esc(terms.version)+' · '+esc(copy.footer)+'</small></div></main>'+
-      footer(locale,model,number,total)+'</section>';
+    const clauses=copy.clauses.map((item,index)=>'<div class="vc-formal-condition"><h3>'+(index+1)+' - '+esc(item[0])+'</h3><p>'+esc(item[1])+'</p></div>').join('');
+    return '<section class="vc-page vc-terms-page vc-formal-page" data-voucher-page>'+
+      header(t,locale,model)+
+      '<main class="vc-main vc-formal-main"><section class="vc-formal-terms-head"><span>'+esc(model.voucher_number||'—')+'</span><h1>'+esc(f.terms)+' · JERI ROTA</h1><p>'+esc(copy.summary)+'</p></section>'+
+      '<section class="vc-formal-terms-list">'+clauses+'</section>'+
+      '<section class="vc-formal-terms-link"><strong>'+esc(copy.link)+':</strong> '+esc(terms.url)+'<br><small>Versão '+esc(terms.version)+' · '+esc(copy.footer)+'</small></section>'+
+      '<section class="vc-formal-responsible"><div><strong>'+esc(f.responsible)+': Equipe Jeri Rota</strong><br>E-mail: contato@jerirota.com.br<br>Celular/Whats: +55 88 98227-4666</div></section>'+
+      '</main>'+footer(locale,model,number,total)+'</section>';
   }
   function render(model){
     const locale=lang(model.language),t=languages[locale],services=Array.isArray(model.services)?model.services:[];
