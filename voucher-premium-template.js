@@ -38,6 +38,7 @@
       issued_at:voucher.issued_at||new Date().toISOString(),
       status:voucher.status||'issued',
       client:snapshot.client||'Cliente',
+      phone:snapshot.phone||'',email:snapshot.email||'',
       passengers:Array.isArray(snapshot.passengers)&&snapshot.passengers.length?snapshot.passengers:splitPassengers(snapshot.client),
       period:snapshot.period||{},
       people:Number(snapshot.people)||1,
