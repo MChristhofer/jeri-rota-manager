@@ -84,3 +84,44 @@
 .vc-document-page.vc-ultra-compact .vc-validation{min-height:27mm;padding:1.8mm}
 .vc-terms-page .vc-terms-head{padding:1.5mm 0 3mm}
 .vc-terms-page .vc-terms-grid{margin-top:3mm}
+
+
+/* FORMAL JERI ROTA V2 */
+.vc-formal-page{padding:8mm 9mm 7mm;color:#111;font-family:Arial,"DM Sans",sans-serif}
+.vc-formal-top{min-height:25mm;padding:2.2mm 3mm 3mm;border:1px solid #6f7478;border-bottom:0;align-items:flex-start}
+.vc-formal-top .vc-brand{gap:3mm}.vc-formal-top .vc-brand img{width:18mm;height:19mm}.vc-formal-top .vc-brand strong{font-size:5.4mm;color:#0b2f49}.vc-formal-top .vc-brand small{font-size:1.7mm;color:#b8892c}
+.vc-formal-top .vc-company{font-size:2.25mm;color:#222;line-height:1.35;text-align:left;min-width:105mm}.vc-formal-top .vc-company strong{font-size:3.5mm;color:#111;margin-bottom:1mm}
+.vc-formal-main{border-left:1px solid #6f7478;border-right:1px solid #6f7478;flex:1}
+.vc-formal-sale-bar{min-height:8mm;border-top:1px solid #6f7478;border-bottom:1px solid #6f7478;display:flex;align-items:center;justify-content:center;padding:1.4mm 3mm;font-size:4mm;font-weight:800;color:#111;letter-spacing:.05mm}
+.vc-formal-client{display:grid;grid-template-columns:1fr 1.25fr;gap:0;border-bottom:1px solid #6f7478;font-size:2.55mm;line-height:1.35}
+.vc-formal-client>div{padding:1.2mm 2.5mm;min-width:0;overflow-wrap:anywhere}.vc-formal-client .wide{grid-column:1/-1}
+.vc-formal-client b{font-weight:800}.vc-formal-dates{grid-column:1/-1!important;display:grid;grid-template-columns:1fr 1fr .8fr;gap:3mm;padding-top:1.5mm!important;padding-bottom:1.5mm!important;border-top:1px solid #e3e3e3}
+.vc-formal-services{border-bottom:1px solid #6f7478}
+.vc-formal-table-head,.vc-formal-service-row{display:grid;grid-template-columns:minmax(0,1.45fr) 28mm 24mm minmax(0,1.4fr) 12mm;align-items:start}
+.vc-formal-table-head{background:#d7d9db;border-bottom:1px solid #6f7478;font-size:2.35mm;font-weight:800;padding:1mm 1.5mm}
+.vc-formal-service-row{font-size:2.35mm;line-height:1.28;padding:1.7mm 1.5mm;border-bottom:1px solid #d3d3d3;min-height:11mm}.vc-formal-service-row:last-child{border-bottom:0}
+.vc-formal-service-row>div,.vc-formal-table-head>div{padding:0 1mm;min-width:0;overflow-wrap:anywhere}
+.vc-formal-item strong{display:block;font-size:2.55mm}.vc-formal-item small{display:block;margin-top:.8mm;text-transform:uppercase;font-size:2mm;color:#555}
+.vc-formal-pax{text-align:center;font-weight:700}
+.vc-formal-passengers{border-bottom:1px solid #6f7478;padding:2mm 1.5mm 2.5mm}
+.vc-formal-passenger-head,.vc-formal-passenger-row{display:grid;grid-template-columns:21mm minmax(0,1.6fr) 33mm 28mm 30mm;gap:0;font-size:2.25mm}
+.vc-formal-passenger-head{background:#d7d9db;font-weight:800;border:1px solid #b7b7b7}
+.vc-formal-passenger-head>div,.vc-formal-passenger-row>div{padding:1mm 1.4mm;overflow-wrap:anywhere}
+.vc-formal-passenger-row{border-left:1px solid #d6d6d6;border-right:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6}
+.vc-formal-money{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #6f7478;background:#faf7ef}
+.vc-formal-money>div{padding:2mm 3mm;border-right:1px solid #cfcfcf}.vc-formal-money>div:last-child{border-right:0}
+.vc-formal-money span{display:block;font-size:2.15mm;color:#555;margin-bottom:.8mm}.vc-formal-money strong{font-size:3mm;color:#0d2f46}
+.vc-formal-important{padding:2.5mm 2.5mm 2mm;border-bottom:1px solid #6f7478}
+.vc-formal-important h2{font-size:2.8mm;margin:0 0 1mm;padding-bottom:.8mm;border-bottom:1px solid #6f7478;color:#111}
+.vc-formal-important p{font-size:2.15mm;line-height:1.32;margin:.65mm 0;color:#111}.vc-formal-customer-note{margin-top:1.4mm!important;padding-top:1mm;border-top:1px dashed #aaa}
+.vc-formal-validation{display:grid;grid-template-columns:minmax(0,1fr) 24mm 55mm;gap:4mm;align-items:center;padding:2.5mm 3mm;margin-top:auto;border-bottom:1px solid #6f7478;min-height:29mm}
+.vc-formal-validation strong{font-size:2.55mm;color:#111}.vc-formal-validation p{font-size:2.15mm;line-height:1.3;margin:1mm 0;color:#333}.vc-formal-validation b{font-size:2.3mm}
+.vc-formal-footer{border:1px solid #6f7478;border-top:0;margin-top:0;padding:2mm 1mm;font-size:2.1mm;color:#111;display:grid;grid-template-columns:1fr auto 1fr}.vc-formal-footer span:last-child{text-align:right}
+.vc-formal-terms-head{padding:3mm;border-bottom:1px solid #6f7478}.vc-formal-terms-head span{font-size:2.3mm;font-weight:700}.vc-formal-terms-head h1{font-size:4.2mm;margin:1mm 0;color:#111}.vc-formal-terms-head p{font-size:2.3mm;line-height:1.35;margin:0;color:#222}
+.vc-formal-terms-list{padding:2.5mm 3mm;display:grid;gap:1.2mm;align-content:start}.vc-formal-condition{break-inside:avoid}.vc-formal-condition h3{font-size:2.35mm;margin:0 0 .4mm;color:#111}.vc-formal-condition p{font-size:2.12mm;line-height:1.28;margin:0;color:#111}
+.vc-formal-terms-link{margin:1mm 3mm 0;padding:2mm 0;border-top:1px solid #999;font-size:2.2mm;line-height:1.35}.vc-formal-terms-link small{font-size:2mm;color:#555}
+.vc-formal-responsible{margin:4mm 3mm 0 auto;width:95mm;border-top:1px solid #444;padding-top:2mm;text-align:right;font-size:2.5mm;line-height:1.55}.vc-formal-responsible strong{font-size:2.7mm}
+.vc-formal-page.vc-compact .vc-formal-service-row{padding:1.1mm 1.3mm;min-height:9.5mm}.vc-formal-page.vc-compact .vc-formal-important p{font-size:2mm;margin:.4mm 0}.vc-formal-page.vc-ultra-compact .vc-formal-service-row{padding:.7mm 1.2mm;min-height:8.5mm}.vc-formal-page.vc-ultra-compact .vc-formal-important p{font-size:1.9mm;line-height:1.22}
+.vc-formal-page.vc-ultra-compact .vc-formal-validation{min-height:25mm;padding:1.7mm 2.5mm}
+@media(max-width:900px){.voucher-preview-shell .vc-formal-page{font-size:inherit}}
+@media print{.vc-formal-page{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
