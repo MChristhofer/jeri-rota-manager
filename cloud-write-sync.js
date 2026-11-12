@@ -152,39 +152,27 @@
     try{if(typeof getReservations==='function')reservations=getReservations();if(typeof renderAll==='function')renderAll()}catch{}
   }
 
-  form.addEventListener('submit',event=>{
-    // Captura a identidade e o CPF ANTES do app fechar/resetar o formulário.
-    // O listener usa capture=true para executar antes do handler principal do app.
-    const submittedId=String(form.dataset.editingReservationId||'');
-    const beforeIds=new Set(read(RESERVATIONS_KEY).map(item=>String(item.id)));
-    const cpfSnapshot=String(form.elements?.holderCpf?.value||'').replace(/\D/g,'');
-    setTimeout(async()=>{
-      // Se a validação principal impediu o submit, não sincronizar.
-      if(event.defaultPrevented&&document.activeElement===form.elements?.holderCpf)return;
-      const list=read(RESERVATIONS_KEY);
-      let reservation=submittedId?list.find(item=>String(item.id)===submittedId):list.find(item=>!beforeIds.has(String(item.id)));
-      if(!reservation)reservation=list[list.length-1]||null;
-      if(!reservation)return;
-
-      // Garante que o valor capturado no formulário sobreviva a qualquer refresh
-      // concorrente do cache local antes do envio ao Supabase.
-      reservation={...reservation,holderCpf:cpfSnapshot};
-      const index=list.findIndex(item=>String(item.id)===String(reservation.id));
-      if(index>=0){
-        list[index]={...list[index],holderCpf:cpfSnapshot};
-        localStorage.setItem(RESERVATIONS_KEY,JSON.stringify(list));
+  async function handleSavedReservation(reservation){
+    if(!reservation)return;
+    try{
+      await syncReservation({...reservation});
+      if(window.JERI_PENDING_RESERVATION_SYNC&&String(window.JERI_PENDING_RESERVATION_SYNC.id)===String(reservation.id)){
+        window.JERI_PENDING_RESERVATION_SYNC=null;
       }
+      if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
+    }catch(error){
+      console.error('Falha ao salvar reserva no Supabase:',error);
+      try{await restoreOfficialCloudState()}catch(refreshError){console.error('Falha ao restaurar dados oficiais:',refreshError)}
+      alert('Não foi possível salvar esta alteração no Supabase. Os dados oficiais do banco foram restaurados. Verifique a conexão e tente novamente.');
+    }
+  }
 
-      try{
-        await syncReservation(reservation);
-        if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
-      }catch(error){
-        console.error('Falha ao salvar reserva no Supabase:',error);
-        try{await restoreOfficialCloudState()}catch(refreshError){console.error('Falha ao restaurar dados oficiais:',refreshError)}
-        alert('Não foi possível salvar esta alteração no Supabase. Os dados oficiais do banco foram restaurados. Verifique a conexão e tente novamente.');
-      }
-    },0);
-  },true);
+  window.addEventListener('jeri:reservation-saved',event=>{
+    handleSavedReservation(event.detail?.reservation);
+  });
+
+  const pending=window.JERI_PENDING_RESERVATION_SYNC;
+  if(pending)handleSavedReservation(pending);
 
   window.JeriCloudWrite={syncReservation,restoreOfficialCloudState};
 })();
