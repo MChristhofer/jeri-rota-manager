@@ -470,6 +470,7 @@ reservationForm.addEventListener('submit', event => {
     phone: data.phone.trim(),
     email: data.email?.trim() || '',
     holderCpf,
+    boarding: data.boarding?.trim() || '',
     service: data.service.trim(),
     date: data.date || dateOffset(0),
     people: Math.max(1, Number(data.people)),
@@ -493,6 +494,9 @@ reservationForm.addEventListener('submit', event => {
     reservations.push(reservation);
   }
   saveReservations();
+  const syncSnapshot = JSON.parse(JSON.stringify(reservation));
+  window.JERI_PENDING_RESERVATION_SYNC = syncSnapshot;
+  window.dispatchEvent(new CustomEvent('jeri:reservation-saved',{detail:{reservation:syncSnapshot}}));
   closeModal();
   renderAll();
   setSection('reservas');
