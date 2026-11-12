@@ -23,6 +23,9 @@
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
   function systemTerm(value,locale,group){return systemText[locale][group]?.[normalize(value)]||value}
   const esc=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function brandMark(){
+    return '<svg class="vc-inline-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 648" role="img" aria-label="Jeri Rota"><defs><linearGradient id="vcGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9d7627"/><stop offset=".28" stop-color="#e3bd62"/><stop offset=".55" stop-color="#f4d27e"/><stop offset=".78" stop-color="#b48733"/><stop offset="1" stop-color="#e6bf65"/></linearGradient></defs><path fill="url(#vcGold)" fill-rule="evenodd" d="M249 0 L142 26 L70 81 L11 184 L0 276 L22 367 L84 466 L255 344 L257 327 L203 270 L231 216 L228 261 L329 322 L336 347 L322 378 L171 541 L187 590 L260 647 L359 554 L454 432 L498 339 L511 254 L487 153 L436 77 L340 15 Z M58 226 L88 152 L141 97 L207 66 L283 62 L351 86 L408 134 L438 183 L454 259 L443 287 L402 276 L326 230 L252 164 L161 243 L84 285 L68 286 L58 277 Z"/></svg>';
+  }
   function lang(value){return Object.prototype.hasOwnProperty.call(languages,value)?value:'pt'}
   function date(value,locale){
     if(!value)return '—';
@@ -65,7 +68,7 @@
     return pages;
   }
   function header(t,locale,model){
-    return '<header class="vc-top vc-formal-top"><div class="vc-brand"><img src="jeri-rota-mark.svg" crossorigin="anonymous" alt=""><div>'+
+    return '<header class="vc-top vc-formal-top"><div class="vc-brand">'+brandMark()+'<div>'+
       '<strong>JERI ROTA</strong><small>'+esc(systemText[locale].branding)+'</small></div></div>'+
       '<div class="vc-company"><strong>JERI ROTA · AGÊNCIA DE TURISMO</strong>'+
       '<span>CNPJ / Cadastur 63.754.344/0001-06</span>'+
@@ -94,22 +97,38 @@
     return passengers.map((name,index)=>'<div class="vc-formal-passenger-row">'+
       '<div>'+esc(f.payer)+'</div><div>'+esc(name)+'</div><div>'+(index===0&&model.holder_cpf_masked?esc(model.holder_cpf_masked):'—')+'</div><div>—</div><div>—</div></div>').join('');
   }
+  function firstPageClauseCount(serviceCount){
+    if(serviceCount<=2)return 7;
+    if(serviceCount<=4)return 5;
+    if(serviceCount<=6)return 3;
+    return 1;
+  }
   function importantBlock(model,locale,f){
     const items=locale==='pt'?[
-      'Confira os dados deste voucher e comunique qualquer divergência antes da execução do serviço.',
-      'Para serviços compartilhados, esteja pronto no local e horário informados; atrasos podem inviabilizar o embarque.',
-      'Horários, veículos e sequência de embarques podem sofrer ajustes por trânsito, clima, maré, segurança ou necessidade operacional.',
-      'Bagagens especiais, excesso de volumes e equipamentos devem ser informados previamente à Jeri Rota.',
-      'Cancelamentos, remarcações, no-show e condições específicas seguem os Termos e Condições aplicáveis à reserva.'
+      'Confira todos os dados do voucher antes do serviço e comunique qualquer divergência à equipe Jeri Rota.',
+      'Em serviços compartilhados ou privativos, horários, disponibilidade e modalidade seguem a confirmação específica da reserva.',
+      'Informe previamente idades de crianças, quantidade de bagagens e itens especiais para validação da opção adequada ao grupo.',
+      'Pontos de encontro, horários e orientações de embarque devem ser conferidos antes da execução do serviço.',
+      'As condições de pagamento, parcelamento e eventuais taxas são informadas antes da confirmação e podem variar conforme o serviço.'
     ]:[
-      'Check the information on this voucher and report any discrepancy before the service.',
-      'For shared services, be ready at the informed place and time.',
-      'Times, vehicles and routes may change due to traffic, weather, safety or operational needs.',
-      'Special or excess luggage must be informed in advance.',
-      'Cancellations, changes and no-show follow the applicable booking terms.'
+      'Check all voucher information before the service and report any discrepancy to Jeri Rota.',
+      'Times, availability and service type follow the specific booking confirmation.',
+      'Inform children ages, baggage quantity and special items in advance.',
+      'Check meeting points, times and boarding instructions before the service.',
+      'Payment conditions may vary according to the booked service.'
     ];
     const note=model.customer_notes?'<p class="vc-formal-customer-note"><strong>Observação:</strong> '+esc(model.customer_notes)+'</p>':'';
     return '<section class="vc-formal-important"><h2>'+esc(f.important)+'</h2>'+items.map((item,index)=>'<p><b>'+(index+1)+' - </b>'+esc(item)+'</p>').join('')+note+'</section>';
+  }
+  function firstPageTerms(model,locale,serviceCount){
+    const terms=window.JeriVoucherTerms;
+    const copy=terms?.translations?.[locale];
+    if(!copy)return '';
+    const count=Math.min(firstPageClauseCount(serviceCount),copy.clauses.length);
+    const clauses=copy.clauses.slice(0,count);
+    return '<section class="vc-formal-first-terms"><h2>TERMOS E CONDIÇÕES ESSENCIAIS</h2>'+
+      clauses.map((item,index)=>'<div><b>'+(index+1)+' - '+esc(item[0])+':</b> '+esc(item[1])+'</div>').join('')+
+      '<small>Continua na página seguinte.</small></section>';
   }
   function page1(model,locale,t,services,number,total,qrPage){
     const f=formalLabels[locale]||formalLabels.pt;
@@ -138,23 +157,25 @@
         main.push('<section class="vc-formal-money"><div><span>'+esc(f.valueTotal)+'</span><strong>'+esc(cash(model.amount,model.currency,locale))+'</strong></div><div><span>'+esc(f.valuePaid)+'</span><strong>'+esc(cash(model.paid_amount,model.currency,locale))+'</strong></div><div><span>'+esc(f.valueBalance)+'</span><strong>'+esc(cash(model.balance,model.currency,locale))+'</strong></div></section>');
       }
       main.push(importantBlock(model,locale,f));
+      main.push(firstPageTerms(model,locale,services.length));
       main.push('<section class="vc-formal-validation"><div><strong>'+esc(f.validation)+'</strong><p>'+esc(t.scan)+'</p><b>'+esc(model.voucher_number||'—')+'</b></div>'+
         (model.qr_data_url?'<img class="vc-qr vp-qr" src="'+esc(model.qr_data_url)+'" alt="QR de validação">':'<div class="vc-qr vp-qr vp-qr-pending">'+esc(t.noQr)+'</div>')+
         '<div><strong>Jeri Rota</strong><p>+55 88 98227-4666<br>contato@jerirota.com.br<br>www.jerirota.com.br</p></div></section>');
     }
     return '<section class="vc-page vc-document-page vc-formal-page" data-voucher-page>'+header(t,locale,model)+'<main class="vc-main vc-formal-main">'+main.join('')+'</main>'+footer(locale,model,number,total)+'</section>';
   }
-  function termsPage(model,locale,t,number,total){
+  function termsPage(model,locale,t,number,total,serviceCount){
     const terms=window.JeriVoucherTerms;
     const copy=terms?.translations?.[locale];
     const f=formalLabels[locale]||formalLabels.pt;
     if(!copy)throw new Error('Política geral indisponível para o idioma selecionado.');
-    const clauses=copy.clauses.map((item,index)=>'<div class="vc-formal-condition"><h3>'+(index+1)+' - '+esc(item[0])+'</h3><p>'+esc(item[1])+'</p></div>').join('');
-    return '<section class="vc-page vc-terms-page vc-formal-page" data-voucher-page>'+
-      header(t,locale,model)+
-      '<main class="vc-main vc-formal-main"><section class="vc-formal-terms-head"><span>'+esc(model.voucher_number||'—')+'</span><h1>'+esc(f.terms)+' · JERI ROTA</h1><p>'+esc(copy.summary)+'</p></section>'+
+    const firstCount=Math.min(firstPageClauseCount(serviceCount),copy.clauses.length);
+    const remaining=copy.clauses.slice(firstCount);
+    const clauses=remaining.map((item,index)=>'<div class="vc-formal-condition"><h3>'+(firstCount+index+1)+' - '+esc(item[0])+'</h3><p>'+esc(item[1])+'</p></div>').join('');
+    return '<section class="vc-page vc-terms-page vc-formal-page vc-formal-page-two" data-voucher-page>'+
+      '<main class="vc-main vc-formal-main"><section class="vc-formal-terms-head vc-formal-terms-head-simple"><span>'+esc(model.voucher_number||'—')+' · '+esc(model.client||'')+'</span><h1>'+esc(f.terms)+' · JERI ROTA</h1><p>'+esc(copy.summary)+'</p></section>'+
       '<section class="vc-formal-terms-list">'+clauses+'</section>'+
-      '<section class="vc-formal-terms-link"><strong>'+esc(copy.link)+':</strong> '+esc(terms.url)+'<br><small>Versão '+esc(terms.version)+' · '+esc(copy.footer)+'</small></section>'+
+      '<section class="vc-formal-terms-link"><strong>'+esc(copy.link)+':</strong> '+esc(terms.url)+'<br><small>Conteúdo consultado em '+esc(terms.version)+' · '+esc(copy.footer)+'</small></section>'+
       '<section class="vc-formal-responsible"><div><strong>'+esc(f.responsible)+': Equipe Jeri Rota</strong><br>E-mail: contato@jerirota.com.br<br>Celular/Whats: +55 88 98227-4666</div></section>'+
       '</main>'+footer(locale,model,number,total)+'</section>';
   }
@@ -163,7 +184,7 @@
     const groups=chunks(services);
     const total=groups.length+1;
     const result=groups.map((group,i)=>page1(model,locale,t,group,i+1,total,i===groups.length-1));
-    result.push(termsPage(model,locale,t,total,total));
+    result.push(termsPage(model,locale,t,total,total,services.length));
     return '<article class="vc-book" data-voucher-sheet lang="'+locale+'">'+result.join('')+'</article>';
   }
   window.JeriVoucherClean={render,languages,lang};
