@@ -152,10 +152,29 @@
     try{if(typeof getReservations==='function')reservations=getReservations();if(typeof renderAll==='function')renderAll()}catch{}
   }
 
-  form.addEventListener('submit',()=>{
-    const submittedId=form.dataset.editingReservationId;
+  form.addEventListener('submit',event=>{
+    // Captura a identidade e o CPF ANTES do app fechar/resetar o formulário.
+    // O listener usa capture=true para executar antes do handler principal do app.
+    const submittedId=String(form.dataset.editingReservationId||'');
+    const beforeIds=new Set(read(RESERVATIONS_KEY).map(item=>String(item.id)));
+    const cpfSnapshot=String(form.elements?.holderCpf?.value||'').replace(/\D/g,'');
     setTimeout(async()=>{
-      const reservation=submittedId?read(RESERVATIONS_KEY).find(r=>String(r.id)===submittedId):findJustSaved();if(!reservation)return;
+      // Se a validação principal impediu o submit, não sincronizar.
+      if(event.defaultPrevented&&document.activeElement===form.elements?.holderCpf)return;
+      const list=read(RESERVATIONS_KEY);
+      let reservation=submittedId?list.find(item=>String(item.id)===submittedId):list.find(item=>!beforeIds.has(String(item.id)));
+      if(!reservation)reservation=list[list.length-1]||null;
+      if(!reservation)return;
+
+      // Garante que o valor capturado no formulário sobreviva a qualquer refresh
+      // concorrente do cache local antes do envio ao Supabase.
+      reservation={...reservation,holderCpf:cpfSnapshot};
+      const index=list.findIndex(item=>String(item.id)===String(reservation.id));
+      if(index>=0){
+        list[index]={...list[index],holderCpf:cpfSnapshot};
+        localStorage.setItem(RESERVATIONS_KEY,JSON.stringify(list));
+      }
+
       try{
         await syncReservation(reservation);
         if(window.JeriCloudData?.fetchAndCache)await window.JeriCloudData.fetchAndCache();
@@ -164,8 +183,8 @@
         try{await restoreOfficialCloudState()}catch(refreshError){console.error('Falha ao restaurar dados oficiais:',refreshError)}
         alert('Não foi possível salvar esta alteração no Supabase. Os dados oficiais do banco foram restaurados. Verifique a conexão e tente novamente.');
       }
-    },900);
-  });
+    },0);
+  },true);
 
   window.JeriCloudWrite={syncReservation,restoreOfficialCloudState};
 })();
