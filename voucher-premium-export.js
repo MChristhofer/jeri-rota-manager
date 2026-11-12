@@ -31,19 +31,19 @@
     return overflowPx(page)<=3;
   }
   function splitDocumentPage(page){
-    const rows=[...page.querySelectorAll('.vc-service-row')];
+    const rows=[...page.querySelectorAll('.vc-service-row, .vc-formal-service-row')];
     if(rows.length<2)return null;
     // Clone only the document structure. The last row and validation block
     // move to the new final page, avoiding a page with an orphaned QR.
     const next=page.cloneNode(true);
     next.querySelector('.vc-summary')?.remove();
-    next.querySelectorAll('.vc-service-row').forEach(row=>row.remove());
+    next.querySelectorAll('.vc-service-row, .vc-formal-service-row').forEach(row=>row.remove());
     next.querySelectorAll('.vc-continuation').forEach(node=>node.remove());
-    const destination=next.querySelector('.vc-service-table');
+    const destination=next.querySelector('.vc-service-table, .vc-formal-services');
     const last=rows[rows.length-1];
     destination.appendChild(last.cloneNode(true));
     last.remove();
-    const endBlocks=['.vc-pickup','.vc-money','.vc-notes','.vc-validation'];
+    const endBlocks=['.vc-pickup','.vc-money','.vc-notes','.vc-validation','.vc-formal-money','.vc-formal-important','.vc-formal-first-terms','.vc-formal-validation'];
     endBlocks.forEach(selector=>page.querySelector(selector)?.remove());
     if(!page.querySelector('.vc-continuation')){
       const more=document.createElement('div');
@@ -75,8 +75,8 @@
     const labels={pt:'Página',en:'Page',fr:'Page',es:'Página'};
     const label=labels[container.getAttribute('lang')]||'Página';
     pages.forEach((page,i)=>{
-      const count=page.querySelector('.vc-footer span:last-child');
-      if(count)count.textContent=label+' '+(i+1)+' / '+pages.length;
+      const count=page.querySelector('.vc-page-count')||page.querySelector('.vc-footer span:last-child');
+      if(count)count.textContent=(count.classList.contains('vc-page-count')?'':label+' ')+(i+1)+' / '+pages.length;
     });
     return pages;
   }
@@ -96,7 +96,7 @@
         const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:page.scrollWidth,windowHeight:page.scrollHeight});
         if(i)doc.addPage();
         doc.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,210,297,undefined,'FAST');
-        if(page.classList.contains('vc-terms-page'))doc.link(10,260,190,18,{url:'https://www.jerirota.com.br/termos-e-condicoes/'});
+        if(page.classList.contains('vc-terms-page'))doc.link(10,260,190,18,{url:'https://www.jerirota.com.br/'});
       }
       return doc.output('blob');
     }
