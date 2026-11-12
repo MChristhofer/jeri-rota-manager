@@ -125,3 +125,18 @@
 .vc-formal-page.vc-ultra-compact .vc-formal-validation{min-height:25mm;padding:1.7mm 2.5mm}
 @media(max-width:900px){.voucher-preview-shell .vc-formal-page{font-size:inherit}}
 @media print{.vc-formal-page{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+.vc-inline-logo{display:block;width:18mm;height:19mm;flex:none}
+.vc-formal-first-terms{padding:2.4mm 2.5mm 1.8mm;border-bottom:1px solid #6f7478}
+.vc-formal-first-terms h2{font-size:2.8mm;margin:0 0 1.1mm;padding-bottom:.8mm;border-bottom:1px solid #777;color:#111}
+.vc-formal-first-terms div{font-size:2.03mm;line-height:1.28;margin:.55mm 0;color:#111}
+.vc-formal-first-terms small{display:block;margin-top:1.2mm;font-size:1.95mm;font-weight:700;color:#555}
+.vc-formal-page-two .vc-formal-main{border-top:1px solid #6f7478}
+.vc-formal-terms-head-simple{padding-top:4mm}
+.vc-formal-page-two .vc-formal-terms-list{gap:1.65mm;padding:3mm 3mm 1.5mm}
+.vc-formal-page-two .vc-formal-condition h3{font-size:2.45mm}
+.vc-formal-page-two .vc-formal-condition p{font-size:2.18mm;line-height:1.32}
+.vc-formal-page-two .vc-formal-responsible{margin-top:auto;margin-bottom:2mm}
+.vc-formal-page.vc-compact .vc-formal-first-terms div{font-size:1.95mm;line-height:1.22;margin:.4mm 0}
+.vc-formal-page.vc-ultra-compact .vc-formal-first-terms{padding:1.5mm 2mm 1.2mm}
+.vc-formal-page.vc-ultra-compact .vc-formal-first-terms div{font-size:1.82mm;line-height:1.18;margin:.3mm 0}
