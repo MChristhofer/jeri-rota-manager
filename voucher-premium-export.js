@@ -76,7 +76,7 @@
     const label=labels[container.getAttribute('lang')]||'Página';
     pages.forEach((page,i)=>{
       const count=page.querySelector('.vc-page-count')||page.querySelector('.vc-footer span:last-child');
-      if(count)count.textContent=(count.classList.contains('vc-page-count')?'':label+' ')+(i+1)+' / '+pages.length;
+      if(count)count.textContent=count.classList.contains('vc-page-count')?((i+1)+' de '+pages.length):(label+' '+(i+1)+' / '+pages.length);
     });
     return pages;
   }
