@@ -2,27 +2,35 @@
   'use strict';
   // Resumo operacional da politica publicada pela Jeri Rota.
   // Não substituir contrato/versão aceita por termos atualizados.
-  const url='https://www.jerirota.com.br/termos-e-condicoes/';
-  const version='2026-09-11';
+  const url='https://www.jerirota.com.br/';
+  const version='2026-11-12';
   const copies={
     pt:{
-      title:'CONDIÇÕES GERAIS DE CONTRATAÇÃO', subtitle:'Resumo das condições operacionais da Jeri Rota',
-      summary:'Este resumo acompanha o voucher para orientação. O contrato, suas condições específicas e a versão dos Termos aceita na contratação prevalecem, observados os direitos previstos na legislação.',
+      title:'CONDIÇÕES GERAIS DE CONTRATAÇÃO', subtitle:'Condições essenciais da reserva Jeri Rota',
+      summary:'Estas condições resumem informações operacionais e comerciais publicadas pela Jeri Rota e acompanham o voucher para orientar a viagem. Permanecem válidas as condições específicas apresentadas na proposta, no serviço contratado e os direitos obrigatórios previstos na legislação brasileira.',
       clauses:[
-        ['Confirmação e conferência','Confira nomes, serviços, quantidade, datas e locais do voucher e comunique divergências imediatamente. A reserva depende de confirmação escrita.'],
-        ['Inclusões','Somente estão incluídos os serviços descritos na proposta confirmada, no voucher ou no comprovante. Despesas opcionais, ingressos e taxas não especificadas são extras.'],
-        ['Embarque e no-show','Esteja pronto no local e horário confirmados com telefone acessível. Atrasos ou ausência podem inviabilizar a execução, sobretudo nos serviços compartilhados.'],
-        ['Bagagens','Bagagem especial, excesso de volumes e equipamentos esportivos devem ser informados previamente; podem gerar custo adicional ou ser recusados por segurança.'],
-        ['Transportes compartilhados','Pontos, horários, veículo e ordem das paradas podem variar conforme a logística, o trânsito e as condições operacionais.'],
-        ['Transportes privativos','O veículo é reservado para o grupo contratado. Alterações de percurso, paradas ou horários dependem de viabilidade e eventual custo adicional.'],
-        ['Alterações de reserva','Sujeitas à disponibilidade e às condições previamente informadas. Como referência geral, o site prevê taxas operacionais de até R$ 50 por passageiro no compartilhado e R$ 150 por reserva no privativo ou pacote.'],
-        ['Cancelamento — política geral','Sem condição específica e ressalvados os direitos legais: mais de 30 dias até 10%; de 15 a 30 dias até 20%; de 7 a 14 dias até 30%; de 72 horas a 6 dias até 50%. A menos de 72 horas, no-show ou após o início, a retenção pode chegar a 100% somente nas condições previstas nos Termos.'],
-        ['Condições especiais','Feriados, alta temporada, tarifas promocionais e prestadores podem ter regras próprias, desde que informadas ao cliente de forma válida.'],
-        ['Clima e segurança','Condições naturais, trânsito, interdições ou segurança podem exigir ajustes de horários, veículos ou itinerários, preservando-se, quando possível, as características essenciais.'],
-        ['Hospedagens e parceiros','Regras específicas de hotéis e outros prestadores podem integrar a contratação quando comunicadas. A intermediação não exclui responsabilidades previstas em lei.'],
-        ['Dados e assistência','A documentação necessária pode ser solicitada para executar os serviços. Atendimento humano de segunda a sábado, 9h–19h (Fortaleza); suporte automático 24h.']
+        ['Conferência da reserva','Confira nomes, datas, quantidade de passageiros, serviços, modalidade e pontos de embarque. Qualquer divergência deve ser comunicada antes da execução do serviço.'],
+        ['Confirmação por sinal','O pagamento do sinal confirma a reserva e cobre a organização inicial do serviço contratado.'],
+        ['Formas de pagamento','A Jeri Rota trabalha com Pix e cartão. Condições de parcelamento e eventuais taxas são informadas antes da confirmação.'],
+        ['Cancelamento pelo cliente','Após a confirmação, o sinal pago não é devolvido por desistência do cliente. O valor permanece registrado como crédito nominal para uma nova reserva.'],
+        ['Uso do crédito','O crédito decorrente de cancelamento pelo cliente depende de disponibilidade, das condições aplicáveis aos parceiros e do pagamento de eventual diferença de valor ou tarifa.'],
+        ['Alterações e remarcações','Pedidos de alteração devem ser feitos com a maior antecedência possível. Datas, horários, rotas, modalidades e fornecedores dependem de disponibilidade e podem gerar ajuste de valor.'],
+        ['Não comparecimento e atraso','A ausência no local e horário informados, ou atraso que impeça a execução ou cause perda da reserva junto ao parceiro, pode ser considerada serviço utilizado, sem restituição.'],
+        ['Cancelamento pela Jeri Rota','Quando o serviço não puder ser realizado por responsabilidade da Jeri Rota, o cliente poderá escolher entre reembolso dos valores pagos ou crédito integral.'],
+        ['Direitos legais','Direitos obrigatórios previstos na legislação brasileira permanecem preservados, inclusive o direito de arrependimento quando legalmente aplicável.'],
+        ['Condições específicas','Determinados serviços e parceiros podem ter regras próprias. As condições específicas aplicáveis devem ser apresentadas ao cliente antes do pagamento ou da confirmação.'],
+        ['Serviços compartilhados e privativos','Passeios e transfers podem ser oferecidos em modalidade compartilhada ou privativa. A disponibilidade varia conforme destino, data e parceiro responsável.'],
+        ['Horários e disponibilidade','Horários, duração, disponibilidade e formato de execução variam conforme o serviço e devem ser conferidos na confirmação da reserva e no voucher.'],
+        ['Embarque','O cliente deve observar o ponto e o horário de embarque informados. Orientações complementares podem ser enviadas pela equipe antes da execução do serviço.'],
+        ['Crianças e necessidades do grupo','Idades das crianças e necessidades específicas do grupo devem ser informadas previamente para que a opção adequada possa ser verificada.'],
+        ['Bagagens e itens especiais','Quantidade de bagagens e itens especiais devem ser informados antes da viagem para conferência da capacidade e da opção de transporte adequada.'],
+        ['Roteiros combinados','É possível combinar diferentes destinos na mesma viagem. A montagem do roteiro considera tempo disponível, perfil do grupo, disponibilidade e orçamento.'],
+        ['Parceiros locais','A Jeri Rota pode utilizar parceiros locais na execução de serviços. A modalidade, o fornecedor responsável e condições específicas devem respeitar o que foi confirmado ao cliente.'],
+        ['Contato e suporte','Mantenha telefone de contato acessível para receber orientações sobre serviços confirmados, embarque e eventuais atualizações operacionais.'],
+        ['Dados fornecidos pelo cliente','O cliente é responsável por informar corretamente nomes, contatos, datas, quantidade de passageiros, bagagens e demais dados necessários à execução da reserva.'],
+        ['Validação do voucher','O QR Code e o número do voucher permitem verificar a autenticidade e o status do documento emitido pela Jeri Rota.']
       ],
-      link:'Íntegra oficial e versão aplicável', footer:'Condições gerais • Jeri Rota'
+      link:'Informações institucionais e política publicada', footer:'Condições da reserva • Jeri Rota'
     },
     en:{
       title:'GENERAL BOOKING TERMS',subtitle:'Jeri Rota operational terms — summary',
