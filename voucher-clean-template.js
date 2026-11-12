@@ -77,7 +77,7 @@
   }
   function footer(locale,model,index,total){
     const issued=date(model.issued_at,locale);
-    return '<footer class="vc-footer vc-formal-footer"><span>www.jerirota.com.br &nbsp; v1.0</span><span>'+index+' de '+total+'</span><span>'+esc(issued)+'</span></footer>';
+    return '<footer class="vc-footer vc-formal-footer"><span>www.jerirota.com.br &nbsp; v1.0</span><span class="vc-page-count">'+index+' de '+total+'</span><span>'+esc(issued)+'</span></footer>';
   }
   function serviceRow(service,locale,t,people){
     const details=[];
