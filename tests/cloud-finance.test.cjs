@@ -32,11 +32,13 @@ test('Leitura Supabase preserva venda, recebido, NET zero e serviços idênticos
 });
 test('Escrita Supabase envia NET e metadados corretos, sem excluir duplicação nem recalcular venda',async()=>{
   const e=environment({reservation_services:[{id:'cloud-a',source_key:'a'},{id:'cloud-b',source_key:'b'}]});
-  const reservation={id:1,cloudId:'cloud-reservation',reservationCode:'JR-00001',amount:1000,paidAmount:800};
+  const reservation={id:1,cloudId:'cloud-reservation',reservationCode:'JR-00001',holderCpf:'123.456.789-09',amount:1000,paidAmount:800};
   const service={reservationId:1,title:'Transfer',repasseAmount:400,netTotal:400,saleTotal:0,boarding:'Hotel A',dropoff:'Hotel B',date:'2026-09-10',returnDate:'2026-09-11',responsible:'JR_OP_V1:'+encodeURIComponent(JSON.stringify({modality:'Privativo',startTime:'09:15',vehicle:'Hilux'}))};
   e.cache.set(R,JSON.stringify([reservation]));e.cache.set(S,JSON.stringify([{...service,id:'a'},{...service,id:'b'}]));
   e.load('cloud-write-sync.js');await e.context.window.JeriCloudWrite.syncReservation(reservation);
   const rows=e.calls.filter(c=>c.table==='reservation_services'&&c.op==='upsert').map(c=>c.payload);
+  const reservationWrite=e.calls.find(c=>c.table==='reservations'&&(c.op==='update'||c.op==='insert'||c.op==='upsert'));
+  assert.equal(reservationWrite?.payload?.holder_cpf,'12345678909');
   assert.equal(rows.length,2);assert.equal(rows[0].net_total,400);assert.equal(rows[0].repasse_amount,400);
   assert.equal(rows[1].source_key,'b');assert.equal(rows[1].boarding,'Hotel A');assert.equal(rows[1].return_date,'2026-09-11');
   assert.equal(rows[1].responsible,service.responsible);
