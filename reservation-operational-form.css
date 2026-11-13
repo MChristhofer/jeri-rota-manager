@@ -282,3 +282,15 @@
 }
 .catalog-compat-field{display:none!important}
 .service-draft-actions{display:flex;align-items:center;gap:10px}
+
+.reservation-passengers-section{margin-top:14px!important}
+.reservation-section-help{margin:-3px 0 10px;color:var(--muted);font-size:9px;line-height:1.45}
+.reservation-passengers-editor{display:grid;gap:8px}
+.reservation-passenger-row{display:grid;grid-template-columns:100px minmax(150px,1.45fr) minmax(130px,1fr) 130px 130px 34px;gap:8px;align-items:end;padding:9px;border:1px solid #e7e1d7;border-radius:10px;background:#faf9f6}
+.reservation-passenger-row label{display:grid;gap:4px;margin:0!important;color:#4f6069;font-size:9px;font-weight:700}
+.reservation-passenger-row input,.reservation-passenger-row select{width:100%;min-height:36px;padding:7px 8px;border:1px solid #dcd7ce;border-radius:8px;background:#fff;color:var(--ink);outline:none;box-sizing:border-box}
+.reservation-passenger-row input:focus,.reservation-passenger-row select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,163,60,.11)}
+.reservation-remove-passenger{display:grid;place-items:center;width:34px;height:36px;border:0;border-radius:8px;background:#f7e9e7;color:#a34a45;font-size:18px;cursor:pointer}
+.reservation-add-passenger{margin-top:9px}
+@media(max-width:900px){.reservation-passenger-row{grid-template-columns:repeat(2,minmax(0,1fr))}.reservation-remove-passenger{width:100%}}
+@media(max-width:620px){.reservation-passenger-row{grid-template-columns:1fr}}
