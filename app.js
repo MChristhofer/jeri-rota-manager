@@ -342,6 +342,33 @@ const netAmountInput = reservationForm.querySelector('[name="netAmount"]');
 const settledAmountInput = reservationForm.querySelector('[name="settledAmount"]');
 const partnerPreview = document.getElementById('partnerPreview');
 const partnerFields = document.getElementById('partnerFields');
+const passengersEditor = document.getElementById('reservationPassengersEditor');
+const addPassengerButton = document.getElementById('addReservationPassenger');
+
+function passengerRowTemplate(passenger={}) {
+  return `<div class="reservation-passenger-row">
+    <label>Tipo<select data-passenger-field="type"><option value="Pagante" ${passenger.type==='Pagante'?'selected':''}>Pagante</option><option value="Cortesia" ${passenger.type==='Cortesia'?'selected':''}>Cortesia</option><option value="Criança" ${passenger.type==='Criança'?'selected':''}>Criança</option></select></label>
+    <label>Passageiro<input data-passenger-field="name" value="${escapeHtml(passenger.name||'')}" placeholder="Nome completo"></label>
+    <label>Documento<input data-passenger-field="document" value="${escapeHtml(passenger.document||'')}" placeholder="CPF, RG ou passaporte"></label>
+    <label>Nascimento<input data-passenger-field="birthDate" type="date" value="${escapeHtml(passenger.birthDate||'')}"></label>
+    <label>Nacionalidade<input data-passenger-field="nationality" value="${escapeHtml(passenger.nationality||'')}" placeholder="Ex.: Brasileira"></label>
+    <button type="button" class="reservation-remove-passenger" aria-label="Remover passageiro">×</button>
+  </div>`;
+}
+function renderPassengerEditor(list=[]) {
+  const passengers=Array.isArray(list)&&list.length?list:[{type:'Pagante',name:''}];
+  passengersEditor.innerHTML=passengers.map(passengerRowTemplate).join('');
+}
+function collectPassengers() {
+  return [...passengersEditor.querySelectorAll('.reservation-passenger-row')].map(row=>({
+    type:row.querySelector('[data-passenger-field="type"]').value||'Pagante',
+    name:row.querySelector('[data-passenger-field="name"]').value.trim(),
+    document:row.querySelector('[data-passenger-field="document"]').value.trim(),
+    birthDate:row.querySelector('[data-passenger-field="birthDate"]').value||'',
+    nationality:row.querySelector('[data-passenger-field="nationality"]').value.trim()
+  })).filter(item=>item.name||item.document||item.birthDate||item.nationality);
+}
+
 
 function updatePaymentPreview() {
   const total = Math.max(0, Number(amountInput.value) || 0);
@@ -382,6 +409,10 @@ function resetForm() {
   netAmountInput.value = 0;
   settledAmountInput.value = 0;
   editingReservationId = null;
+  reservationForm.querySelector('[name="travelLanguage"]').value = 'Português';
+  reservationForm.querySelector('[name="checkInDate"]').value = '';
+  reservationForm.querySelector('[name="checkOutDate"]').value = '';
+  renderPassengerEditor([]);
   document.getElementById('modalTitle').textContent = 'Cadastrar reserva';
   document.getElementById('submitReservation').textContent = 'Salvar reserva';
   updatePaymentPreview();
@@ -399,6 +430,10 @@ function openModal(id = null) {
     reservationForm.querySelector('[name="phone"]').value = reservation.phone;
     reservationForm.querySelector('[name="email"]').value = reservation.email || '';
     reservationForm.querySelector('[name="holderCpf"]').value = reservation.holderCpf || '';
+    reservationForm.querySelector('[name="travelLanguage"]').value = reservation.travelLanguage || 'Português';
+    reservationForm.querySelector('[name="checkInDate"]').value = reservation.checkInDate || '';
+    reservationForm.querySelector('[name="checkOutDate"]').value = reservation.checkOutDate || '';
+    renderPassengerEditor(reservation.passengers?.length?reservation.passengers:(reservation.client||'').split('/').map(name=>({type:'Pagante',name:name.trim()})).filter(x=>x.name));
     reservationForm.querySelector('[name="service"]').value = reservation.service;
     reservationForm.querySelector('[name="date"]').value = reservation.date;
     reservationForm.querySelector('[name="people"]').value = reservation.people;
@@ -437,6 +472,8 @@ document.getElementById('searchInput').addEventListener('input', renderReservati
 document.getElementById('statusFilter').addEventListener('change', renderReservations);
 document.getElementById('partnerFilter').addEventListener('change', renderSettlement);
 document.getElementById('partnerStatusFilter').addEventListener('change', renderSettlement);
+addPassengerButton.addEventListener('click',()=>passengersEditor.insertAdjacentHTML('beforeend',passengerRowTemplate({type:'Pagante'})));
+passengersEditor.addEventListener('click',event=>{const button=event.target.closest('.reservation-remove-passenger');if(!button)return;button.closest('.reservation-passenger-row')?.remove();if(!passengersEditor.children.length)renderPassengerEditor([])});
 amountInput.addEventListener('input', updatePaymentPreview);
 paidAmountInput.addEventListener('input', updatePaymentPreview);
 partnerOperationInput.addEventListener('change', updatePartnerPreview);
@@ -470,6 +507,10 @@ reservationForm.addEventListener('submit', event => {
     phone: data.phone.trim(),
     email: data.email?.trim() || '',
     holderCpf,
+    travelLanguage:data.travelLanguage||'Português',
+    checkInDate:data.checkInDate||'',
+    checkOutDate:data.checkOutDate||'',
+    passengers:collectPassengers(),
     boarding: data.boarding?.trim() || '',
     service: data.service.trim(),
     date: data.date || dateOffset(0),
