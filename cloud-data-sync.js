@@ -151,6 +151,9 @@
       phone:r.phone||null,
       email:r.email||null,
        holder_cpf:r.holderCpf||null,
+      travel_language:r.travelLanguage||'Português',
+      check_in_date:r.checkInDate||null,
+      check_out_date:r.checkOutDate||null,
       people:Number(r.people)||1,
       amount:Number(r.amount)||0,
       paid_amount:Number(r.paidAmount)||0,
@@ -208,6 +211,16 @@
     if(phones.length){
       const ins=await client.from('reservation_phones').insert(phones.map((p,i)=>({reservation_id:result.data.id,phone:p.phone||null,phone_e164:p.phoneE164||null,phone_country:p.phoneCountry||null,sort_order:i})));
       if(ins.error)throw ins.error;
+    }
+    const passengerDelete=await client.from('reservation_passengers').delete().eq('reservation_id',result.data.id);
+    if(passengerDelete.error)throw passengerDelete.error;
+    const passengers=Array.isArray(r.passengers)?r.passengers:[];
+    if(passengers.length){
+      const insPassengers=await client.from('reservation_passengers').insert(passengers.map((p,i)=>({
+        reservation_id:result.data.id,sort_order:i,passenger_type:p.type||'Pagante',name:p.name||'',
+        document_number:p.document||null,birth_date:p.birthDate||null,nationality:p.nationality||null,updated_at:new Date().toISOString()
+      })).filter(p=>p.name));
+      if(insPassengers.error)throw insPassengers.error;
     }
     return result.data;
   }
