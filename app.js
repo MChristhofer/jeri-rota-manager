@@ -500,6 +500,7 @@ reservationForm.addEventListener('submit', event => {
   }
   if(!cpfValid(holderCpf)){alert('CPF inválido. Confira os 11 dígitos ou deixe o campo vazio.');reservationForm.querySelector('[name="holderCpf"]').focus();return;}
   const currentReservation = activeEditingId ? reservations.find(item => String(item.id) === String(activeEditingId)) : null;
+  const detailedPassengers = collectPassengers();
   const reservation = normalizeReservation({
     ...(currentReservation || {}),
     id: activeEditingId || Date.now(),
@@ -510,11 +511,11 @@ reservationForm.addEventListener('submit', event => {
     travelLanguage:data.travelLanguage||'Português',
     checkInDate:data.checkInDate||'',
     checkOutDate:data.checkOutDate||'',
-    passengers:collectPassengers(),
+    passengers:detailedPassengers,
     boarding: data.boarding?.trim() || '',
     service: data.service.trim(),
     date: data.date || dateOffset(0),
-    people: Math.max(1, Number(data.people)),
+    people: detailedPassengers.length || Math.max(1, Number(data.people)),
     amount,
     paidAmount,
     payments: currentReservation?.payments || [],
