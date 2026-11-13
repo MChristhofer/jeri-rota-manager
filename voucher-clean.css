@@ -140,3 +140,7 @@
 .vc-formal-page.vc-compact .vc-formal-first-terms div{font-size:1.95mm;line-height:1.22;margin:.4mm 0}
 .vc-formal-page.vc-ultra-compact .vc-formal-first-terms{padding:1.5mm 2mm 1.2mm}
 .vc-formal-page.vc-ultra-compact .vc-formal-first-terms div{font-size:1.82mm;line-height:1.18;margin:.3mm 0}
+
+.vc-formal-page-two .vc-formal-main{display:flex;flex-direction:column}
+.vc-formal-page-two .vc-formal-terms-list{flex:1;align-content:space-between;padding-top:3mm;padding-bottom:3mm}
+.vc-formal-page-two .vc-formal-condition{break-inside:avoid}
