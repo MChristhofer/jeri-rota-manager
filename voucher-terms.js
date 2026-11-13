@@ -2,7 +2,7 @@
   'use strict';
   // Resumo operacional da politica publicada pela Jeri Rota.
   // Não substituir contrato/versão aceita por termos atualizados.
-  const url='https://www.jerirota.com.br/';
+  const url='https://www.jerirota.com.br/termos-e-condicoes/';
   const version='2026-11-12';
   const copies={
     pt:{
