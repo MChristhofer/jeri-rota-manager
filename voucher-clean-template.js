@@ -102,11 +102,11 @@
     }).join('');
   }
   function firstPageClauseCount(serviceCount){
-    if(serviceCount<=2)return 14;
-    if(serviceCount<=4)return 11;
-    if(serviceCount<=6)return 8;
-    if(serviceCount<=8)return 5;
-    return 3;
+    if(serviceCount<=2)return 11;
+    if(serviceCount<=4)return 8;
+    if(serviceCount<=6)return 6;
+    if(serviceCount<=8)return 4;
+    return 2;
   }
   function importantBlock(model,locale,f){
     const items=locale==='pt'?[
