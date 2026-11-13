@@ -92,8 +92,8 @@
     });
     const services=premium.sortServices(occurrences);
     const dates=services.map(item=>item.date).filter(Boolean).sort();
-    const start=dates[0]||reservation.date;
-    const end=dates.at(-1)||reservation.date;
+    const start=reservation.checkInDate||dates[0]||reservation.date;
+    const end=reservation.checkOutDate||dates.at(-1)||reservation.date;
     const amount=Number(reservation.amount)||0,paid=Number(reservation.paidAmount)||0;
     return{
       voucher_scope_key:scopeKey,
@@ -101,7 +101,7 @@
       reservation_code:reservation.reservationCode||String(reservation.id),client:reservation.client,
       holder_cpf_masked:reservation.holderCpf?'***.***.***-'+String(reservation.holderCpf).slice(-2):'',
       phone:reservation.phone||'',email:reservation.email||'',period:{start,end},people:Number(reservation.people)||1,
-      passengers:premium.splitPassengers(reservation.client),services,
+      passengers:Array.isArray(reservation.passengers)&&reservation.passengers.length?reservation.passengers:premium.splitPassengers(reservation.client).map(name=>({type:'Pagante',name,document:'',birthDate:'',nationality:''})),services,
       boarding:services.find(item=>item.leg!=='VOLTA'&&item.boarding)?.boarding||services.find(item=>item.boarding)?.boarding||reservation.boarding||'A definir',
       boarding_time:services.find(item=>item.leg!=='VOLTA'&&item.time)?.time||services.find(item=>item.time)?.time||'',
       payment_status:paid<=0?'Aguardando sinal':paid>=amount?'Pago':'Sinal recebido',
@@ -134,7 +134,8 @@
 
     const current=vouchers.find(item=>item.reservation_id===reservation.cloudId&&item.status==='issued'&&(item.scope_key||item.snapshot_data?.voucher_scope_key||'reservation')===scopeKey);
     const snapshot=await buildSnapshot(reservation,current?.snapshot_data?.customer_notes||'',scopeKey);
-    snapshot.language=current?.snapshot_data?.language||'pt';
+    const languageMap={'Português':'pt','English':'en','Français':'fr','Español':'es'};
+    snapshot.language=current?.snapshot_data?.language||languageMap[reservation.travelLanguage]||'pt';
     snapshot.template=current?.snapshot_data?.template||(current?'classic':'clean');
     snapshot.services.forEach((item,index)=>{item.title_i18n={...(item.title_i18n||{}),...(current?.snapshot_data?.services?.[index]?.title_i18n||{})}});
     const changes=current?snapshotChanges(snapshot,current.snapshot_data):[];
