@@ -40,6 +40,10 @@
       phone:phoneList[0]?.phone||row.phone||'',
       email:row.email||'',
        holderCpf:row.holder_cpf||'',
+      travelLanguage:row.travel_language||'Português',
+      checkInDate:isoDate(row.check_in_date),
+      checkOutDate:isoDate(row.check_out_date),
+      passengers:[],
       phones:phoneList,
       service:firstService?.title||firstService?.service||firstService?.tour||'',
       date:isoDate(firstService?.service_date),
@@ -223,13 +227,14 @@
   }
 
   async function fetchAndCache(){
-    const [rRes,sRes,pRes,repRes]=await Promise.all([
+    const [rRes,sRes,pRes,passRes,repRes]=await Promise.all([
       client.from('reservations').select('*').order('created_at',{ascending:true}),
       client.from('reservation_services').select('*').order('reservation_id').order('sort_order'),
       client.from('reservation_phones').select('*').order('reservation_id').order('sort_order'),
+      client.from('reservation_passengers').select('*').order('reservation_id').order('sort_order'),
       client.from('repasses').select('*').order('created_at',{ascending:true})
     ]);
-    for(const result of [rRes,sRes,pRes,repRes])if(result.error)throw result.error;
+    for(const result of [rRes,sRes,pRes,passRes,repRes])if(result.error)throw result.error;
     const uniqueRows=new Map();
     (rRes.data||[]).filter(r=>!isDemoReservation(r)).forEach(row=>{
       const key=reservationKey(row);const current=uniqueRows.get(key);
@@ -244,10 +249,17 @@
     });
     const serviceRows=[...uniqueServices.values()];
     const phoneRows=(pRes.data||[]).filter(p=>validIds.has(p.reservation_id));
+    const passengerRows=(passRes.data||[]).filter(p=>validIds.has(p.reservation_id));
     const servicesByReservation=new Map();serviceRows.forEach(s=>{if(!servicesByReservation.has(s.reservation_id))servicesByReservation.set(s.reservation_id,[]);servicesByReservation.get(s.reservation_id).push(s)});
     const phonesByReservation=new Map();phoneRows.forEach(p=>{if(!phonesByReservation.has(p.reservation_id))phonesByReservation.set(p.reservation_id,[]);phonesByReservation.get(p.reservation_id).push(p)});
+    const passengersByReservation=new Map();passengerRows.forEach(p=>{if(!passengersByReservation.has(p.reservation_id))passengersByReservation.set(p.reservation_id,[]);passengersByReservation.get(p.reservation_id).push(p)});
     const reservationMap=new Map();
-    const localReservations=reservationRows.map(row=>{const linkedServices=servicesByReservation.get(row.id)||[];const r=localReservation(row,phonesByReservation.get(row.id)||[],linkedServices[0]);reservationMap.set(row.id,r);return r});
+    const localReservations=reservationRows.map(row=>{
+      const linkedServices=servicesByReservation.get(row.id)||[];
+      const r=localReservation(row,phonesByReservation.get(row.id)||[],linkedServices[0]);
+      r.passengers=(passengersByReservation.get(row.id)||[]).map(p=>({type:p.passenger_type||'Pagante',name:p.name||'',document:p.document_number||'',birthDate:isoDate(p.birth_date),nationality:p.nationality||''}));
+      reservationMap.set(row.id,r);return r
+    });
     const cachedReservations=read(KEYS.reservations);const cachedByCode=new Map(cachedReservations.filter(r=>r.reservationCode).map(r=>[r.reservationCode,r]));const cachedByCloudId=new Map(cachedReservations.filter(r=>r.cloudId).map(r=>[r.cloudId,r]));
     localReservations.forEach(reservation=>{const cached=cachedByCloudId.get(reservation.cloudId)||cachedByCode.get(reservation.reservationCode);if(!Array.isArray(cached?.payments)||!cached.payments.length)return;const cachedTotal=cached.payments.reduce((sum,payment)=>sum+(Number(payment.amount)||0),0);if(Math.abs(cachedTotal-reservation.paidAmount)<0.01)reservation.payments=cached.payments});
     const serviceMap=new Map();const localServices=[];
