@@ -39,7 +39,7 @@
       status:voucher.status||'issued',
       client:snapshot.client||'Cliente',
       phone:snapshot.phone||'',email:snapshot.email||'',
-      passengers:Array.isArray(snapshot.passengers)&&snapshot.passengers.length?snapshot.passengers:splitPassengers(snapshot.client),
+      passengers:Array.isArray(snapshot.passengers)&&snapshot.passengers.length?snapshot.passengers:splitPassengers(snapshot.client).map(name=>({type:'Pagante',name,document:'',birthDate:'',nationality:''})),
       period:snapshot.period||{},
       people:Number(snapshot.people)||1,
       services:sortServices(snapshot.services||[]).map(service=>({
@@ -76,14 +76,14 @@
 
   function render(model){
     if(model.template==='clean'&&window.JeriVoucherClean)return window.JeriVoucherClean.render(model);
-    const passengers=model.passengers.length?model.passengers:[model.client];
+    const passengers=model.passengers.length?model.passengers:[{name:model.client}];
     const payment=model.show_value?`<section class="vp-card vp-payment"><div class="vp-card-title">▤ <span>PAGAMENTO</span></div><div class="vp-payment-values"><div><small>Valor da reserva</small><strong>${money(model.amount)}</strong></div><div><small>Sinal recebido</small><strong>${money(model.paid_amount)}</strong></div></div><div class="vp-balance"><span>${model.balance>0?'SALDO NO EMBARQUE':'RESERVA QUITADA'}</span><strong>${model.balance>0?money(model.balance):'PAGO'}</strong></div></section>`:'';
     return`<article class="voucher-sheet" data-voucher-sheet>
       <header class="vp-hero" aria-label="Jeri Rota - Reserva confirmada"></header>
       <main class="vp-body">
         <section class="vp-number-row"><div><span>VOUCHER OFICIAL DE RESERVA</span><h1>${escapeHtml(model.voucher_number)}</h1><p>Reserva ${escapeHtml(model.reservation_code)} <b>|</b> Emitido em ${escapeHtml(shortDate(model.issued_at))}</p></div><div class="vp-slogan">EXPERIÊNCIAS<br>QUE FICAM<br>PARA SEMPRE</div></section>
         <section class="vp-summary">
-          <div><span>● &nbsp; CLIENTE</span><strong>${passengers.map(escapeHtml).join('<br>')}</strong></div>
+          <div><span>● &nbsp; CLIENTE</span><strong>${passengers.map(item=>escapeHtml(typeof item==='string'?item:(item.name||''))).join('<br>')}</strong></div>
           <div><span>▣ &nbsp; PERÍODO</span><strong>${escapeHtml(shortDate(model.period.start))} a ${escapeHtml(shortDate(model.period.end))}</strong></div>
           <div><span>♟ &nbsp; PASSAGEIROS</span><strong>${model.people}</strong></div>
         </section>
