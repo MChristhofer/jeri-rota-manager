@@ -93,15 +93,20 @@
       '<div>'+esc(check)+'</div><div>—</div><div>'+esc(details.join(' · ')||'—')+'</div><div class="vc-formal-pax">'+esc(people||1)+'</div></div>';
   }
   function passengerRows(model,locale,f){
-    const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[model.client||'—'];
-    return passengers.map((name,index)=>'<div class="vc-formal-passenger-row">'+
-      '<div>'+esc(f.payer)+'</div><div>'+esc(name)+'</div><div>'+(index===0&&model.holder_cpf_masked?esc(model.holder_cpf_masked):'—')+'</div><div>—</div><div>—</div></div>').join('');
+    const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[{type:'Pagante',name:model.client||'—'}];
+    return passengers.map((passenger,index)=>{
+      const item=typeof passenger==='string'?{type:'Pagante',name:passenger}:passenger;
+      const doc=item.document||(index===0&&model.holder_cpf_masked?model.holder_cpf_masked:'—');
+      return '<div class="vc-formal-passenger-row">'+
+        '<div>'+esc(item.type||f.payer)+'</div><div>'+esc(item.name||'—')+'</div><div>'+esc(doc||'—')+'</div><div>'+esc(item.birthDate?date(item.birthDate,locale):'—')+'</div><div>'+esc(item.nationality||'—')+'</div></div>';
+    }).join('');
   }
   function firstPageClauseCount(serviceCount){
-    if(serviceCount<=2)return 7;
-    if(serviceCount<=4)return 5;
-    if(serviceCount<=6)return 3;
-    return 1;
+    if(serviceCount<=2)return 14;
+    if(serviceCount<=4)return 11;
+    if(serviceCount<=6)return 8;
+    if(serviceCount<=8)return 5;
+    return 3;
   }
   function importantBlock(model,locale,f){
     const items=locale==='pt'?[
