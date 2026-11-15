@@ -104,6 +104,7 @@
     if (!validPhone(phone)) { status('Informe o telefone com DDI e DDD, somente números.', 'error'); return; }
     const requestId = ++openRequestId;
     const changingConversation = selected !== phone;
+    if (changingConversation && pendingVoucher) clearVoucher();
     selected = phone;
     $('phone').value = phone;
     $('title').textContent = '+' + phone;
