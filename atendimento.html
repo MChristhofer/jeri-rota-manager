@@ -25,7 +25,7 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 #phone{max-width:185px}.empty{padding:22px;color:#697484}.pill{border-radius:999px;padding:5px 10px;background:#eaeaea;font-size:12px}
 @media(max-width:750px){header{padding:0 12px}.shell{display:flex;flex-direction:column;height:calc(100dvh - 70px)}aside{max-height:195px;flex:0 0 auto;border-right:0;border-bottom:1px solid #ddd}main{flex:1;min-height:0}.toolbar{padding:10px}.messages{padding:12px}.bubble{max-width:91%}}
 </style>
-<link rel="stylesheet" href="atendimento-layout.css?v=20261115-scroll-1">
+<link rel="stylesheet" href="atendimento-layout.css?v=20261115-chat-audio-1">
 <style>
 .voucher-preview[hidden]{display:none!important}
 .voucher-preview{display:grid;gap:8px;padding:12px;border:1px solid #e0d2b7;border-radius:12px;background:#fbf7ed}
@@ -55,26 +55,49 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
  </div>
  <div id="messages" class="messages" role="log" aria-live="off" aria-label="Histórico da conversa"><div class="empty">Escolha uma conversa à esquerda.</div></div>
  <div class="composer">
-   <div class="row"><input id="phone" inputmode="numeric" placeholder="DDI + DDD + número" aria-label="Telefone do cliente"><button id="openPhone" type="button">Abrir número</button><span class="muted">Para clientes que não aparecem na lista.</span></div>
-   <textarea id="message" placeholder="Escreva sua mensagem para o cliente..." aria-label="Mensagem ao cliente" maxlength="4096"></textarea>
-   <div class="row">
-     <button id="send" class="primary" type="button">Enviar mensagem</button>
-     <label class="gold" style="padding:9px 12px;border-radius:9px;cursor:pointer" id="pdfPickerLabel">Selecionar voucher PDF <input type="file" id="pdf" accept="application/pdf,.pdf" hidden></label>
-     <input id="templateName" value="jeri_rota_confirmacao_reserva_copiaridioma" placeholder="Modelo aprovado da Meta" aria-label="Nome exato do modelo aprovado" title="Modelo de confirmação de reserva aprovado na Meta" style="width:320px;max-width:100%">
-     <button id="sendTemplate" type="button">Iniciar com modelo</button><label class="muted"><input id="consent" type="checkbox"> Confirmo que o cliente autorizou o contato</label>
-   </div>
-   <section id="voucherPreview" class="voucher-preview" hidden aria-label="Prévia de envio do voucher">
-     <div class="voucher-preview-header"><strong>Voucher e mensagem</strong><span id="voucherFileName"></span></div>
-     <label for="voucherCaption" class="muted">Mensagem que aparecerá abaixo do PDF no WhatsApp (opcional)</label>
-     <textarea id="voucherCaption" maxlength="1024" rows="4" placeholder="Escreva a mensagem que acompanhará o voucher"></textarea>
-     <div class="voucher-preview-actions"><span class="muted"><span id="voucherCaptionLength">0</span>/1024 caracteres</span><button id="cancelVoucher" type="button">Cancelar</button><button id="confirmVoucher" class="primary" type="button">Enviar PDF + mensagem</button></div>
-   </section>
-   <div id="status" class="status" role="status">Aguardando autenticação.</div>
+  <div class="composer-row">
+    <div class="attach-box">
+      <button id="attachmentMenu" class="icon-button attachment-trigger" type="button" aria-expanded="false" aria-controls="attachmentOptions" aria-label="Abrir opções de anexo" title="Anexar arquivo">+</button>
+      <div id="attachmentOptions" class="attachment-menu" hidden>
+        <label id="pdfPickerLabel" class="attachment-option">▤ &nbsp;Voucher ou PDF<input type="file" id="pdf" accept="application/pdf,.pdf" hidden></label>
+        <label id="audioPickerLabel" class="attachment-option">♫ &nbsp;Arquivo de áudio<input type="file" id="audioFile" accept="audio/*,.ogg,.mp3,.m4a,.aac,.wav,.webm" hidden></label>
+      </div>
+    </div>
+    <textarea id="message" rows="1" placeholder="Digite uma mensagem" aria-label="Mensagem ao cliente" maxlength="4096"></textarea>
+    <button id="mic" class="icon-button mic-button" type="button" aria-label="Gravar mensagem de voz" title="Gravar mensagem de voz">🎙</button>
+    <button id="send" class="send-button" type="button" aria-label="Enviar mensagem" title="Enviar mensagem">➤</button>
+  </div>
+  <section id="audioPreview" class="media-preview" hidden aria-label="Revisão da mensagem de voz">
+    <div class="media-preview-head"><strong id="audioTitle">Mensagem de voz</strong><span id="recordingInfo">Ouça antes de enviar</span></div>
+    <audio id="audioPlayer" controls preload="metadata"></audio>
+    <div class="preview-actions">
+      <button id="cancelAudio" type="button">Descartar</button>
+      <button id="sendAudio" class="primary" type="button">Enviar áudio</button>
+    </div>
+  </section>
+  <section id="voucherPreview" class="voucher-preview" hidden aria-label="Prévia de envio do voucher">
+    <div class="voucher-preview-header"><strong>Voucher e mensagem</strong><span id="voucherFileName"></span></div>
+    <label for="voucherCaption" class="muted">Legenda que aparecerá abaixo do PDF no WhatsApp (opcional)</label>
+    <textarea id="voucherCaption" maxlength="1024" rows="4" placeholder="Mensagem que acompanhará o voucher"></textarea>
+    <div class="voucher-preview-actions"><span class="muted"><span id="voucherCaptionLength">0</span>/1024 caracteres</span><button id="cancelVoucher" type="button">Cancelar</button><button id="confirmVoucher" class="primary" type="button">Enviar PDF + mensagem</button></div>
+  </section>
+  <details class="advanced-tools" id="advancedTools">
+    <summary>Mais opções <span class="muted"> · iniciar conversa / modelo aprovado</span></summary>
+    <div class="advanced-tools-body">
+      <div class="row"><input id="phone" inputmode="numeric" placeholder="DDI + DDD + número" aria-label="Telefone do cliente"><button id="openPhone" type="button">Abrir número</button></div>
+      <div class="row">
+        <input id="templateName" value="jeri_rota_confirmacao_reserva_copiaridioma" placeholder="Modelo aprovado da Meta" aria-label="Nome exato do modelo aprovado" title="Modelo de confirmação de reserva aprovado na Meta">
+        <button id="sendTemplate" type="button">Iniciar com modelo</button>
+      </div>
+      <label class="muted consent-label"><input id="consent" type="checkbox"> Confirmo que o cliente autorizou o contato</label>
+    </div>
+  </details>
+  <div id="status" class="status" role="status">Aguardando autenticação.</div>
  </div>
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="central-config.js"></script>
-<script src="atendimento.js?v=20261115-voucher-caption-1"></script>
+<script src="atendimento.js?v=20261115-chat-audio-1"></script>
 </body></html>
