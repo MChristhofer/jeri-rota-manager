@@ -460,7 +460,7 @@ function openModal(id = null) {
 function closeModal() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
 
 document.getElementById('todayLabel').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date()).replace('.', '');
-document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => setSection(button.dataset.section)));
+document.querySelectorAll('.nav-item[data-section]').forEach(button => button.addEventListener('click', () => setSection(button.dataset.section)));
 document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => setSection(button.dataset.go)));
 document.querySelectorAll('[data-open-modal]').forEach(button => button.addEventListener('click', () => openModal()));
 document.getElementById('newReservationButton').addEventListener('click', () => openModal());
