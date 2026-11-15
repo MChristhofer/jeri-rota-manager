@@ -27,14 +27,14 @@
     $('release').disabled = !selected || busy || !human;
     $('send').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
     $('mic').disabled = !selected || busy || !human || !windowOpen || Boolean(pendingAudio);
-    $('audioFile').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
+    $('audioFile').disabled = !selected || busy || Boolean(recorder);
     $('sendAudio').disabled = !pendingAudio || !selected || busy || !human || !windowOpen;
     $('cancelAudio').disabled = busy;
-    $('attachmentMenu').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
+    $('attachmentMenu').disabled = !selected || busy || Boolean(recorder);
     $('mic').classList.toggle('recording', Boolean(recorder));
     $('mic').textContent = recorder ? '■' : '🎙';
     $('mic').setAttribute('aria-label', recorder ? 'Parar gravação' : 'Gravar mensagem de voz');
-    $('pdf').disabled = !selected || busy || !human || !windowOpen;
+    $('pdf').disabled = !selected || busy;
     $('confirmVoucher').disabled = !pendingVoucher || !selected || busy || !human || !windowOpen;
     $('cancelVoucher').disabled = busy;
     $('voucherCaption').disabled = busy;
@@ -43,7 +43,7 @@
     $('mode').textContent = human ? 'Humano ativo' : 'IA ativa';
     $('windowInfo').textContent = windowOpen
       ? 'Janela aberta: mensagens livres e documentos permitidos.'
-      : 'Janela de 24h fechada ou desconhecida: inicie com modelo aprovado da Meta.';
+      : 'Janela de 24h fechada ou desconhecida: prepare anexos e aguarde resposta do cliente para enviar.';
   }
   async function request(path, opts = {}) {
     if (!api || !/^https:\/\//.test(api)) throw Error('Central não configurada. Falta URL HTTPS do servidor.');
@@ -119,7 +119,10 @@
     const changingConversation = selected !== phone;
     if (changingConversation && pendingVoucher) clearVoucher();
     if (changingConversation) clearAudio();
-    if (changingConversation) $('attachmentOptions').hidden = true;
+    if (changingConversation) {
+      $('attachmentOptions').hidden = true;
+      $('attachmentMenu').setAttribute('aria-expanded', 'false');
+    }
     selected = phone;
     $('phone').value = phone;
     $('title').textContent = '+' + phone;
@@ -167,17 +170,37 @@
       if (!$('send').disabled && $('message').value.trim()) $('send').click();
     }
   });
+  // O menu fica no document.body para não ser cortado pela área de digitação
+  // (que possui overflow-y:auto). Também funciona enquanto o cliente não respondeu.
+  const attachmentOptions = $('attachmentOptions');
+  document.body.appendChild(attachmentOptions);
+  function closeAttachmentMenu() {
+    attachmentOptions.hidden = true;
+    $('attachmentMenu').setAttribute('aria-expanded', 'false');
+  }
+  function placeAttachmentMenu() {
+    const rect = $('attachmentMenu').getBoundingClientRect();
+    const width = attachmentOptions.offsetWidth || 215;
+    const height = attachmentOptions.offsetHeight || 102;
+    attachmentOptions.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
+    attachmentOptions.style.top = Math.max(8, rect.top - height - 8) + 'px';
+  }
   $('attachmentMenu').addEventListener('click', () => {
     if ($('attachmentMenu').disabled) return;
-    $('attachmentOptions').hidden = !$('attachmentOptions').hidden;
-    $('attachmentMenu').setAttribute('aria-expanded', String(!$('attachmentOptions').hidden));
+    if (!attachmentOptions.hidden) {
+      closeAttachmentMenu();
+      return;
+    }
+    attachmentOptions.hidden = false;
+    placeAttachmentMenu();
+    $('attachmentMenu').setAttribute('aria-expanded', 'true');
   });
   document.addEventListener('click', event => {
-    if (!event.target.closest('.attach-box')) {
-      $('attachmentOptions').hidden = true;
-      $('attachmentMenu').setAttribute('aria-expanded', 'false');
-    }
+    if (!$('attachmentMenu').contains(event.target) && !attachmentOptions.contains(event.target))
+      closeAttachmentMenu();
   });
+  window.addEventListener('resize', () => { if (!attachmentOptions.hidden) placeAttachmentMenu(); });
+  $('messages').addEventListener('scroll', closeAttachmentMenu);
   $('send').addEventListener('click', () => action(async () => {
     const texto = $('message').value.trim();
     if (!texto) throw Error('Escreva uma mensagem.');
@@ -205,9 +228,9 @@
     $('attachmentMenu').setAttribute('aria-expanded', 'false');
     const file = $('pdf').files?.[0];
     if (!file) return;
-    if (!selected || busy || !human || !windowOpen) {
+    if (!selected || busy) {
       clearVoucher();
-      status('Para enviar PDF, assuma uma conversa com janela de 24 horas aberta.', 'error');
+      status('Selecione uma conversa antes de anexar o voucher.', 'error');
       return;
     }
     if (file.size > 8 * 1024 * 1024 || file.size < 5 || !/\.pdf$/i.test(file.name)) {
@@ -225,7 +248,9 @@
     $('voucherPreview').hidden = false;
     setDisabled();
     $('voucherCaption').focus();
-    status('Revise a mensagem antes de enviar o voucher.');
+    status(windowOpen && human
+      ? 'Revise a mensagem e confirme o envio do voucher.'
+      : 'Voucher preparado. Para enviar, assuma a conversa e aguarde a janela de 24 horas abrir.');
   });
   $('voucherCaption').addEventListener('input', () => {
     $('voucherCaptionLength').textContent = String($('voucherCaption').value.length);
@@ -271,16 +296,18 @@
     $('audioTitle').textContent = gravado ? 'Mensagem de voz' : name;
     $('audioPreview').hidden = false;
     setDisabled();
-    status('Ouça o áudio e confirme o envio para este cliente.');
+    status(windowOpen && human
+      ? 'Ouça o áudio e confirme o envio para este cliente.'
+      : 'Áudio preparado. Para enviar, assuma a conversa e aguarde a janela de 24 horas abrir.');
   }
   $('audioFile').addEventListener('change', () => {
     $('attachmentOptions').hidden = true;
     $('attachmentMenu').setAttribute('aria-expanded', 'false');
     const file = $('audioFile').files?.[0];
     if (!file) return;
-    if (!selected || busy || !human || !windowOpen || file.size > 8 * 1024 * 1024 || !file.size) {
+    if (!selected || busy || file.size > 8 * 1024 * 1024 || !file.size) {
       $('audioFile').value = '';
-      status('Selecione uma conversa humana com janela aberta e um áudio de até 8 MB.', 'error');
+      status('Selecione uma conversa e um áudio de até 8 MB.', 'error');
       return;
     }
     showAudio(file, file.name, false, selected);

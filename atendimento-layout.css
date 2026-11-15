@@ -123,3 +123,9 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
  .toolbar .row button{font-size:12px;padding:7px 9px}
 }
 @media(prefers-reduced-motion:reduce){.mic-button.recording{animation:none}}
+
+/* Menu de anexos montado no body: não é cortado pelo composer com rolagem. */
+.attachment-menu{position:fixed!important;bottom:auto!important;z-index:1000;max-width:calc(100vw - 16px)}
+.attachment-menu[hidden]{display:none!important}
+.attachment-trigger:not(:disabled){background:#eaf0f3;color:#183a55;border:1px solid #d5e0e8}
+.attachment-trigger:not(:disabled):hover{background:#dbe7ef}
