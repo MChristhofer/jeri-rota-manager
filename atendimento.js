@@ -8,6 +8,8 @@
   let busy = false;
   let human = false;
   let windowOpen = false;
+  let displayedPhone = '';
+  let openRequestId = 0;
 
   function status(text, type = '') {
     $('status').textContent = text;
@@ -66,38 +68,59 @@
     leads = await request('/central/conversas');
     renderLeads();
   }
-  function renderMessages(rows) {
+  function renderMessages(rows, phone) {
     const root = $('messages');
+    const newConversation = displayedPhone !== phone;
+    const nearBottom = newConversation || (root.scrollHeight - root.clientHeight - root.scrollTop < 110);
+    const previousTop = root.scrollTop;
+    displayedPhone = phone;
     root.replaceChildren();
     if (!rows.length) {
       const p = document.createElement('div'); p.className = 'empty';
-      p.textContent = 'Ainda não há mensagens armazenadas para este telefone.'; root.append(p); return;
+      p.textContent = 'Ainda não há mensagens armazenadas para este telefone.'; root.append(p);
+    } else {
+      const fragment = document.createDocumentFragment();
+      for (const row of rows) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble' + (row.papel === 'assistant' ? ' out' : '');
+        const meta = document.createElement('small');
+        meta.textContent = (row.papel === 'assistant' ? 'Jeri Rota' : 'Cliente') + ' · ' + new Date(row.criado_em).toLocaleString('pt-BR');
+        const content = document.createElement('div');
+        content.textContent = row.conteudo || '';
+        bubble.append(meta, content); fragment.append(bubble);
+      }
+      root.append(fragment);
     }
-    for (const row of rows) {
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble' + (row.papel === 'assistant' ? ' out' : '');
-      const meta = document.createElement('small');
-      meta.textContent = (row.papel === 'assistant' ? 'Jeri Rota' : 'Cliente') + ' · ' + new Date(row.criado_em).toLocaleString('pt-BR');
-      const content = document.createElement('div');
-      content.textContent = row.conteudo || '';
-      bubble.append(meta, content); root.append(bubble);
-    }
-    root.scrollTop = root.scrollHeight;
+    // Seleção de cliente abre na última mensagem. Se o atendente estiver
+    // lendo mensagens antigas, a atualização automática não o interrompe.
+    root.scrollTop = nearBottom ? root.scrollHeight : previousTop;
   }
-  async function open(phone) {
+  async function open(phone, { silent = false } = {}) {
     if (!validPhone(phone)) { status('Informe o telefone com DDI e DDD, somente números.', 'error'); return; }
+    const requestId = ++openRequestId;
+    const changingConversation = selected !== phone;
     selected = phone;
     $('phone').value = phone;
     $('title').textContent = '+' + phone;
+    if (changingConversation) {
+      displayedPhone = '';
+      $('messages').replaceChildren();
+      const loading = document.createElement('div');
+      loading.className = 'empty'; loading.textContent = 'Carregando conversa...';
+      $('messages').append(loading);
+    }
     renderLeads();
     try {
       const data = await request('/central/conversas/' + phone);
+      if (requestId !== openRequestId || selected !== phone) return;
       human = Boolean(data.humano);
       windowOpen = Boolean(data.janela_aberta);
-      renderMessages(data.mensagens || []);
+      renderMessages(data.mensagens || [], phone);
       setDisabled();
-      status('Conversa carregada.', 'ok');
-    } catch (error) { status(error.message, 'error'); }
+      if (!silent) status('Conversa carregada.', 'ok');
+    } catch (error) {
+      if (requestId === openRequestId && !silent) status(error.message, 'error');
+    }
   }
   async function action(fn) {
     if (busy || !selected) return;
@@ -156,7 +179,7 @@
     setInterval(() => {
       if (document.visibilityState === 'visible' && !busy) {
         refreshLeads().catch(() => {});
-        if (selected) open(selected);
+        if (selected) open(selected, { silent: true });
       }
     }, 15000);
   }
