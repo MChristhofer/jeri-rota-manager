@@ -26,6 +26,15 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 @media(max-width:750px){header{padding:0 12px}.shell{display:flex;flex-direction:column;height:calc(100dvh - 70px)}aside{max-height:195px;flex:0 0 auto;border-right:0;border-bottom:1px solid #ddd}main{flex:1;min-height:0}.toolbar{padding:10px}.messages{padding:12px}.bubble{max-width:91%}}
 </style>
 <link rel="stylesheet" href="atendimento-layout.css?v=20261115-scroll-1">
+<style>
+.voucher-preview[hidden]{display:none!important}
+.voucher-preview{display:grid;gap:8px;padding:12px;border:1px solid #e0d2b7;border-radius:12px;background:#fbf7ed}
+.voucher-preview-header,.voucher-preview-actions{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.voucher-preview-header span{font-size:12px;color:#687586;overflow-wrap:anywhere}
+.voucher-preview textarea{min-height:82px;max-height:150px;resize:vertical;background:white}
+.voucher-preview-actions{justify-content:flex-end}
+#pdfPickerLabel:has(input:disabled){opacity:.5;cursor:not-allowed!important}
+</style>
 </head>
 <body>
 <header><div><b>JERI ROTA</b> <small>MANAGER / CENTRAL</small></div><a class="back" href="index.html">← Voltar ao sistema</a></header>
@@ -50,10 +59,16 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
    <textarea id="message" placeholder="Escreva sua mensagem para o cliente..." aria-label="Mensagem ao cliente" maxlength="4096"></textarea>
    <div class="row">
      <button id="send" class="primary" type="button">Enviar mensagem</button>
-     <label class="gold" style="padding:9px 12px;border-radius:9px;cursor:pointer">Enviar voucher PDF <input type="file" id="pdf" accept="application/pdf,.pdf" hidden></label>
+     <label class="gold" style="padding:9px 12px;border-radius:9px;cursor:pointer" id="pdfPickerLabel">Selecionar voucher PDF <input type="file" id="pdf" accept="application/pdf,.pdf" hidden></label>
      <input id="templateName" value="jeri_rota_confirmacao_reserva_copiaridioma" placeholder="Modelo aprovado da Meta" aria-label="Nome exato do modelo aprovado" title="Modelo de confirmação de reserva aprovado na Meta" style="width:320px;max-width:100%">
      <button id="sendTemplate" type="button">Iniciar com modelo</button><label class="muted"><input id="consent" type="checkbox"> Confirmo que o cliente autorizou o contato</label>
    </div>
+   <section id="voucherPreview" class="voucher-preview" hidden aria-label="Prévia de envio do voucher">
+     <div class="voucher-preview-header"><strong>Voucher e mensagem</strong><span id="voucherFileName"></span></div>
+     <label for="voucherCaption" class="muted">Mensagem que aparecerá abaixo do PDF no WhatsApp (opcional)</label>
+     <textarea id="voucherCaption" maxlength="1024" rows="4" placeholder="Escreva a mensagem que acompanhará o voucher"></textarea>
+     <div class="voucher-preview-actions"><span class="muted"><span id="voucherCaptionLength">0</span>/1024 caracteres</span><button id="cancelVoucher" type="button">Cancelar</button><button id="confirmVoucher" class="primary" type="button">Enviar PDF + mensagem</button></div>
+   </section>
    <div id="status" class="status" role="status">Aguardando autenticação.</div>
  </div>
 </main>
@@ -61,5 +76,5 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="central-config.js"></script>
-<script src="atendimento.js?v=20261115-scroll-1"></script>
+<script src="atendimento.js?v=20261115-voucher-caption-1"></script>
 </body></html>
