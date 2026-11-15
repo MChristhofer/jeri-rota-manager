@@ -137,9 +137,10 @@
   }
   function page1(model,locale,t,services,number,total,qrPage){
     const f=formalLabels[locale]||formalLabels.pt;
-    const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[model.client||'—'];
+    const passengers=Array.isArray(model.passengers)&&model.passengers.length?model.passengers:[{type:'Pagante',name:model.client||'—'}];
     const period=model.period||{};
-    const titular=passengers[0]||model.client||'—';
+    const firstPassenger=passengers[0];
+    const titular=typeof firstPassenger==='string'?firstPassenger:(firstPassenger?.name||model.client||'—');
     const main=[];
     main.push('<section class="vc-formal-sale-bar">VOUCHER Nº ['+esc(model.voucher_number||'—')+'] &nbsp; - &nbsp; Data: '+esc(date(model.issued_at,locale))+'</section>');
     if(number===1){
