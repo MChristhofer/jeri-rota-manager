@@ -126,7 +126,9 @@
   $('sendTemplate').addEventListener('click', () => action(async () => {
     const nome = $('templateName').value.trim();
     if (!/^[a-z0-9_]{1,100}$/.test(nome)) throw Error('Informe o nome exato do modelo aprovado.');
-    await request('/central/modelos', { method:'POST', body: {telefone:selected, nome, idioma:'pt_BR'} });
+    if (!$('consent').checked) throw Error('Confirme o consentimento do cliente para iniciar contato.');
+    await request('/central/modelos', { method:'POST', body: {telefone:selected, nome, idioma:'pt_BR', consentimento_confirmado:true} });
+    $('consent').checked = false;
   }));
   $('pdf').addEventListener('change', async () => {
     const file = $('pdf').files?.[0];
