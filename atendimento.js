@@ -8,6 +8,7 @@
   let busy = false;
   let human = false;
   let windowOpen = false;
+  let pendingVoucher = null;
   let displayedPhone = '';
   let openRequestId = 0;
 
@@ -21,6 +22,10 @@
     $('release').disabled = !selected || busy || !human;
     $('send').disabled = !selected || busy || !human || !windowOpen;
     $('pdf').disabled = !selected || busy || !human || !windowOpen;
+    $('confirmVoucher').disabled = !pendingVoucher || !selected || busy || !human || !windowOpen;
+    $('cancelVoucher').disabled = busy;
+    $('voucherCaption').disabled = busy;
+
     $('sendTemplate').disabled = !selected || busy || !human;
     $('mode').textContent = human ? 'Humano ativo' : 'IA ativa';
     $('windowInfo').textContent = windowOpen
@@ -153,22 +158,59 @@
     await request('/central/modelos', { method:'POST', body: {telefone:selected, nome, idioma:'pt_BR', consentimento_confirmado:true} });
     $('consent').checked = false;
   }));
-  $('pdf').addEventListener('change', async () => {
+  function clearVoucher() {
+    pendingVoucher = null;
+    $('pdf').value = '';
+    $('voucherCaption').value = '';
+    $('voucherPreview').hidden = true;
+    $('voucherFileName').textContent = '';
+    $('voucherCaptionLength').textContent = '0';
+    setDisabled();
+  }
+  $('pdf').addEventListener('change', () => {
     const file = $('pdf').files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024 || file.size < 5 || !/\.pdf$/i.test(file.name)) {
-      $('pdf').value = ''; status('Escolha um PDF com até 8 MB.', 'error'); return;
+    if (!selected || busy || !human || !windowOpen) {
+      clearVoucher();
+      status('Para enviar PDF, assuma uma conversa com janela de 24 horas aberta.', 'error');
+      return;
     }
-    await action(async () => {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      let binary = '';
-      for (let i=0; i<bytes.length; i+=8192) binary += String.fromCharCode(...bytes.subarray(i,i+8192));
-      await request('/central/documentos', { method:'POST', body: {
-        telefone:selected, nome_arquivo:file.name, pdf_base64:btoa(binary)
-      }});
-    });
-    $('pdf').value = '';
+    if (file.size > 8 * 1024 * 1024 || file.size < 5 || !/\.pdf$/i.test(file.name)) {
+      clearVoucher();
+      status('Escolha um PDF de até 8 MB.', 'error');
+      return;
+    }
+    pendingVoucher = {file, telefone: selected};
+    $('voucherFileName').textContent = file.name;
+    $('voucherCaption').value =
+      'Olá! Segue em anexo seu voucher da Jeri Rota.\n\n' +
+      'Por favor, confira os dados da reserva, a data, o horário e os locais de embarque e desembarque.\n\n' +
+      'Em caso de dúvidas, estamos à disposição.\n\nEquipe Jeri Rota';
+    $('voucherCaptionLength').textContent = String($('voucherCaption').value.length);
+    $('voucherPreview').hidden = false;
+    setDisabled();
+    $('voucherCaption').focus();
+    status('Revise a mensagem antes de enviar o voucher.');
   });
+  $('voucherCaption').addEventListener('input', () => {
+    $('voucherCaptionLength').textContent = String($('voucherCaption').value.length);
+  });
+  $('cancelVoucher').addEventListener('click', clearVoucher);
+  $('confirmVoucher').addEventListener('click', () => action(async () => {
+    if (!pendingVoucher || pendingVoucher.telefone !== selected)
+      throw Error('Selecione novamente o voucher para este cliente.');
+    const file = pendingVoucher.file;
+    const legenda = $('voucherCaption').value.trim();
+    if (legenda.length > 1024) throw Error('A legenda deve ter até 1024 caracteres.');
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = '';
+    for (let i=0; i<bytes.length; i+=8192)
+      binary += String.fromCharCode(...bytes.subarray(i,i+8192));
+    await request('/central/documentos', { method:'POST', body: {
+      telefone:selected, nome_arquivo:file.name, legenda, pdf_base64:btoa(binary)
+    }});
+    clearVoucher();
+  }));
   async function boot() {
     if (!supabase) { status('Configuração de login indisponível.', 'error'); return; }
     const { data: { user } } = await supabase.auth.getUser();
