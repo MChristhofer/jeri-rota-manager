@@ -24,6 +24,7 @@
   function iconClass(item){
     if(item.id==='logoutSystemButton')return 'ph-sign-out';
     if(item.matches('a[href*="repasses.html"]'))return 'ph-arrows-left-right';
+    if(item.matches('a[href="atendimento.html"]'))return 'ph-chat-circle-dots';
     return iconBySection[item.dataset.section]||'ph-circle';
   }
 
