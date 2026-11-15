@@ -9,6 +9,11 @@
   let human = false;
   let windowOpen = false;
   let pendingVoucher = null;
+  let pendingAudio = null;
+  let recorder = null;
+  let recordingStream = null;
+  let discardRecording = false;
+  let audioPreviewUrl = '';
   let displayedPhone = '';
   let openRequestId = 0;
 
@@ -20,7 +25,15 @@
   function setDisabled() {
     $('take').disabled = !selected || busy || human;
     $('release').disabled = !selected || busy || !human;
-    $('send').disabled = !selected || busy || !human || !windowOpen;
+    $('send').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
+    $('mic').disabled = !selected || busy || !human || !windowOpen || Boolean(pendingAudio);
+    $('audioFile').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
+    $('sendAudio').disabled = !pendingAudio || !selected || busy || !human || !windowOpen;
+    $('cancelAudio').disabled = busy;
+    $('attachmentMenu').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
+    $('mic').classList.toggle('recording', Boolean(recorder));
+    $('mic').textContent = recorder ? '■' : '🎙';
+    $('mic').setAttribute('aria-label', recorder ? 'Parar gravação' : 'Gravar mensagem de voz');
     $('pdf').disabled = !selected || busy || !human || !windowOpen;
     $('confirmVoucher').disabled = !pendingVoucher || !selected || busy || !human || !windowOpen;
     $('cancelVoucher').disabled = busy;
@@ -105,6 +118,8 @@
     const requestId = ++openRequestId;
     const changingConversation = selected !== phone;
     if (changingConversation && pendingVoucher) clearVoucher();
+    if (changingConversation) clearAudio();
+    if (changingConversation) $('attachmentOptions').hidden = true;
     selected = phone;
     $('phone').value = phone;
     $('title').textContent = '+' + phone;
@@ -146,6 +161,23 @@
     await request('/central/modo', { method:'POST', body: {telefone:selected, humano:false} });
     human = false;
   }));
+  $('message').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (!$('send').disabled && $('message').value.trim()) $('send').click();
+    }
+  });
+  $('attachmentMenu').addEventListener('click', () => {
+    if ($('attachmentMenu').disabled) return;
+    $('attachmentOptions').hidden = !$('attachmentOptions').hidden;
+    $('attachmentMenu').setAttribute('aria-expanded', String(!$('attachmentOptions').hidden));
+  });
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.attach-box')) {
+      $('attachmentOptions').hidden = true;
+      $('attachmentMenu').setAttribute('aria-expanded', 'false');
+    }
+  });
   $('send').addEventListener('click', () => action(async () => {
     const texto = $('message').value.trim();
     if (!texto) throw Error('Escreva uma mensagem.');
@@ -169,6 +201,8 @@
     setDisabled();
   }
   $('pdf').addEventListener('change', () => {
+    $('attachmentOptions').hidden = true;
+    $('attachmentMenu').setAttribute('aria-expanded', 'false');
     const file = $('pdf').files?.[0];
     if (!file) return;
     if (!selected || busy || !human || !windowOpen) {
@@ -211,6 +245,117 @@
       telefone:selected, nome_arquivo:file.name, legenda, pdf_base64:btoa(binary)
     }});
     clearVoucher();
+  }));
+  function clearAudio() {
+    discardRecording = true;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    recorder = null;
+    if (recordingStream) recordingStream.getTracks().forEach(track => track.stop());
+    recordingStream = null;
+    pendingAudio = null;
+    $('audioFile').value = '';
+    $('audioPreview').hidden = true;
+    $('audioPlayer').removeAttribute('src');
+    $('audioPlayer').load();
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    audioPreviewUrl = '';
+    $('recordingInfo').textContent = 'Ouça antes de enviar';
+    setDisabled();
+  }
+  function showAudio(blob, name, gravado, phone) {
+    if (phone !== selected) return;
+    clearAudio();
+    pendingAudio = { blob, name, gravado, telefone: phone };
+    audioPreviewUrl = URL.createObjectURL(blob);
+    $('audioPlayer').src = audioPreviewUrl;
+    $('audioTitle').textContent = gravado ? 'Mensagem de voz' : name;
+    $('audioPreview').hidden = false;
+    setDisabled();
+    status('Ouça o áudio e confirme o envio para este cliente.');
+  }
+  $('audioFile').addEventListener('change', () => {
+    $('attachmentOptions').hidden = true;
+    $('attachmentMenu').setAttribute('aria-expanded', 'false');
+    const file = $('audioFile').files?.[0];
+    if (!file) return;
+    if (!selected || busy || !human || !windowOpen || file.size > 8 * 1024 * 1024 || !file.size) {
+      $('audioFile').value = '';
+      status('Selecione uma conversa humana com janela aberta e um áudio de até 8 MB.', 'error');
+      return;
+    }
+    showAudio(file, file.name, false, selected);
+  });
+  $('mic').addEventListener('click', async () => {
+    if (recorder) {
+      if (recorder.state === 'recording') recorder.stop();
+      recorder = null;
+      setDisabled();
+      return;
+    }
+    if (!selected || busy || !human || !windowOpen || pendingAudio) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      status('Este navegador não permite gravação de áudio. Use o anexo de áudio.', 'error');
+      return;
+    }
+    const phone = selected;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (selected !== phone || busy || !human || !windowOpen) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      recordingStream = stream;
+      discardRecording = false;
+      const formats = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/mp4'];
+      const supported = formats.find(t => MediaRecorder.isTypeSupported(t));
+      const media = supported ? new MediaRecorder(stream, { mimeType: supported }) : new MediaRecorder(stream);
+      const chunks = [];
+      recorder = media;
+      media.ondataavailable = e => { if (e.data?.size) chunks.push(e.data); };
+      media.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        recordingStream = null;
+        const discarded = discardRecording;
+        if (recorder === media) recorder = null;
+        if (!discarded && chunks.length) {
+          const blob = new Blob(chunks, { type: media.mimeType || 'audio/webm' });
+          if (blob.size > 8 * 1024 * 1024) {
+            status('Gravação acima de 8 MB. Faça um áudio mais curto.', 'error');
+          } else {
+            showAudio(blob, 'mensagem-de-voz', true, phone);
+          }
+        }
+        setDisabled();
+      };
+      media.onerror = () => {
+        status('Falha na gravação de áudio.', 'error');
+        clearAudio();
+      };
+      media.start(1000);
+      setDisabled();
+      status('Gravando áudio. Clique novamente no microfone para parar.');
+    } catch (error) {
+      status('Microfone indisponível ou sem permissão no navegador.', 'error');
+      if (recordingStream) recordingStream.getTracks().forEach(track => track.stop());
+      recordingStream = null;
+      recorder = null;
+      setDisabled();
+    }
+  });
+  $('cancelAudio').addEventListener('click', clearAudio);
+  $('sendAudio').addEventListener('click', () => action(async () => {
+    if (!pendingAudio || pendingAudio.telefone !== selected)
+      throw Error('Selecione o áudio novamente para este cliente.');
+    const { blob, name, gravado } = pendingAudio;
+    if (blob.size > 8 * 1024 * 1024 || !blob.size) throw Error('Áudio inválido ou maior que 8 MB.');
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    await request('/central/audios', { method:'POST', body: {
+      telefone:selected, nome_arquivo:name, audio_base64:btoa(binary), gravado
+    }});
+    clearAudio();
   }));
   async function boot() {
     if (!supabase) { status('Configuração de login indisponível.', 'error'); return; }
