@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central de Atendimento | Jeri Rota Manager</title>
+<link rel="icon" href="jeri-rota-mark.svg">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#182536;background:#f4f1eb}
+*{box-sizing:border-box}body{margin:0}header{height:70px;background:#0b233c;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:16px}
+header b{font-size:19px}header small{color:#dabd7d}.back{color:#f7dfad;text-decoration:none}.shell{display:grid;grid-template-columns:310px minmax(0,1fr);height:calc(100dvh - 70px);max-width:1600px;margin:auto}
+aside{background:#fff;border-right:1px solid #e3e1dc;overflow:auto;padding:14px}
+main{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0}
+h1{font-size:18px;margin:0}.muted{color:#657282;font-size:13px}.toolbar{padding:16px 20px;background:#fff;border-bottom:1px solid #e1e0da;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+input,textarea,button,select{font:inherit}input,textarea{padding:11px;border:1px solid #ccd2db;border-radius:10px;min-width:0}textarea{width:100%;resize:vertical;min-height:58px}
+button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:#fff;color:#18324d;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#0b2b49;color:white;border-color:#0b2b49}.gold{background:#d3ab66;color:#122b44;border-color:#d3ab66}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.search{width:100%;margin-bottom:12px}
+.lead{display:block;text-align:left;width:100%;padding:14px;border:0;border-bottom:1px solid #ececea;border-radius:0;background:transparent}
+.lead:hover,.lead.active{background:#f2eee5}.lead strong{display:block}.lead span{display:block;color:#687586;font-size:12px;margin-top:5px}
+.messages{padding:20px;overflow:auto;background:#f7f5ef;display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:min(78%,660px);padding:11px 13px;border-radius:13px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 1px 2px #0001}
+.bubble.out{align-self:flex-end;background:#e9f2ed}.bubble small{display:block;color:#78828c;margin-bottom:5px;font-size:11px}
+.composer{padding:14px 18px;background:white;border-top:1px solid #e2e2dc;display:grid;gap:10px}
+.status{font-size:13px;color:#607082}.status.error{color:#b12f30}.status.ok{color:#186d4c}
+#phone{max-width:185px}.empty{padding:22px;color:#697484}.pill{border-radius:999px;padding:5px 10px;background:#eaeaea;font-size:12px}
+@media(max-width:750px){header{padding:0 12px}.shell{display:flex;flex-direction:column;height:calc(100dvh - 70px)}aside{max-height:195px;flex:0 0 auto;border-right:0;border-bottom:1px solid #ddd}main{flex:1;min-height:0}.toolbar{padding:10px}.messages{padding:12px}.bubble{max-width:91%}}
+</style>
+</head>
+<body>
+<header><div><b>JERI ROTA</b> <small>MANAGER / CENTRAL</small></div><a class="back" href="index.html">← Voltar ao sistema</a></header>
+<div class="shell">
+<aside>
+ <div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>Conversas</strong><button id="reload" type="button">Atualizar</button></div>
+ <input class="search" id="search" placeholder="Buscar telefone" aria-label="Buscar telefone">
+ <div id="leads"><div class="empty">Entrando na central...</div></div>
+</aside>
+<main>
+ <div class="toolbar">
+  <div><h1 id="title">Selecione um cliente</h1><div id="windowInfo" class="muted">As mensagens serão enviadas pelo número principal da Jeri Rota.</div></div>
+  <div class="row">
+    <span id="mode" class="pill">IA ativa</span>
+    <button id="take" type="button" disabled>Assumir conversa</button>
+    <button id="release" type="button" disabled>Reativar IA</button>
+  </div>
+ </div>
+ <div id="messages" class="messages" aria-live="polite"><div class="empty">Escolha uma conversa à esquerda.</div></div>
+ <div class="composer">
+   <div class="row"><input id="phone" inputmode="numeric" placeholder="DDI + DDD + número" aria-label="Telefone do cliente"><button id="openPhone" type="button">Abrir número</button><span class="muted">Para clientes que não aparecem na lista.</span></div>
+   <textarea id="message" placeholder="Escreva sua mensagem para o cliente..." aria-label="Mensagem ao cliente" maxlength="4096"></textarea>
+   <div class="row">
+     <button id="send" class="primary" type="button">Enviar mensagem</button>
+     <label class="gold" style="padding:9px 12px;border-radius:9px;cursor:pointer">Enviar voucher PDF <input type="file" id="pdf" accept="application/pdf,.pdf" hidden></label>
+     <input id="templateName" placeholder="Modelo aprovado da Meta" aria-label="Modelo aprovado" style="max-width:230px">
+     <button id="sendTemplate" type="button">Iniciar com modelo</button><label class="muted"><input id="consent" type="checkbox"> Confirmo que o cliente autorizou o contato</label>
+   </div>
+   <div id="status" class="status" role="status">Aguardando autenticação.</div>
+ </div>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="central-config.js"></script>
+<script src="atendimento.js"></script>
+</body></html>
