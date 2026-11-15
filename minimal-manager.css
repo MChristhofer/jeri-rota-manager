@@ -1,6 +1,6 @@
 /* Modo mínimo: o Manager expõe Dashboard, Reservas, Clientes, Financeiro, Serviços, Vouchers, Hospedagens e Protocolos Financeiros. */
-.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="clientes"]):not([data-section="servicos"]):not([data-section="financeiro"]):not([data-section="vouchers"]):not([data-section="hospedagens"]):not([data-section="protocolos"]),
-.main-nav a.nav-item,
+.main-nav .nav-item:not([data-section="dashboard"]):not([data-section="reservas"]):not([data-section="clientes"]):not([data-section="servicos"]):not([data-section="financeiro"]):not([data-section="vouchers"]):not([data-section="hospedagens"]):not([data-section="protocolos"]):not([href="atendimento.html"]),
+.main-nav a.nav-item:not([href="atendimento.html"]),
 .content-section#operacao,
 .content-section#prestacao,
 [data-go="prestacao"],
@@ -11,6 +11,9 @@
 .main-nav{
   gap:8px;
 }
+
+/* O atendimento é uma página própria do Manager: mantém o link visível. */
+.main-nav a.nav-item[href="atendimento.html"]{display:flex!important;align-items:center;}
 
 /* Mantém o foco visual nas rotinas atuais. */
 .main-nav .nav-item[data-section="dashboard"],
