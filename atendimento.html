@@ -25,7 +25,7 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 #phone{max-width:185px}.empty{padding:22px;color:#697484}.pill{border-radius:999px;padding:5px 10px;background:#eaeaea;font-size:12px}
 @media(max-width:750px){header{padding:0 12px}.shell{display:flex;flex-direction:column;height:calc(100dvh - 70px)}aside{max-height:195px;flex:0 0 auto;border-right:0;border-bottom:1px solid #ddd}main{flex:1;min-height:0}.toolbar{padding:10px}.messages{padding:12px}.bubble{max-width:91%}}
 </style>
-<link rel="stylesheet" href="atendimento-layout.css?v=20261115-attachments-2">
+<link rel="stylesheet" href="atendimento-layout.css?v=20261115-mobile-nav-1">
 <style>
 .voucher-preview[hidden]{display:none!important}
 .voucher-preview{display:grid;gap:8px;padding:12px;border:1px solid #e0d2b7;border-radius:12px;background:#fbf7ed}
@@ -38,7 +38,7 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 </head>
 <body>
 <header><div><b>JERI ROTA</b> <small>MANAGER / CENTRAL</small></div><a class="back" href="index.html">← Voltar ao sistema</a></header>
-<div class="shell">
+<div class="shell" id="centralShell" data-mobile-view="list">
 <aside>
  <div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>Conversas</strong><button id="reload" type="button">Atualizar</button></div>
  <input class="search" id="search" placeholder="Buscar telefone" aria-label="Buscar telefone">
@@ -46,6 +46,7 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 </aside>
 <main>
  <div class="toolbar">
+  <button id="mobileBack" class="mobile-back" type="button" aria-label="Voltar à lista de conversas" title="Voltar às conversas">‹</button>
   <div><h1 id="title">Selecione um cliente</h1><div id="windowInfo" class="muted">As mensagens serão enviadas pelo número principal da Jeri Rota.</div></div>
   <div class="row">
     <span id="mode" class="pill">IA ativa</span>
@@ -99,5 +100,5 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="central-config.js"></script>
-<script src="atendimento.js?v=20261115-attachments-2"></script>
+<script src="atendimento.js?v=20261115-mobile-nav-1"></script>
 </body></html>
