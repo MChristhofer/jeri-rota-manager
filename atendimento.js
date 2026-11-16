@@ -18,9 +18,24 @@
   let openRequestId = 0;
   const mobileMedia = window.matchMedia('(max-width: 750px)');
   let chatView = false;
-  function updateMobileView() {
-    $('centralShell').dataset.mobileView = chatView && selected ? 'chat' : 'list';
+  function closeChatOptions() {
+    $('chatActions').classList.remove('mobile-open');
+    $('mobileChatOptions').setAttribute('aria-expanded', 'false');
   }
+  function updateMobileView() {
+    const active = chatView && selected;
+    $('centralShell').dataset.mobileView = active ? 'chat' : 'list';
+    document.body.classList.toggle('mobile-chat-active', Boolean(active && mobileMedia.matches));
+    if (!active) closeChatOptions();
+  }
+  $('mobileChatOptions').addEventListener('click', () => {
+    const open = !$('chatActions').classList.contains('mobile-open');
+    $('chatActions').classList.toggle('mobile-open', open);
+    $('mobileChatOptions').setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', event => {
+    if (!event.target.closest('#chatActions, #mobileChatOptions')) closeChatOptions();
+  });
   function showChat() {
     chatView = true;
     updateMobileView();
@@ -59,6 +74,8 @@
 
     $('sendTemplate').disabled = !selected || busy || !human;
     $('mode').textContent = human ? 'Humano ativo' : 'IA ativa';
+    $('mobileModeLabel').textContent = (human ? 'Humano' : 'IA') +
+      (windowOpen ? ' · Janela aberta' : ' · Janela indisponível');
     $('windowInfo').textContent = windowOpen
       ? 'Janela aberta: mensagens livres e documentos permitidos.'
       : 'Janela de 24h fechada ou desconhecida: prepare anexos e aguarde resposta do cliente para enviar.';
@@ -204,7 +221,11 @@
     selected = phone;
     if (!silent) showChat();
     $('phone').value = phone;
-    $('title').textContent = '+' + phone;
+    const contact = leads.find(l => String(l.telefone_whatsapp) === phone);
+    const contactName = String(contact?.nome || '').trim();
+    $('title').textContent = contactName || '+' + phone;
+    $('chatAvatar').textContent = contactName ? initials(contactName) : '+';
+    closeChatOptions();
     if (changingConversation) {
       displayedPhone = '';
       $('messages').replaceChildren();
