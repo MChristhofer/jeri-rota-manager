@@ -5,7 +5,7 @@
     '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
   })[char]);
   const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
-  const shortDate=value=>value?new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(`${String(value).slice(0,10)}T12:00:00`)):'A definir';
+  const shortDate=value=>{if(!value)return'A definir';const raw=String(value);if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(raw+'T12:00:00'));const d=new Date(raw);return Number.isNaN(d.getTime())?'A definir':new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',day:'2-digit',month:'2-digit',year:'numeric'}).format(d)};
   const serviceDate=value=>value?new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${String(value).slice(0,10)}T12:00:00`)).replaceAll('.','').toUpperCase():'A DEFINIR';
   const titleKey=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const localImages=[
