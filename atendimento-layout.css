@@ -167,3 +167,28 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
   .advanced-tools>summary{font-size:11px}
   .status{font-size:10px}
 }
+
+/* Lista de conversas: identificação rápida, prévia e modo de atendimento. */
+.inbox-filters{display:flex;gap:7px;padding:0 9px 10px;flex:none;overflow-x:auto}
+.filter-chip{border-radius:999px;border:1px solid #dfe6e9;background:#fff;padding:7px 12px;font-size:12px;white-space:nowrap;color:#506477}
+.filter-chip.active{background:#0b2b49;border-color:#0b2b49;color:#fff}
+.filter-chip:focus-visible{outline:2px solid #d3ab66;outline-offset:2px}
+#leads .inbox-lead{display:flex;align-items:center;gap:11px;min-width:0;min-height:86px;padding:12px 10px;text-align:left}
+#leads .inbox-lead.active{border-left:3px solid #d3ab66}
+.inbox-avatar{flex:none;display:grid!important;place-items:center;width:43px;height:43px;border-radius:50%;background:#e6e9ed;color:#0b2b49;font-size:15px;font-weight:700;margin:0!important}
+.inbox-lead-body{display:flex!important;flex:1;flex-direction:column;min-width:0;gap:4px;margin:0!important}
+.inbox-lead-head,.inbox-lead-footer{display:flex!important;align-items:center;justify-content:space-between;gap:8px;min-width:0;margin:0!important}
+#leads .inbox-lead-head strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#leads .inbox-lead-time{flex:none;font-size:11px;color:#7b8895;white-space:nowrap}
+#leads .inbox-lead-preview{display:block!important;font-size:12px;color:#607080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0!important;max-width:100%}
+#leads .inbox-lead-phone{font-size:11px;color:#88939b;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0!important}
+#leads .inbox-mode{flex:none;display:inline-flex!important;align-items:center;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:600;margin:0!important}
+#leads .inbox-mode.human{background:#fff0d8;color:#805b1e}
+#leads .inbox-mode.ai{background:#e9eff5;color:#4a647c}
+@media(max-width:750px){
+ .shell>aside .inbox-filters{padding:0 8px 12px}
+ #leads .inbox-lead{min-height:82px;padding:12px 14px}
+ .inbox-avatar{width:48px;height:48px}
+ #leads .inbox-lead-head strong{font-size:15px}
+ #leads .inbox-lead-preview{font-size:13px}
+}
