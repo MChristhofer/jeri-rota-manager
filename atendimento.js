@@ -16,6 +16,24 @@
   let audioPreviewUrl = '';
   let displayedPhone = '';
   let openRequestId = 0;
+  const mobileMedia = window.matchMedia('(max-width: 750px)');
+  let chatView = false;
+  function updateMobileView() {
+    $('centralShell').dataset.mobileView = chatView && selected ? 'chat' : 'list';
+  }
+  function showChat() {
+    chatView = true;
+    updateMobileView();
+  }
+  function showConversations() {
+    chatView = false;
+    updateMobileView();
+    if (recorder && recorder.state === 'recording') clearAudio();
+    $('attachmentOptions').hidden = true;
+    $('attachmentMenu').setAttribute('aria-expanded', 'false');
+  }
+  $('mobileBack').addEventListener('click', showConversations);
+  mobileMedia.addEventListener('change', updateMobileView);
 
   function status(text, type = '') {
     $('status').textContent = text;
@@ -124,6 +142,7 @@
       $('attachmentMenu').setAttribute('aria-expanded', 'false');
     }
     selected = phone;
+    if (!silent) showChat();
     $('phone').value = phone;
     $('title').textContent = '+' + phone;
     if (changingConversation) {
@@ -399,5 +418,6 @@
     }, 15000);
   }
   setDisabled();
+  updateMobileView();
   boot();
 })();
