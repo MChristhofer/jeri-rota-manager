@@ -29,17 +29,25 @@
   function lang(value){return Object.prototype.hasOwnProperty.call(languages,value)?value:'pt'}
   function date(value,locale){
     if(!value)return '—';
-    const text=String(value).slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(text))return esc(value);
-    const parts=text.split('-');
-    return parts[2]+'/'+parts[1]+'/'+parts[0];
+    const raw=String(value);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+      const parts=raw.split('-');
+      return parts[2]+'/'+parts[1]+'/'+parts[0];
+    }
+    const d=new Date(raw);
+    if(Number.isNaN(d.getTime()))return esc(value);
+    return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',day:'2-digit',month:'2-digit',year:'numeric'}).format(d);
   }
   function shortDate(value,locale){
     if(!value)return '—';
-    const text=String(value).slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(text))return esc(value);
-    const d=new Date(text+'T12:00:00');
-    return new Intl.DateTimeFormat(languages[locale].tag,{day:'2-digit',month:'short'}).format(d);
+    const raw=String(value);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+      const d=new Date(raw+'T12:00:00');
+      return new Intl.DateTimeFormat(languages[locale].tag,{day:'2-digit',month:'short'}).format(d);
+    }
+    const d=new Date(raw);
+    if(Number.isNaN(d.getTime()))return esc(value);
+    return new Intl.DateTimeFormat(languages[locale].tag,{timeZone:'America/Fortaleza',day:'2-digit',month:'short'}).format(d);
   }
   function cash(value,currency,locale){
     const iso=/^[A-Z]{3}$/.test(currency||'')?currency:'BRL';
