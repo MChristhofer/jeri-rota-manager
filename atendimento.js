@@ -105,7 +105,8 @@
     const visible = leads.filter(l => {
       const name = String(l.nome || '').trim().toLocaleLowerCase('pt-BR');
       const phone = String(l.telefone_whatsapp || '');
-      const matches = !filter || name.includes(filter) || phone.includes(filter.replace(/\D/g, ''));
+      const numericFilter = filter.replace(/\D/g, '');
+      const matches = !filter || name.includes(filter) || (numericFilter.length > 0 && phone.includes(numericFilter));
       return matches && (inboxFilter === 'all' || (inboxFilter === 'human' ? l.humano : !l.humano));
     });
     if (!visible.length) {
