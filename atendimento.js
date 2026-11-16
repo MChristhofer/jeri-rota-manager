@@ -80,25 +80,85 @@
     if (!response.ok) throw Error(typeof parsed.detail === 'string' ? parsed.detail : 'Operação falhou (HTTP ' + response.status + ').');
     return parsed;
   }
+  let inboxFilter = 'all';
+  function inboxTime(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (!Number.isFinite(d.getTime())) return '';
+    const now = new Date();
+    if (d.toDateString() === now.toDateString())
+      return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return 'Ontem';
+    return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+  }
+  function initials(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    return (words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0,2))
+      .toLocaleUpperCase('pt-BR');
+  }
   function renderLeads() {
-    const filter = $('search').value.trim().replace(/\D/g, '');
+    const filter = $('search').value.trim().toLocaleLowerCase('pt-BR');
     const root = $('leads');
     root.replaceChildren();
-    const visible = leads.filter(l => !filter || l.telefone_whatsapp.includes(filter));
-    if (!visible.length) {
-      const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'Nenhuma conversa nesta lista.'; root.append(p); return;
-    }
-    visible.forEach(l => {
-      const btn = document.createElement('button');
-      btn.className = 'lead' + (l.telefone_whatsapp === selected ? ' active' : '');
-      const title = document.createElement('strong');
-      title.textContent = '+' + l.telefone_whatsapp;
-      const detail = document.createElement('span');
-      detail.textContent = (l.humano ? 'Atendimento humano' : 'IA disponível') + (l.ultima_mensagem_em ? ' · ' + new Date(l.ultima_mensagem_em).toLocaleString('pt-BR') : '');
-      btn.append(title, detail);
-      btn.addEventListener('click', () => open(l.telefone_whatsapp));
-      root.append(btn);
+    const visible = leads.filter(l => {
+      const name = String(l.nome || '').trim().toLocaleLowerCase('pt-BR');
+      const phone = String(l.telefone_whatsapp || '');
+      const numericFilter = filter.replace(/\D/g, '');
+      const matches = !filter || name.includes(filter) || (numericFilter.length > 0 && phone.includes(numericFilter));
+      return matches && (inboxFilter === 'all' || (inboxFilter === 'human' ? l.humano : !l.humano));
     });
+    if (!visible.length) {
+      const p = document.createElement('div');
+      p.className = 'empty';
+      p.textContent = 'Nenhuma conversa encontrada.';
+      root.append(p);
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    visible.forEach(l => {
+      const phone = String(l.telefone_whatsapp || '');
+      const name = String(l.nome || '').trim();
+      const displayName = name || '+' + phone;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lead inbox-lead' + (phone === selected ? ' active' : '');
+      btn.setAttribute('aria-label', 'Abrir conversa com ' + displayName);
+      const avatar = document.createElement('span');
+      avatar.className = 'inbox-avatar';
+      avatar.textContent = name ? initials(name) : '+';
+      avatar.setAttribute('aria-hidden', 'true');
+      const body = document.createElement('span');
+      body.className = 'inbox-lead-body';
+      const head = document.createElement('span');
+      head.className = 'inbox-lead-head';
+      const title = document.createElement('strong');
+      title.textContent = displayName;
+      const time = document.createElement('time');
+      time.className = 'inbox-lead-time';
+      time.textContent = inboxTime(l.ultima_previa_em || l.ultima_mensagem_em);
+      if (l.ultima_previa_em) time.dateTime = l.ultima_previa_em;
+      head.append(title, time);
+      const preview = document.createElement('span');
+      preview.className = 'inbox-lead-preview';
+      const last = String(l.ultima_previa || '').replace(/\s+/g, ' ').trim();
+      preview.textContent = last ? (l.ultima_previa_papel === 'assistant' ? 'Jeri Rota: ' : '') + last : 'Sem mensagens recentes';
+      const footer = document.createElement('span');
+      footer.className = 'inbox-lead-footer';
+      const sub = document.createElement('span');
+      sub.className = 'inbox-lead-phone';
+      sub.textContent = name ? '+' + phone : '';
+      const mode = document.createElement('span');
+      mode.className = 'inbox-mode ' + (l.humano ? 'human' : 'ai');
+      mode.textContent = l.humano ? 'Humano' : 'IA';
+      footer.append(sub, mode);
+      body.append(head, preview, footer);
+      btn.append(avatar, body);
+      btn.addEventListener('click', () => open(phone));
+      fragment.append(btn);
+    });
+    root.append(fragment);
   }
   async function refreshLeads() {
     leads = await request('/central/conversas');
@@ -174,6 +234,17 @@
   }
   $('reload').addEventListener('click', () => refreshLeads().catch(e => status(e.message, 'error')));
   $('search').addEventListener('input', renderLeads);
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      inboxFilter = chip.dataset.filter;
+      document.querySelectorAll('.filter-chip').forEach(other => {
+        const active = other === chip;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-pressed', String(active));
+      });
+      renderLeads();
+    });
+  });
   $('openPhone').addEventListener('click', () => open($('phone').value.trim().replace(/\D/g, '')));
   $('take').addEventListener('click', () => action(async () => {
     await request('/central/modo', { method:'POST', body: {telefone:selected, humano:true} });
