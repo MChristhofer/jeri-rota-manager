@@ -25,7 +25,7 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 #phone{max-width:185px}.empty{padding:22px;color:#697484}.pill{border-radius:999px;padding:5px 10px;background:#eaeaea;font-size:12px}
 @media(max-width:750px){header{padding:0 12px}.shell{display:flex;flex-direction:column;height:calc(100dvh - 70px)}aside{max-height:195px;flex:0 0 auto;border-right:0;border-bottom:1px solid #ddd}main{flex:1;min-height:0}.toolbar{padding:10px}.messages{padding:12px}.bubble{max-width:91%}}
 </style>
-<link rel="stylesheet" href="atendimento-layout.css?v=20261116-inbox-cards-1">
+<link rel="stylesheet" href="atendimento-layout.css?v=20261116-mobile-header-1">
 <style>
 .voucher-preview[hidden]{display:none!important}
 .voucher-preview{display:grid;gap:8px;padding:12px;border:1px solid #e0d2b7;border-radius:12px;background:#fbf7ed}
@@ -52,12 +52,20 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 <main>
  <div class="toolbar">
   <button id="mobileBack" class="mobile-back" type="button" aria-label="Voltar à lista de conversas" title="Voltar às conversas">‹</button>
-  <div><h1 id="title">Selecione um cliente</h1><div id="windowInfo" class="muted">As mensagens serão enviadas pelo número principal da Jeri Rota.</div></div>
-  <div class="row">
+  <div class="chat-heading">
+    <span id="chatAvatar" class="chat-avatar" aria-hidden="true">+</span>
+    <div class="chat-identity">
+      <h1 id="title">Selecione um cliente</h1>
+      <div id="windowInfo" class="muted">As mensagens serão enviadas pelo número principal da Jeri Rota.</div>
+      <div id="mobileModeLabel" class="mobile-mode-label" aria-live="polite">IA ativa</div>
+    </div>
+  </div>
+  <div class="row chat-actions" id="chatActions">
     <span id="mode" class="pill">IA ativa</span>
     <button id="take" type="button" disabled>Assumir conversa</button>
     <button id="release" type="button" disabled>Reativar IA</button>
   </div>
+  <button id="mobileChatOptions" class="mobile-chat-options" type="button" aria-label="Opções de atendimento" aria-expanded="false" aria-controls="chatActions" title="Opções de atendimento">⋯</button>
  </div>
  <div id="messages" class="messages" role="log" aria-live="off" aria-label="Histórico da conversa"><div class="empty">Escolha uma conversa à esquerda.</div></div>
  <div class="composer">
