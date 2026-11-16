@@ -192,3 +192,55 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
  #leads .inbox-lead-head strong{font-size:15px}
  #leads .inbox-lead-preview{font-size:13px}
 }
+
+/* Cabeçalho do chat: no iPhone prioriza conversa, não controles administrativos. */
+.chat-heading{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.chat-identity{min-width:0;flex:1}
+.chat-avatar,.mobile-mode-label,.mobile-chat-options{display:none}
+@media(max-width:750px){
+  body.mobile-chat-active>header{display:none!important}
+  .shell[data-mobile-view="chat"]>.toolbar{min-height:0}
+  .shell[data-mobile-view="chat"]>main .toolbar{
+    position:relative;display:grid;grid-template-columns:36px minmax(0,1fr) 40px;
+    flex-wrap:nowrap;align-items:center;gap:5px;padding:7px 9px;
+    min-height:60px;max-height:74px;background:#fff;z-index:4
+  }
+  .shell[data-mobile-view="chat"] .toolbar>.chat-heading{
+    display:flex;gap:9px;align-items:center;min-width:0;overflow:hidden
+  }
+  .shell[data-mobile-view="chat"] .toolbar .chat-avatar{
+    display:grid;place-items:center;flex:none;width:39px;height:39px;
+    border-radius:50%;background:#e8edf0;color:#0b233c;font-size:14px;font-weight:700
+  }
+  .shell[data-mobile-view="chat"] .toolbar .chat-identity{
+    display:flex;flex-direction:column;justify-content:center;min-width:0;gap:3px
+  }
+  .shell[data-mobile-view="chat"] .toolbar #title{
+    font-size:15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .shell[data-mobile-view="chat"] .toolbar #windowInfo{display:none}
+  .shell[data-mobile-view="chat"] .toolbar .mobile-mode-label{
+    display:block;font-size:11px;color:#677788;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .shell[data-mobile-view="chat"] .toolbar .mobile-chat-options{
+    display:grid;place-items:center;justify-self:end;width:40px;height:40px;border:0;
+    border-radius:50%;padding:0;font-size:25px;line-height:1;background:transparent;color:#0b233c
+  }
+  .shell[data-mobile-view="chat"] .toolbar .mobile-chat-options:hover,
+  .shell[data-mobile-view="chat"] .toolbar .mobile-chat-options[aria-expanded="true"]{
+    background:#eaf0f3
+  }
+  .shell[data-mobile-view="chat"] .toolbar>.chat-actions{display:none!important}
+  .shell[data-mobile-view="chat"] .toolbar>.chat-actions.mobile-open{
+    position:absolute;display:flex!important;flex-direction:column;align-items:stretch;
+    top:calc(100% - 2px);right:8px;width:min(260px,calc(100vw - 16px))!important;
+    max-width:none;gap:8px;max-height:260px;overflow-y:auto;flex-wrap:nowrap;
+    border:1px solid #dae1e6;border-radius:12px;background:#fff;padding:12px;
+    box-shadow:0 12px 30px #0b233c30;z-index:30
+  }
+  .shell[data-mobile-view="chat"] .toolbar>.chat-actions.mobile-open .pill{align-self:flex-start}
+  .shell[data-mobile-view="chat"] .toolbar>.chat-actions.mobile-open button{
+    width:100%;text-align:left;white-space:nowrap;padding:11px;border-radius:9px;font-size:13px
+  }
+  .shell[data-mobile-view="chat"] .messages{padding-top:12px}
+}
