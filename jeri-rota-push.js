@@ -62,6 +62,10 @@
     busy = true;
     button.disabled = true;
     try {
+      // No iOS, solicitar a permissão diretamente no gesto do toque,
+      // antes de qualquer await que possa consumir a ativação do usuário.
+      const enabling = button.textContent.trim() === 'Ativar notificações';
+      const permissionRequest = enabling ? Notification.requestPermission() : null;
       const reg = await navigator.serviceWorker.ready;
       let sub = await reg.pushManager.getSubscription();
       if (sub) {
@@ -72,7 +76,7 @@
         status('Notificações desativadas neste aparelho.');
       } else {
         // A permissão precisa ser solicitada diretamente após o toque do usuário.
-        const permission = await Notification.requestPermission();
+        const permission = await permissionRequest;
         if (permission !== 'granted') throw Error('Permissão não concedida. Autorize as notificações nos Ajustes do iPhone.');
         sub = await reg.pushManager.subscribe({
           userVisibleOnly:true,
