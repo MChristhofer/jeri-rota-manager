@@ -244,3 +244,14 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
   }
   .shell[data-mobile-view="chat"] .messages{padding-top:12px}
 }
+
+/* Configuração opcional de Web Push sem deslocar a navegação do chat. */
+.push-settings{flex:none;margin:0 8px 12px;padding:10px 12px;border:1px solid #dce5e9;border-radius:12px;background:#f8fafb}
+.push-title{font-size:12px;font-weight:700;color:#0b233c;margin-bottom:6px}
+.push-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.push-controls button{padding:7px 10px;font-size:12px;border-radius:8px;background:#0b2b49;border-color:#0b2b49;color:white}
+.push-controls button[hidden]{display:none!important}
+.push-controls button:disabled{opacity:.5}
+.push-controls #pushTest{background:#fff;border-color:#ccd6df;color:#0b2b49}
+.push-settings #pushStatus{font-size:11px;line-height:1.35;margin-top:6px}
+@media(max-width:750px){.shell>aside .push-settings{margin-bottom:10px}}

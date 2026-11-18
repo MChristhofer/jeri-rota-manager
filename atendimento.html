@@ -4,6 +4,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Central de Atendimento | Jeri Rota Manager</title>
 <link rel="icon" href="jeri-rota-mark.svg">
+<link rel="manifest" href="jeri-rota-app.webmanifest">
+<meta name="theme-color" content="#0b233c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jeri Rota">
 <style>
 :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#182536;background:#f4f1eb}
 *{box-sizing:border-box}body{margin:0}header{height:70px;background:#0b233c;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:16px}
@@ -47,6 +51,14 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
    <button type="button" class="filter-chip" data-filter="human" aria-pressed="false">Humano</button>
    <button type="button" class="filter-chip" data-filter="ai" aria-pressed="false">IA</button>
  </div>
+ <section class="push-settings" aria-label="Notificações de mensagens">
+   <div class="push-title">Alertas no celular</div>
+   <div class="push-controls">
+     <button type="button" id="pushToggle">Ativar notificações</button>
+     <button type="button" id="pushTest" hidden>Testar</button>
+   </div>
+   <div id="pushStatus" class="muted" role="status">Verificando compatibilidade...</div>
+ </section>
  <div id="leads" aria-label="Lista de conversas"><div class="empty">Entrando na central...</div></div>
 </aside>
 <main>
@@ -114,4 +126,5 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
 <script src="supabase-config.js"></script>
 <script src="central-config.js"></script>
 <script src="atendimento.js?v=20261116-inbox-cards-1"></script>
+<script src="jeri-rota-push.js?v=20261118-push-1"></script>
 </body></html>
