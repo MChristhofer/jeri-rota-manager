@@ -255,3 +255,9 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
 .push-controls #pushTest{background:#fff;border-color:#ccd6df;color:#0b2b49}
 .push-settings #pushStatus{font-size:11px;line-height:1.35;margin-top:6px}
 @media(max-width:750px){.shell>aside .push-settings{margin-bottom:10px}}
+
+/* Fila de triagem 24h: o atendente identifica quem espera sem tirar o foco da conversa. */
+.filter-chip.waiting-chip{border-color:#dcc58f;color:#6d531e;background:#fff9ed}
+.filter-chip.waiting-chip.active{background:#d3ab66;color:#0b233c;border-color:#bf923d}
+#leads .inbox-mode.waiting{background:#fff1d7;color:#805a15}
+#leads .inbox-lead:has(.inbox-mode.waiting){border-left:3px solid #d3ab66}
