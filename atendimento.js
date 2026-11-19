@@ -73,8 +73,9 @@
     $('voucherCaption').disabled = busy;
 
     $('sendTemplate').disabled = !selected || busy || !human;
-    $('mode').textContent = human ? 'Humano ativo' : 'IA ativa';
-    $('mobileModeLabel').textContent = (human ? 'Humano' : 'IA') +
+    const pendingHuman = Boolean(leads.find(l => String(l.telefone_whatsapp) === selected)?.aguardando);
+    $('mode').textContent = human ? 'Humano ativo' : (pendingHuman ? 'Aguardando humano' : 'IA ativa');
+    $('mobileModeLabel').textContent = (human ? 'Humano' : (pendingHuman ? 'Aguardando humano' : 'IA')) +
       (windowOpen ? ' · Janela aberta' : ' · Janela indisponível');
     $('windowInfo').textContent = windowOpen
       ? 'Janela aberta: mensagens livres e documentos permitidos.'
@@ -116,6 +117,9 @@
       .toLocaleUpperCase('pt-BR');
   }
   function renderLeads() {
+    const pending = leads.filter(l => l.aguardando).length;
+    const chip = document.querySelector('.filter-chip[data-filter="waiting"]');
+    if (chip) chip.textContent = pending ? 'Aguardando (' + pending + ')' : 'Aguardando';
     const filter = $('search').value.trim().toLocaleLowerCase('pt-BR');
     const root = $('leads');
     root.replaceChildren();
@@ -124,7 +128,12 @@
       const phone = String(l.telefone_whatsapp || '');
       const numericFilter = filter.replace(/\D/g, '');
       const matches = !filter || name.includes(filter) || (numericFilter.length > 0 && phone.includes(numericFilter));
-      return matches && (inboxFilter === 'all' || (inboxFilter === 'human' ? l.humano : !l.humano));
+      return matches && (
+        inboxFilter === 'all' ||
+        (inboxFilter === 'human' && l.humano) ||
+        (inboxFilter === 'waiting' && l.aguardando) ||
+        (inboxFilter === 'ai' && !l.humano && !l.aguardando)
+      );
     });
     if (!visible.length) {
       const p = document.createElement('div');
@@ -134,7 +143,13 @@
       return;
     }
     const fragment = document.createDocumentFragment();
-    visible.forEach(l => {
+    const ordered = [...visible].sort((a,b) => {
+      if (Boolean(a.aguardando) !== Boolean(b.aguardando)) return a.aguardando ? -1 : 1;
+      if (a.aguardando && b.aguardando && Number(a.fila_prioridade||0) !== Number(b.fila_prioridade||0))
+        return Number(b.fila_prioridade||0) - Number(a.fila_prioridade||0);
+      return new Date(b.ultima_mensagem_em || 0) - new Date(a.ultima_mensagem_em || 0);
+    });
+    ordered.forEach(l => {
       const phone = String(l.telefone_whatsapp || '');
       const name = String(l.nome || '').trim();
       const displayName = name || '+' + phone;
@@ -160,15 +175,16 @@
       const preview = document.createElement('span');
       preview.className = 'inbox-lead-preview';
       const last = String(l.ultima_previa || '').replace(/\s+/g, ' ').trim();
-      preview.textContent = last ? (l.ultima_previa_papel === 'assistant' ? 'Jeri Rota: ' : '') + last : 'Sem mensagens recentes';
+      const readablePreview = last.replace(/^\[(RECEPÇÃO|HUMANO)\]\s*/i, '');
+      preview.textContent = readablePreview ? (l.ultima_previa_papel === 'assistant' ? 'Jeri Rota: ' : '') + readablePreview : 'Sem mensagens recentes';
       const footer = document.createElement('span');
       footer.className = 'inbox-lead-footer';
       const sub = document.createElement('span');
       sub.className = 'inbox-lead-phone';
       sub.textContent = name ? '+' + phone : '';
       const mode = document.createElement('span');
-      mode.className = 'inbox-mode ' + (l.humano ? 'human' : 'ai');
-      mode.textContent = l.humano ? 'Humano' : 'IA';
+      mode.className = 'inbox-mode ' + (l.humano ? 'human' : (l.aguardando ? 'waiting' : 'ai'));
+      mode.textContent = l.humano ? 'Humano ativo' : (l.aguardando ? (Number(l.fila_prioridade||0)>0 ? 'Prioritário' : 'Aguardando') : 'IA');
       footer.append(sub, mode);
       body.append(head, preview, footer);
       btn.append(avatar, body);
