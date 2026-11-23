@@ -197,37 +197,129 @@
     leads = await request('/central/conversas');
     renderLeads();
   }
+
+  // Preserva controles de áudio durante atualização automática do chat.
+  let visibleMessageKeys = [];
+  const incomingAudioCache = new Map();
+  function releaseIncomingAudio() {
+    for (const url of incomingAudioCache.values()) URL.revokeObjectURL(url);
+    incomingAudioCache.clear();
+    visibleMessageKeys = [];
+  }
+  async function fetchIncomingAudio(phone, messageId) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session?.access_token) throw Error('Sessão expirada. Faça login novamente.');
+    const url = api + '/central/conversas/' + encodeURIComponent(phone) +
+      '/audios/' + encodeURIComponent(messageId);
+    const response = await fetch(url, {
+      headers: { Authorization: 'Bearer ' + data.session.access_token },
+      cache: 'no-store'
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw Error(typeof result.detail === 'string' ? result.detail : 'Não foi possível abrir o áudio.');
+    }
+    const blob = await response.blob();
+    if (!blob.size || !blob.type.startsWith('audio/')) throw Error('Formato de áudio inválido.');
+    return blob;
+  }
+  function messageSignature(row) {
+    return [row.id || row.criado_em, row.papel, row.conteudo, row.audio_disponivel ? 1 : 0].join('|');
+  }
+  function bubbleFor(row, phone) {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble' + (row.papel === 'assistant' ? ' out' : '');
+    const meta = document.createElement('small');
+    meta.textContent = (row.papel === 'assistant' ? 'Jeri Rota' : 'Cliente') +
+      ' · ' + new Date(row.criado_em).toLocaleString('pt-BR');
+    const raw = String(row.conteudo || '');
+    const hasAudio = row.papel === 'user' && Boolean(row.audio_disponivel && row.id);
+    const content = document.createElement('div');
+    content.textContent = hasAudio && raw.startsWith('[Áudio recebido')
+      ? 'Mensagem de voz recebida' : raw;
+    bubble.append(meta, content);
+    if (hasAudio) {
+      const area = document.createElement('div');
+      area.className = 'received-audio';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'received-audio-button';
+      button.textContent = '▶ Ouvir áudio';
+      button.setAttribute('aria-label', 'Ouvir áudio recebido do cliente');
+      const player = document.createElement('audio');
+      player.controls = true;
+      player.preload = 'none';
+      player.hidden = true;
+      player.setAttribute('aria-label', 'Áudio recebido');
+      const error = document.createElement('span');
+      error.className = 'received-audio-error';
+      error.hidden = true;
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        button.textContent = 'Carregando áudio...';
+        error.hidden = true;
+        try {
+          let url = incomingAudioCache.get(row.id);
+          if (!url) {
+            const audioBlob = await fetchIncomingAudio(phone, row.id);
+            if (selected !== phone) return;
+            url = URL.createObjectURL(audioBlob);
+            incomingAudioCache.set(row.id, url);
+          }
+          if (selected !== phone) return;
+          player.src = url;
+          player.hidden = false;
+          button.hidden = true;
+          // Após o download, o Safari pode pedir um toque no controle de reprodução.
+          player.play().catch(() => {});
+        } catch (ex) {
+          error.textContent = ex.message || 'Falha ao carregar o áudio.';
+          error.hidden = false;
+          button.disabled = false;
+          button.textContent = '↻ Tentar ouvir áudio';
+        }
+      });
+      area.append(button, player, error);
+      bubble.append(area);
+    } else if (row.papel === 'user' && raw.startsWith('[Áudio recebido')) {
+      const legacy = document.createElement('div');
+      legacy.className = 'received-audio-legacy';
+      legacy.textContent = 'Este áudio foi recebido antes da atualização. Peça ao cliente para reenviar.';
+      bubble.append(legacy);
+    }
+    return bubble;
+  }
   function renderMessages(rows, phone) {
     const root = $('messages');
-    const newConversation = displayedPhone !== phone;
-    const nearBottom = newConversation || (root.scrollHeight - root.clientHeight - root.scrollTop < 110);
+    const keys = rows.map(messageSignature);
+    const samePhone = displayedPhone === phone;
+    const onlyAppend = samePhone && visibleMessageKeys.length <= keys.length &&
+      visibleMessageKeys.every((key, i) => key === keys[i]);
+    if (onlyAppend && visibleMessageKeys.length === keys.length) return;
+    const atBottom = !samePhone || root.scrollHeight - root.clientHeight - root.scrollTop < 110;
     const previousTop = root.scrollTop;
+    if (!samePhone) releaseIncomingAudio();
     displayedPhone = phone;
-    root.replaceChildren();
+    const from = onlyAppend ? visibleMessageKeys.length : 0;
+    if (!onlyAppend) root.replaceChildren();
     if (!rows.length) {
-      const p = document.createElement('div'); p.className = 'empty';
-      p.textContent = 'Ainda não há mensagens armazenadas para este telefone.'; root.append(p);
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Ainda não há mensagens armazenadas para este telefone.';
+      root.append(empty);
     } else {
       const fragment = document.createDocumentFragment();
-      for (const row of rows) {
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble' + (row.papel === 'assistant' ? ' out' : '');
-        const meta = document.createElement('small');
-        meta.textContent = (row.papel === 'assistant' ? 'Jeri Rota' : 'Cliente') + ' · ' + new Date(row.criado_em).toLocaleString('pt-BR');
-        const content = document.createElement('div');
-        content.textContent = row.conteudo || '';
-        bubble.append(meta, content); fragment.append(bubble);
-      }
+      for (let i = from; i < rows.length; i++) fragment.append(bubbleFor(rows[i], phone));
       root.append(fragment);
     }
-    // Seleção de cliente abre na última mensagem. Se o atendente estiver
-    // lendo mensagens antigas, a atualização automática não o interrompe.
-    root.scrollTop = nearBottom ? root.scrollHeight : previousTop;
+    visibleMessageKeys = keys;
+    root.scrollTop = atBottom ? root.scrollHeight : previousTop;
   }
   async function open(phone, { silent = false } = {}) {
     if (!validPhone(phone)) { status('Informe o telefone com DDI e DDD, somente números.', 'error'); return; }
     const requestId = ++openRequestId;
     const changingConversation = selected !== phone;
+    if (changingConversation) releaseIncomingAudio();
     if (changingConversation && pendingVoucher) clearVoucher();
     if (changingConversation) clearAudio();
     if (changingConversation) {

@@ -261,3 +261,13 @@ body>header{flex:none;min-height:64px;height:64px;box-shadow:0 1px 5px #061d3510
 .filter-chip.waiting-chip.active{background:#d3ab66;color:#0b233c;border-color:#bf923d}
 #leads .inbox-mode.waiting{background:#fff1d7;color:#805a15}
 #leads .inbox-lead:has(.inbox-mode.waiting){border-left:3px solid #d3ab66}
+
+/* Reprodução segura de áudios recebidos, compatível com o Safari do iPhone. */
+.received-audio{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin-top:9px;max-width:100%;min-width:0}
+.received-audio-button{border:1px solid #a7bbce;border-radius:999px;background:#e4edf4;color:#0b233c;font-size:13px;font-weight:700;padding:9px 13px;min-height:41px}
+.received-audio-button:not(:disabled):hover{background:#d3e5f0}
+.received-audio audio{display:block;max-width:100%;width:min(285px,78vw);height:44px}
+.received-audio audio[hidden],.received-audio button[hidden],.received-audio-error[hidden]{display:none!important}
+.received-audio-error{font-size:12px;line-height:1.4;color:#9b3631}
+.received-audio-legacy{font-size:11px;line-height:1.4;color:#7a6b4d;margin-top:8px}
+@media(max-width:750px){.messages .bubble .received-audio audio{width:min(275px,72vw)}}
