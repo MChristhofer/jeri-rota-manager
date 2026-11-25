@@ -50,6 +50,50 @@
   $('mobileBack').addEventListener('click', showConversations);
   mobileMedia.addEventListener('change', updateMobileView);
 
+  // Navegação dedicada: só executa ações reais da Central.
+  $('railConversations').addEventListener('click', () => {
+    showConversations();
+    $('search').focus();
+  });
+  function showPushSettings() {
+    const settings = $('pushSettings');
+    settings.open = !settings.open;
+    $('showAlerts').setAttribute('aria-expanded', String(settings.open));
+    $('railAlerts').setAttribute('aria-pressed', String(settings.open));
+    if (settings.open) settings.scrollIntoView({block:'nearest'});
+  }
+  $('showAlerts').addEventListener('click', showPushSettings);
+  $('railAlerts').addEventListener('click', showPushSettings);
+  $('pushSettings').addEventListener('toggle', () => {
+    const expanded = $('pushSettings').open;
+    $('showAlerts').setAttribute('aria-expanded', String(expanded));
+    $('railAlerts').setAttribute('aria-pressed', String(expanded));
+  });
+
+  // Iniciar conversa permanece acessível mesmo sem cliente previamente selecionado.
+  const newChatDialog = $('newConversationDialog');
+  function closeNewChat() { if (newChatDialog.open) newChatDialog.close(); }
+  $('newConversation').addEventListener('click', () => {
+    $('newConversationError').textContent = '';
+    $('newConversationNumber').value = '';
+    if (typeof newChatDialog.showModal === 'function') newChatDialog.showModal();
+    else newChatDialog.setAttribute('open', '');
+    $('newConversationNumber').focus();
+  });
+  $('closeNewConversation').addEventListener('click', closeNewChat);
+  $('cancelNewConversation').addEventListener('click', closeNewChat);
+  $('newConversationForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const phone = $('newConversationNumber').value.replace(/\\D/g,'');
+    if (!validPhone(phone)) {
+      $('newConversationError').textContent = 'Informe um telefone válido com DDI e DDD (10 a 15 dígitos).';
+      return;
+    }
+    closeNewChat();
+    open(phone);
+    $('advancedTools').open = false;
+  });
+
   function status(text, type = '') {
     $('status').textContent = text;
     $('status').className = 'status ' + type;
@@ -57,6 +101,7 @@
   function validPhone(value) { return /^[0-9]{10,15}$/.test(value); }
   function setDisabled() {
     $('take').disabled = !selected || busy || human;
+    $('take').hidden = !selected || human;
     $('release').disabled = !selected || busy || !human;
     $('send').disabled = !selected || busy || !human || !windowOpen || Boolean(recorder);
     $('mic').disabled = !selected || busy || !human || !windowOpen || Boolean(pendingAudio);
@@ -75,8 +120,10 @@
     $('sendTemplate').disabled = !selected || busy || !human;
     const pendingHuman = Boolean(leads.find(l => String(l.telefone_whatsapp) === selected)?.aguardando);
     $('mode').textContent = human ? 'Humano ativo' : (pendingHuman ? 'Aguardando humano' : 'IA ativa');
-    $('mobileModeLabel').textContent = (human ? 'Humano' : (pendingHuman ? 'Aguardando humano' : 'IA')) +
-      (windowOpen ? ' · Janela aberta' : ' · Janela indisponível');
+    $('mobileModeLabel').textContent = !selected
+      ? 'Selecione uma conversa para começar'
+      : (human ? 'Humano ativo' : (pendingHuman ? 'Aguardando humano' : 'Recepção virtual'))
+        + (windowOpen ? ' · Janela aberta' : ' · Janela fechada');
     $('windowInfo').textContent = windowOpen
       ? 'Janela aberta: mensagens livres e documentos permitidos.'
       : 'Janela de 24h fechada ou desconhecida: prepare anexos e aguarde resposta do cliente para enviar.';
@@ -176,7 +223,9 @@
       preview.className = 'inbox-lead-preview';
       const last = String(l.ultima_previa || '').replace(/\s+/g, ' ').trim();
       const readablePreview = last.replace(/^\[(RECEPÇÃO|HUMANO)\]\s*/i, '');
-      preview.textContent = readablePreview ? (l.ultima_previa_papel === 'assistant' ? 'Jeri Rota: ' : '') + readablePreview : 'Sem mensagens recentes';
+      const voicePreview = readablePreview.startsWith('[Áudio recebido');
+      preview.textContent = voicePreview ? '♫ Mensagem de voz' :
+        readablePreview ? (l.ultima_previa_papel === 'assistant' ? 'Jeri Rota: ' : '') + readablePreview : 'Sem mensagens recentes';
       const footer = document.createElement('span');
       footer.className = 'inbox-lead-footer';
       const sub = document.createElement('span');
@@ -194,8 +243,17 @@
     root.append(fragment);
   }
   async function refreshLeads() {
-    leads = await request('/central/conversas');
-    renderLeads();
+    try {
+      const latest = await request('/central/conversas');
+      leads = latest;
+      renderLeads();
+      $('inboxConnection').textContent = 'Central sincronizada · Atualização automática';
+      document.querySelector('.inbox-footer-dot').className = 'inbox-footer-dot online';
+    } catch (error) {
+      $('inboxConnection').textContent = 'Falha na atualização. Tente novamente.';
+      document.querySelector('.inbox-footer-dot').className = 'inbox-footer-dot offline';
+      throw error;
+    }
   }
 
   // Preserva controles de áudio durante atualização automática do chat.
@@ -229,15 +287,28 @@
   function bubbleFor(row, phone) {
     const bubble = document.createElement('div');
     bubble.className = 'bubble' + (row.papel === 'assistant' ? ' out' : '');
-    const meta = document.createElement('small');
-    meta.textContent = (row.papel === 'assistant' ? 'Jeri Rota' : 'Cliente') +
-      ' · ' + new Date(row.criado_em).toLocaleString('pt-BR');
     const raw = String(row.conteudo || '');
     const hasAudio = row.papel === 'user' && Boolean(row.audio_disponivel && row.id);
+    let cleanText = raw;
+    let origin = '';
+    if (row.papel === 'assistant' && raw.startsWith('[RECEPÇÃO] ')) {
+      cleanText = raw.slice('[RECEPÇÃO] '.length);
+      origin = 'RECEPÇÃO VIRTUAL';
+    } else if (row.papel === 'assistant' && raw.startsWith('[HUMANO] ')) {
+      cleanText = raw.slice('[HUMANO] '.length);
+      origin = 'ATENDENTE';
+    }
+    if (origin) {
+      const label = document.createElement('span');
+      label.className = 'bubble-origin';
+      label.textContent = origin;
+      bubble.append(label);
+    }
     const content = document.createElement('div');
+    content.className = 'bubble-text';
     content.textContent = hasAudio && raw.startsWith('[Áudio recebido')
-      ? 'Mensagem de voz recebida' : raw;
-    bubble.append(meta, content);
+      ? 'Mensagem de voz recebida' : cleanText;
+    bubble.append(content);
     if (hasAudio) {
       const area = document.createElement('div');
       area.className = 'received-audio';
@@ -287,7 +358,28 @@
       legacy.textContent = 'Este áudio foi recebido antes da atualização. Peça ao cliente para reenviar.';
       bubble.append(legacy);
     }
+    const meta = document.createElement('small');
+    meta.className = 'bubble-time';
+    const created = new Date(row.criado_em);
+    meta.textContent = Number.isNaN(created.getTime()) ? '' :
+      created.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    bubble.append(meta);
     return bubble;
+  }
+  function dateCode(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return [date.getFullYear(),date.getMonth()+1,date.getDate()].join('-');
+  }
+  function dayLabel(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) return 'HOJE';
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) return 'ONTEM';
+    return date.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
   }
   function renderMessages(rows, phone) {
     const root = $('messages');
@@ -309,7 +401,18 @@
       root.append(empty);
     } else {
       const fragment = document.createDocumentFragment();
-      for (let i = from; i < rows.length; i++) fragment.append(bubbleFor(rows[i], phone));
+      let previousDay = from > 0 ? dateCode(rows[from - 1].criado_em) : '';
+      for (let i = from; i < rows.length; i++) {
+        const currentDay = dateCode(rows[i].criado_em);
+        if (currentDay && currentDay !== previousDay) {
+          const label = document.createElement('div');
+          label.className = 'message-day';
+          label.textContent = dayLabel(rows[i].criado_em);
+          fragment.append(label);
+        }
+        fragment.append(bubbleFor(rows[i], phone));
+        previousDay = currentDay;
+      }
       root.append(fragment);
     }
     visibleMessageKeys = keys;
@@ -397,6 +500,19 @@
     attachmentOptions.hidden = true;
     $('attachmentMenu').setAttribute('aria-expanded', 'false');
   }
+  function toggleAdvancedTools() {
+    const details = $('advancedTools');
+    details.open = !details.open;
+    closeAttachmentMenu();
+    closeChatOptions();
+    if (details.open) {
+      details.closest('.composer').scrollTop = details.closest('.composer').scrollHeight;
+      details.querySelector('summary').focus();
+    }
+  }
+  $('advancedShortcut').addEventListener('click', toggleAdvancedTools);
+  $('advancedHeader').addEventListener('click', toggleAdvancedTools);
+
   function placeAttachmentMenu() {
     const rect = $('attachmentMenu').getBoundingClientRect();
     const width = attachmentOptions.offsetWidth || 215;
