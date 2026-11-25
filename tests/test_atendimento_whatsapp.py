@@ -46,7 +46,7 @@ class CentralVisualTests(unittest.TestCase):
 
     def test_assets_and_css_balance(self):
         self.assertIn("atendimento-whatsapp.css?v=20261124-1", self.html)
-        self.assertIn("atendimento.js?v=20261124-whatsapp-1", self.html)
+        self.assertIn("atendimento.js?v=20261124-contact-photos-1", self.html)
         self.assertEqual(self.css.count("{"), self.css.count("}"))
 
     def test_audio_and_server_actions_preserved(self):
