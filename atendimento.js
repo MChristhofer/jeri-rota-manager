@@ -174,7 +174,9 @@
     const cached = contactPhotoCache.get(phone);
     if (cached) URL.revokeObjectURL(cached.url);
     contactPhotoCache.delete(phone);
-    contactPhotoPending.delete(phone);
+    for (const key of contactPhotoPending.keys()) {
+      if (key.startsWith(phone + '|')) contactPhotoPending.delete(key);
+    }
   }
   async function getContactPhoto(phone, revision) {
     const cached = contactPhotoCache.get(phone);
@@ -212,10 +214,11 @@
     element.textContent = name ? initials(name) : '+';
     element.classList.remove('has-contact-photo');
     const revision = String(contact?.foto_atualizada_em || '');
-    if (!contact?.tem_foto || !revision || !phone) return;
     element.dataset.photoRevision = revision;
+    element.dataset.avatarPhone = phone;
+    if (!contact?.tem_foto || !revision || !phone) return;
     function setImg(url) {
-      if (!url || element.dataset.photoRevision !== revision) return;
+      if (!url || element.dataset.photoRevision !== revision || element.dataset.avatarPhone !== phone) return;
       const img = document.createElement('img');
       img.src = url;
       img.alt = '';
