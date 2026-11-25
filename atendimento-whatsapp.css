@@ -334,3 +334,87 @@ body>.central-global-header{display:none!important}
 #newConversationDialog .dialog-actions button{border-radius:9px;font-size:12px;font-weight:700;padding:10px 13px}
 #newConversationDialog .dialog-actions .primary{background:#0b233c;color:#fff;border-color:#0b233c}
 @media(max-width:750px){.inbox-home{display:grid}}
+
+/* Fotos reais cadastradas manualmente: avatares privados no chat e na lista. */
+#leads .inbox-lead .inbox-avatar.has-contact-photo,
+#centralShell>main .toolbar .chat-avatar.has-contact-photo{
+  overflow:hidden;padding:0;background:#e7edf1;border:1px solid #d5e0e7
+}
+#leads .inbox-lead .inbox-avatar img,
+#centralShell>main .toolbar .chat-avatar img{
+  display:block;width:100%;height:100%;max-width:100%;max-height:100%;
+  object-fit:cover;object-position:center;border-radius:50%
+}
+#centralShell>main .toolbar .chat-edit-contact{
+  flex:none;position:relative;display:grid;place-items:center;
+  width:44px;height:44px;min-width:44px;border:0;border-radius:50%;
+  padding:0;background:transparent;cursor:pointer
+}
+#centralShell>main .toolbar .chat-edit-contact:hover:not(:disabled){
+  background:#e9eff3
+}
+#centralShell>main .toolbar .chat-edit-contact .chat-avatar{
+  display:grid;place-items:center;width:41px;height:41px;min-width:41px;
+  margin:0;border-radius:50%;font-weight:800
+}
+#centralShell>main .toolbar .chat-edit-pencil{
+  position:absolute;bottom:-2px;right:-2px;width:17px;height:17px;
+  display:grid;place-items:center;border-radius:50%;background:#f3d496;
+  border:2px solid white;color:#143249;font-size:10px;line-height:1
+}
+#centralShell>main .toolbar .chat-edit-contact:disabled .chat-edit-pencil{display:none}
+.contact-editor-dialog{
+  position:fixed;inset:0;max-width:95vw;width:min(445px,calc(100vw - 28px));
+  max-height:calc(100dvh - 28px);margin:auto;padding:0;overflow-y:auto;
+  border:1px solid #dde5e8;border-radius:16px;background:#fff;color:#233b4e;
+  box-shadow:0 22px 65px #0b233c40;z-index:10001
+}
+.contact-editor-dialog:not([open]){display:none!important}
+.contact-editor-dialog::backdrop{background:#061b2da8;backdrop-filter:blur(2px)}
+.contact-editor-dialog form{display:flex;flex-direction:column;gap:14px;padding:20px}
+.contact-editor-header{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.contact-editor-header h2{margin:3px 0 0;color:#0b233c;font-size:19px}
+.contact-editor-header>button{
+  width:34px;height:34px;display:grid;place-items:center;padding:0;
+  border:0;border-radius:9px;background:#eff3f4;color:#405b70;font-size:23px
+}
+.contact-editor-preview-wrap{display:flex;align-items:center;gap:16px;padding:12px 0}
+.contact-editor-preview{
+  display:grid;place-items:center;flex:none;overflow:hidden;
+  width:90px;height:90px;border-radius:50%;background:#e4edf1;
+  color:#37566d;font-size:24px;font-weight:800;border:2px solid #f0f2f3
+}
+.contact-editor-preview img{width:100%;height:100%;object-fit:cover}
+.contact-editor-preview img[hidden],
+.contact-editor-preview span[hidden]{display:none!important}
+.contact-editor-photo-actions{display:flex;flex-direction:column;align-items:start;gap:7px;min-width:0}
+.contact-editor-file{
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid #d3b274;border-radius:9px;background:#fff8e8;
+  color:#705327;font-size:12px;font-weight:700;padding:9px 11px;cursor:pointer
+}
+.contact-editor-photo-actions>button{
+  border:0;background:transparent;color:#97604f;font-size:11px;
+  padding:4px 0;border-radius:0;text-decoration:underline
+}
+.contact-editor-photo-actions small{font-size:10px;line-height:1.45;color:#7a8a95}
+.contact-editor-name{font-size:12px;font-weight:700;color:#435b6c}
+#contactNameField{
+  display:block;width:100%;min-height:43px;padding:10px 12px;
+  border:1px solid #d5e0e5;border-radius:9px;font-size:14px
+}
+.contact-editor-status{font-size:12px;color:#337756;line-height:1.4}
+.contact-editor-status.error{color:#ad4335}
+.contact-editor-status:empty{display:none}
+.contact-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:7px}
+.contact-editor-actions button{padding:10px 13px;font-size:12px;font-weight:700;border-radius:9px}
+.contact-editor-actions button.primary{background:#0b233c;color:#fff;border-color:#0b233c}
+@media(max-width:750px){
+ #centralShell>main .toolbar .chat-edit-contact{width:37px;height:37px;min-width:37px}
+ #centralShell>main .toolbar .chat-edit-contact .chat-avatar{
+   width:36px;height:36px;min-width:36px
+ }
+ .contact-editor-dialog{width:min(100%,calc(100vw - 18px));max-height:calc(100dvh - 18px)}
+ .contact-editor-preview-wrap{gap:10px}
+ .contact-editor-preview{width:79px;height:79px}
+}
