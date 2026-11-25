@@ -106,7 +106,10 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
  <div class="toolbar">
   <button id="mobileBack" class="mobile-back" type="button" aria-label="Voltar à lista de conversas" title="Voltar às conversas">‹</button>
   <div class="chat-heading">
-    <span id="chatAvatar" class="chat-avatar" aria-hidden="true">+</span>
+    <button id="editContact" class="chat-edit-contact" type="button" title="Editar foto e nome do cliente" aria-label="Editar foto e nome do cliente" disabled>
+      <span id="chatAvatar" class="chat-avatar" aria-hidden="true">+</span>
+      <span class="chat-edit-pencil" aria-hidden="true">✎</span>
+    </button>
     <div class="chat-identity">
       <h1 id="title">Selecione um cliente</h1>
       <div id="mobileModeLabel" class="mobile-mode-label" aria-live="polite">Selecione uma conversa para começar</div>
@@ -165,9 +168,37 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
  </div>
 </main>
 </div>
+<dialog class="contact-editor-dialog" id="contactEditor" aria-labelledby="contactEditorTitle">
+  <form id="contactEditorForm" novalidate>
+    <div class="contact-editor-header">
+      <div><div class="inbox-brand">JERI ROTA · CONTATO</div><h2 id="contactEditorTitle">Foto e identificação</h2></div>
+      <button id="closeContactEditor" type="button" aria-label="Fechar edição">×</button>
+    </div>
+    <div class="contact-editor-preview-wrap">
+      <div class="contact-editor-preview" id="contactEditorPreview">
+        <span id="contactEditorInitials" aria-hidden="true">+</span>
+        <img id="contactEditorPhoto" alt="Prévia da foto do cliente" hidden>
+      </div>
+      <div class="contact-editor-photo-actions">
+        <label class="contact-editor-file">Escolher foto
+          <input id="contactPhotoFile" type="file" accept="image/*,.heic,.heif" hidden>
+        </label>
+        <button id="removeContactPhoto" type="button">Remover foto</button>
+        <small>Imagem JPG, PNG ou foto do iPhone. A imagem é redimensionada e guardada de forma privada.</small>
+      </div>
+    </div>
+    <label class="contact-editor-name" for="contactNameField">Nome do cliente</label>
+    <input id="contactNameField" type="text" maxlength="80" autocomplete="off" placeholder="Nome para identificar a conversa">
+    <div id="contactEditorStatus" class="contact-editor-status" role="status" aria-live="polite"></div>
+    <div class="contact-editor-actions">
+      <button id="cancelContactEdit" type="button">Cancelar</button>
+      <button id="saveContactEdit" class="primary" type="submit">Salvar alterações</button>
+    </div>
+  </form>
+</dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="central-config.js"></script>
-<script src="atendimento.js?v=20261124-whatsapp-1"></script>
+<script src="atendimento.js?v=20261124-contact-photos-1"></script>
 <script src="jeri-rota-push.js?v=20261118-push-1"></script>
 </body></html>
