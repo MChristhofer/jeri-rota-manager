@@ -56,6 +56,23 @@ class CentralVisualTests(unittest.TestCase):
             self.assertIn(action, self.js)
         self.assertIn("document.visibilityState === 'visible'", self.js)
 
+    def test_contact_photo_editor_and_authenticated_avatar(self):
+        required = {"editContact", "contactEditor", "contactEditorForm",
+                    "contactEditorPhoto", "contactEditorInitials", "contactPhotoFile",
+                    "removeContactPhoto", "contactNameField", "saveContactEdit",
+                    "cancelContactEdit", "closeContactEditor", "contactEditorStatus"}
+        self.assertEqual(set(), required - set(self.parser.ids))
+        self.assertIn("/central/contatos/", self.js)
+        self.assertIn("getSession()", self.js)
+        self.assertIn("imageFileToJpeg(file)", self.js)
+        self.assertIn("discardContactPhoto(phone)", self.js)
+        self.assertIn("getContactPhoto(phone, revision)", self.js)
+        self.assertIn("classList.add('has-contact-photo')", self.js)
+        self.assertIn("data:image/jpeg;base64,", self.js)
+        self.assertIn("20261124-contact-photos-1", self.html)
+        # Não é seguro enviar fotos de clientes a hosts públicos.
+        self.assertNotIn("storage/v1/object/public", self.js)
+
     def test_new_conversation_and_menus(self):
         self.assertIn("newChatDialog.showModal()", self.js)
         self.assertIn("toggleAdvancedTools()", self.js)
