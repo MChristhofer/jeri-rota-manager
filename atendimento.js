@@ -163,6 +163,239 @@
     return (words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0,2))
       .toLocaleUpperCase('pt-BR');
   }
+  // Fotos privadas: são baixadas somente por atendente autenticado.
+  // Nunca usamos URLs públicas do Supabase nem expomos chaves no HTML.
+  const contactPhotoCache = new Map();
+  const contactPhotoPending = new Map();
+  function contactForPhone(phone) {
+    return leads.find(l => String(l.telefone_whatsapp || '') === String(phone)) || null;
+  }
+  function discardContactPhoto(phone) {
+    const cached = contactPhotoCache.get(phone);
+    if (cached) URL.revokeObjectURL(cached.url);
+    contactPhotoCache.delete(phone);
+    contactPhotoPending.delete(phone);
+  }
+  async function getContactPhoto(phone, revision) {
+    const cached = contactPhotoCache.get(phone);
+    if (cached?.revision === revision) return cached.url;
+    const key = phone + '|' + revision;
+    if (contactPhotoPending.has(key)) return contactPhotoPending.get(key);
+    const promise = (async () => {
+      const {data, error} = await supabase.auth.getSession();
+      if (error || !data.session?.access_token) throw Error('Entre novamente na Central.');
+      const result = await fetch(api + '/central/contatos/' + encodeURIComponent(phone) + '/foto', {
+        headers: {'Authorization': 'Bearer ' + data.session.access_token},
+        cache: 'no-store'
+      });
+      if (!result.ok) throw Error('Foto do cliente indisponível.');
+      const blob = await result.blob();
+      if (!blob.type.startsWith('image/jpeg') || !blob.size || blob.size > 100000)
+        throw Error('Formato de foto inesperado.');
+      // Uma edição mais recente pode ter invalidado este pedido enquanto ele carregava.
+      if (contactPhotoPending.get(key) !== promise) return null;
+      const old = contactPhotoCache.get(phone);
+      if (old) URL.revokeObjectURL(old.url);
+      const url = URL.createObjectURL(blob);
+      contactPhotoCache.set(phone, {revision, url});
+      return url;
+    })().finally(() => {
+      if (contactPhotoPending.get(key) === promise) contactPhotoPending.delete(key);
+    });
+    contactPhotoPending.set(key, promise);
+    return promise;
+  }
+  function applyContactAvatar(element, contact) {
+    const phone = String(contact?.telefone_whatsapp || '');
+    const name = String(contact?.nome || '').trim();
+    element.replaceChildren();
+    element.textContent = name ? initials(name) : '+';
+    element.classList.remove('has-contact-photo');
+    const revision = String(contact?.foto_atualizada_em || '');
+    if (!contact?.tem_foto || !revision || !phone) return;
+    element.dataset.photoRevision = revision;
+    function setImg(url) {
+      if (!url || !element.isConnected || element.dataset.photoRevision !== revision) return;
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      img.decoding = 'async';
+      element.replaceChildren(img);
+      element.classList.add('has-contact-photo');
+    }
+    const cached = contactPhotoCache.get(phone);
+    if (cached?.revision === revision) setImg(cached.url);
+    else getContactPhoto(phone, revision).then(setImg).catch(() => {});
+  }
+
+  let editingContactPhone = '';
+  let editingContactInitialName = '';
+  let editingContactDeletePhoto = false;
+  let editingContactFile = null;
+  let contactPreviewUrl = '';
+  let contactEditBusy = false;
+  const editor = $('contactEditor');
+  function photoEditStatus(message, error = false) {
+    $('contactEditorStatus').textContent = message;
+    $('contactEditorStatus').classList.toggle('error', error);
+  }
+  function releaseContactPreview() {
+    if (contactPreviewUrl) URL.revokeObjectURL(contactPreviewUrl);
+    contactPreviewUrl = '';
+  }
+  function showContactEditPreview(url) {
+    const img = $('contactEditorPhoto');
+    if (!url) {
+      img.hidden = true;
+      img.removeAttribute('src');
+      $('contactEditorInitials').hidden = false;
+      return;
+    }
+    img.src = url;
+    img.hidden = false;
+    $('contactEditorInitials').hidden = true;
+  }
+  function closeContactEditor() {
+    if (contactEditBusy) return;
+    releaseContactPreview();
+    $('contactPhotoFile').value = '';
+    editingContactFile = null;
+    editingContactPhone = '';
+    if (editor.open) editor.close();
+  }
+  $('editContact').addEventListener('click', async () => {
+    if (!selected || contactEditBusy) return;
+    const phone = selected;
+    const contact = contactForPhone(phone);
+    const name = String(contact?.nome || '').trim();
+    editingContactPhone = phone;
+    editingContactInitialName = name;
+    editingContactFile = null;
+    editingContactDeletePhoto = false;
+    releaseContactPreview();
+    $('contactPhotoFile').value = '';
+    $('contactNameField').value = name;
+    $('contactEditorInitials').textContent = name ? initials(name) : '+';
+    photoEditStatus('');
+    $('removeContactPhoto').disabled = !contact?.tem_foto;
+    showContactEditPreview(null);
+    editor.showModal();
+    if (contact?.tem_foto) {
+      try {
+        const url = await getContactPhoto(phone, String(contact.foto_atualizada_em || ''));
+        if (editingContactPhone === phone && editor.open && !editingContactFile && !editingContactDeletePhoto)
+          showContactEditPreview(url);
+      } catch (_) {
+        if (editingContactPhone === phone && editor.open) photoEditStatus('Foto atual indisponível. Você pode substituí-la.', true);
+      }
+    }
+  });
+  $('closeContactEditor').addEventListener('click', closeContactEditor);
+  $('cancelContactEdit').addEventListener('click', closeContactEditor);
+  editor.addEventListener('cancel', event => { if (contactEditBusy) event.preventDefault(); });
+  editor.addEventListener('close', () => {
+    releaseContactPreview();
+    editingContactFile = null;
+    editingContactPhone = '';
+  });
+  $('contactPhotoFile').addEventListener('change', () => {
+    const file = $('contactPhotoFile').files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024 || !file.size) {
+      photoEditStatus('Escolha uma foto de até 20 MB. Ela será reduzida antes do envio.', true);
+      $('contactPhotoFile').value = '';
+      return;
+    }
+    releaseContactPreview();
+    contactPreviewUrl = URL.createObjectURL(file);
+    editingContactFile = file;
+    editingContactDeletePhoto = false;
+    showContactEditPreview(contactPreviewUrl);
+    $('removeContactPhoto').disabled = false;
+    photoEditStatus('Foto escolhida. Toque em Salvar alterações para confirmar.');
+  });
+  $('contactNameField').addEventListener('input', () => {
+    const text = $('contactNameField').value.trim();
+    $('contactEditorInitials').textContent = text ? initials(text) : '+';
+  });
+  $('removeContactPhoto').addEventListener('click', () => {
+    editingContactDeletePhoto = true;
+    editingContactFile = null;
+    $('contactPhotoFile').value = '';
+    releaseContactPreview();
+    showContactEditPreview(null);
+    $('removeContactPhoto').disabled = true;
+    photoEditStatus('Foto será removida quando você salvar.');
+  });
+  async function imageFileToJpeg(file) {
+    if (!file || !file.size || file.size > 20 * 1024 * 1024) throw Error('Escolha uma foto de até 20 MB.');
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(Error('Não foi possível abrir esta foto. Tente JPG ou PNG.'));
+        img.src = previewUrl;
+      });
+      if (!img.naturalWidth || !img.naturalHeight) throw Error('Foto inválida.');
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw Error('O navegador não conseguiu preparar a foto.');
+      const edge = Math.min(img.naturalWidth, img.naturalHeight);
+      const x = Math.round((img.naturalWidth - edge) / 2);
+      const y = Math.round((img.naturalHeight - edge) / 2);
+      ctx.drawImage(img, x, y, edge, edge, 0, 0, size, size);
+      const jpeg = canvas.toDataURL('image/jpeg', 0.8);
+      if (!jpeg.startsWith('data:image/jpeg;base64,')) throw Error('Não foi possível converter a imagem para JPG.');
+      return jpeg.slice('data:image/jpeg;base64,'.length);
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
+  }
+  $('contactEditorForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (contactEditBusy || !editingContactPhone) return;
+    const phone = editingContactPhone;
+    const name = $('contactNameField').value.trim().replace(/\s+/g, ' ');
+    const deletePhoto = editingContactDeletePhoto;
+    const file = editingContactFile;
+    contactEditBusy = true;
+    $('saveContactEdit').disabled = true;
+    $('cancelContactEdit').disabled = true;
+    $('closeContactEditor').disabled = true;
+    $('removeContactPhoto').disabled = true;
+    photoEditStatus('Salvando informações...');
+    try {
+      if (file) {
+        const jpeg = await imageFileToJpeg(file);
+        await request('/central/contatos/' + phone + '/foto',
+          {method:'POST', body:{foto_base64:jpeg}});
+        discardContactPhoto(phone);
+      } else if (deletePhoto) {
+        await request('/central/contatos/' + phone + '/foto', {method:'DELETE'});
+        discardContactPhoto(phone);
+      }
+      if (name !== editingContactInitialName) {
+        await request('/central/contatos/' + phone + '/nome',
+          {method:'PATCH', body:{nome:name}});
+      }
+      await refreshLeads();
+      if (selected === phone) await open(phone, {silent:true});
+      editor.close();
+      status('Contato atualizado.', 'ok');
+    } catch (error) {
+      photoEditStatus(error.message || 'Não foi possível salvar o contato.', true);
+    } finally {
+      contactEditBusy = false;
+      $('saveContactEdit').disabled = false;
+      $('cancelContactEdit').disabled = false;
+      $('closeContactEditor').disabled = false;
+      $('removeContactPhoto').disabled = !editingContactFile && !contactForPhone(phone)?.tem_foto;
+    }
+  });
   function renderLeads() {
     const pending = leads.filter(l => l.aguardando).length;
     const chip = document.querySelector('.filter-chip[data-filter="waiting"]');
@@ -206,8 +439,8 @@
       btn.setAttribute('aria-label', 'Abrir conversa com ' + displayName);
       const avatar = document.createElement('span');
       avatar.className = 'inbox-avatar';
-      avatar.textContent = name ? initials(name) : '+';
       avatar.setAttribute('aria-hidden', 'true');
+      applyContactAvatar(avatar, l);
       const body = document.createElement('span');
       body.className = 'inbox-lead-body';
       const head = document.createElement('span');
@@ -435,7 +668,8 @@
     const contact = leads.find(l => String(l.telefone_whatsapp) === phone);
     const contactName = String(contact?.nome || '').trim();
     $('title').textContent = contactName || '+' + phone;
-    $('chatAvatar').textContent = contactName ? initials(contactName) : '+';
+    applyContactAvatar($('chatAvatar'), contact || {telefone_whatsapp:phone, nome:contactName});
+    $('editContact').disabled = false;
     closeChatOptions();
     if (changingConversation) {
       displayedPhone = '';
@@ -733,6 +967,11 @@
       }
     }, 15000);
   }
+  window.addEventListener('pagehide', () => {
+    for (const item of contactPhotoCache.values()) URL.revokeObjectURL(item.url);
+    contactPhotoCache.clear();
+    releaseContactPreview();
+  });
   setDisabled();
   updateMobileView();
   boot();
