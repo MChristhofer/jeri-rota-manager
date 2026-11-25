@@ -215,7 +215,7 @@
     if (!contact?.tem_foto || !revision || !phone) return;
     element.dataset.photoRevision = revision;
     function setImg(url) {
-      if (!url || !element.isConnected || element.dataset.photoRevision !== revision) return;
+      if (!url || element.dataset.photoRevision !== revision) return;
       const img = document.createElement('img');
       img.src = url;
       img.alt = '';
