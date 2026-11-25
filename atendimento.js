@@ -84,7 +84,7 @@
   $('cancelNewConversation').addEventListener('click', closeNewChat);
   $('newConversationForm').addEventListener('submit', event => {
     event.preventDefault();
-    const phone = $('newConversationNumber').value.replace(/\\D/g,'');
+    const phone = $('newConversationNumber').value.replace(/\D/g,'');
     if (!validPhone(phone)) {
       $('newConversationError').textContent = 'Informe um telefone válido com DDI e DDD (10 a 15 dígitos).';
       return;
