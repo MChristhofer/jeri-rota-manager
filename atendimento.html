@@ -64,6 +64,9 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
   <div class="inbox-heading-text"><div class="inbox-brand">JERI ROTA MANAGER</div><h2>Conversas</h2></div>
   <div class="inbox-heading-actions">
    <a href="index.html" class="inbox-icon inbox-home" aria-label="Voltar ao sistema" title="Voltar ao Manager"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg></a>
+   <button id="newConversation" class="inbox-icon" type="button" aria-label="Abrir nova conversa" title="Abrir número">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a8.2 8.2 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 20.5l1.9-5.7A8.5 8.5 0 0 1 12.5 3h.5"/><path d="M19 2v8M15 6h8"/></svg>
+   </button>
    <button id="showAlerts" class="inbox-icon" type="button" aria-label="Configurar notificações" title="Alertas no celular" aria-expanded="false" aria-controls="pushSettings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>
    <button id="reload" class="inbox-icon" type="button" aria-label="Atualizar conversas" title="Atualizar conversas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.9 9A7 7 0 0 1 18 7l2 5M4 12l2 5A7 7 0 0 0 18 15"/></svg></button>
   </div>
@@ -89,6 +92,16 @@ button{padding:10px 13px;border-radius:10px;border:1px solid #ced2da;background:
  <div id="leads" aria-label="Lista de conversas"><div class="empty">Entrando na central...</div></div>
  <div class="inbox-footer"><span class="inbox-footer-dot" aria-hidden="true"></span><span id="inboxConnection">Atualização automática a cada 15 segundos</span></div>
 </aside>
+<dialog id="newConversationDialog" class="new-conversation-dialog" aria-labelledby="newConversationTitle">
+  <form method="dialog" id="newConversationForm">
+    <div class="dialog-heading"><div><div class="inbox-brand">JERI ROTA</div><h2 id="newConversationTitle">Nova conversa</h2></div><button type="button" id="closeNewConversation" aria-label="Fechar">×</button></div>
+    <label for="newConversationNumber">Número do WhatsApp com DDI e DDD</label>
+    <input id="newConversationNumber" inputmode="tel" autocomplete="off" placeholder="Ex.: 5585999999999" maxlength="20" required>
+    <p class="dialog-explainer">Para enviar a primeira mensagem, utilize um modelo aprovado quando necessário.</p>
+    <div id="newConversationError" role="status" aria-live="polite"></div>
+    <div class="dialog-actions"><button type="button" id="cancelNewConversation">Cancelar</button><button type="submit" class="primary">Abrir conversa</button></div>
+  </form>
+</dialog>
 <main>
  <div class="toolbar">
   <button id="mobileBack" class="mobile-back" type="button" aria-label="Voltar à lista de conversas" title="Voltar às conversas">‹</button>
